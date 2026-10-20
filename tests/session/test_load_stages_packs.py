@@ -190,3 +190,17 @@ def test_a_bad_peer_binding_fails_closed(tmp_path, peers, needle):
 def test_the_peer_block_key_must_look_like_a_block(tmp_path):
     with pytest.raises(ValueError, match="peers.r1"):
         load_stages(_skill(tmp_path), _workspace(tmp_path, {"peers": {"r1": "x:y"}}))
+
+
+def test_a_project_overlay_runs_a_gate_script_next_to_its_config(tmp_path):
+    ws = _workspace(tmp_path, {"stages": {"overlays": [
+        {"op": "insert_after", "block": "A1", "row": {**NEW, "gate_script": ".cadence/gates/house.py --check"}}]}})
+    write_files(ws, {".cadence/gates/house.py": "print('ok')\n"})
+    [row] = [r for r in load_stages(_skill(tmp_path), ws) if r["block"] == "A9"]
+    assert row["gate_script"] == f"{ws.resolve() / '.cadence' / 'gates' / 'house.py'} --check"
+
+
+def test_an_overlay_gate_that_is_not_next_to_its_config_stays_relative_to_the_skill_root(tmp_path):
+    ws = _workspace(tmp_path, {"stages": {"overlays": [{"op": "insert_after", "block": "A1", "row": NEW}]}})
+    [row] = [r for r in load_stages(_skill(tmp_path), ws) if r["block"] == "A9"]
+    assert row["gate_script"] == "scripts/one.py"

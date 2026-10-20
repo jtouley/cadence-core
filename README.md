@@ -127,10 +127,10 @@ peers.
 | Run your own planner or reviewer | `peers.<block>`, set to another plugin's skill. It writes the [peer output contract](docs/peer-output-contract.md) |
 
 Config is a stack of JSON layers: core defaults, a profile, `~/.config/cadence/config.json`, the
-repo's `.cadence.json`, a git-ignored `.cadence.local.json`, and `CADENCE_*` variables.
+repo's `.cadence.json`, a git-ignored `.cadence.local.json`, and `CADENCE_*` variables. A
+`.cadence.json` in your repository:
 
-```jsonc
-// .cadence.json
+```json
 {
   "$schema": "https://raw.githubusercontent.com/jtouley/cadence-core/main/references/cadence.config.schema.json",
   "packs": {"append": ["architecture"]},

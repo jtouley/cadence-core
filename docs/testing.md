@@ -29,11 +29,12 @@ installed. To check that the plugin loads and that the Bash tool gets
 `CADENCE_HOME`, run a headless session from an empty directory:
 
 ```bash
-claude -p --plugin-dir /path/to/cadence-core --allowedTools "Bash(printenv:*)" \
-  "Run printenv CADENCE_HOME and reply with its output only."
+claude -p "Run printenv CADENCE_HOME and reply with its output only." \
+  --plugin-dir /path/to/cadence-core --allowedTools "Bash(printenv:*)"
 ```
 
-The output must be the path of the checkout.
+The output must be the path of the checkout. Put the prompt first: `--allowedTools` takes more than
+one value, so a prompt after it is read as one more tool name.
 
 ## Evals and benchmarks
 

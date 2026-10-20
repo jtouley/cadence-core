@@ -46,19 +46,41 @@ class OverlayError(ValueError):
     """A stage overlay or a peer binding cannot apply. load_stages fails closed on it."""
 
 
+def _anchored(op: dict[str, Any], base: Path, source: str, pack: str | None = None) -> dict[str, Any]:
+    """`op` with a relative gate script of its row made absolute when the script is next to the file
+    that declares the operation (`base`). Any other relative path stays relative to the skill root."""
+    op = dict(op)
+    if isinstance(op.get("row"), dict):
+        row = {**op["row"], **({"pack": pack} if pack else {})}
+        script = str(row.get("gate_script") or "")
+        first = script.split()[0] if script else ""
+        if first and not Path(first).is_absolute() and (base / first).is_file():
+            row["gate_script"] = str(base / first) + script[len(first):]
+        op["row"] = row
+    return {**op, "source": source}
+
+
 def _pack_ops(pack: Any) -> list[dict[str, Any]]:
-    """The overlay operations of a pack's manifest. A row's gate script path is made absolute."""
+    """The overlay operations of a pack's manifest, anchored at the pack directory."""
+    return [_anchored(op, pack.path, f"pack {pack.name}", pack.name) for op in pack.stages]
+
+
+def _config_ops(resolved: Any, root: Path, workspace: Path | None) -> list[dict[str, Any]]:
+    """`stages.overlays` of each config layer, in layer order, anchored at the directory of its file.
+
+    The defaults and the profiles anchor at the skill root; the env layer at the project root.
+    """
+    import cadence_config
+
     ops = []
-    for op in pack.stages:
-        op = dict(op)
-        if isinstance(op.get("row"), dict):
-            row = {**op["row"], "pack": pack.name}
-            script = str(row.get("gate_script") or "")
-            first = script.split()[0] if script else ""
-            if first and not Path(first).is_absolute() and (pack.path / first).is_file():
-                row["gate_script"] = str(pack.path / first) + script[len(first):]
-            op["row"] = row
-        ops.append({**op, "source": f"pack {pack.name}"})
+    for layer in resolved.layers:
+        if layer.name == "default" or layer.name.startswith("profile:"):
+            base = root
+        elif layer.path is not None:
+            base = layer.path.parent
+        else:
+            base = cadence_config.project_root(workspace if workspace is not None else Path.cwd()) or Path.cwd()
+        ops += [_anchored(op, base, f"config {layer.name}") for op in (layer.data.get("stages") or {}).get("overlays") or []]
     return ops
 
 
@@ -135,7 +157,7 @@ def resolve_stages(skill_root: Path | None = None, workspace: Path | None = None
     # A row that is not an object stays, so the reader reports it (fail closed).
     rows = [r for r in load_registry(root)["stages"] if not isinstance(r, dict) or r.get("pack", "core") in on]
     ops = [op for pack in packs for op in _pack_ops(pack)]
-    ops += [{**op, "source": "config"} for op in resolved.get("stages.overlays") or []]
+    ops += _config_ops(resolved, root, workspace)
     rows, removed = apply_overlays(rows, ops)
     return bind_peers(rows, resolved.get("peers") or {}), removed
 

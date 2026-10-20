@@ -102,18 +102,23 @@ the profile like any other value.
 ## Block overlays
 
 An overlay changes the block order of `stages.json` by block id. The operations are
-`insert_before`, `insert_after`, `replace` and `remove`.
+`insert_before`, `insert_after`, `replace` and `remove`. This `.cadence.json` adds a license check
+after E1, with its gate in the repository at `.cadence/gates/license_check.py`:
 
 ```json
 {"stages": {"overlays": [
-  {"op": "remove", "block": "A5"},
   {"op": "insert_after", "block": "E1", "row": {
      "block": "E1b", "slug": "license-check", "phase": "execution",
-     "command": "python3 scripts/license_check.py", "gate_script": "scripts/license_check.py --check"}},
+     "command": "python3 .cadence/gates/license_check.py",
+     "gate_script": ".cadence/gates/license_check.py --check"}},
   {"op": "replace", "block": "R1", "row": {"description": "Our review, our rubric"}}
 ]}}
 ```
 
+- A block gate is a Python script that exits 0 to pass. A relative `gate_script` is looked up next
+  to the file that declares the overlay (here, the repository root), then in the skill root.
+- `remove` drops a block: `{"op": "remove", "block": "A5"}` drops A5 when its pack is on. A block
+  that is not in the order of the run is an error, so remove only blocks that are there.
 - `replace` merges the given fields over the row.
 - An inserted row needs `block`, `slug`, `phase` and `gate_script`, and its `block` and `slug` must be new.
 - P9, R1 and R5 make the evidence that closes a run. An overlay cannot remove them or change their
