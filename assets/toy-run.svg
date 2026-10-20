@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 354" width="880" height="354" role="img" aria-labelledby="t d">
+  <title id="t">Cadence toy run</title>
+  <desc id="d">A terminal runs the Cadence toy run. The edit guard denies a code edit and a secret read before the plan passed review. The gates walk the blocks and fail each one until its evidence exists. The findings ledger refuses a verified status that the agent sets, and closes the finding only after the check passes on the fix commit.</desc>
+  <style>
+    text{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;white-space:pre}
+    .win{fill:#0d1117;stroke:#30363d}.bar{fill:#161b22}.title{fill:#8b949e;font-size:12px}
+    .fg{fill:#e6edf3}.dim{fill:#8b949e}.h{fill:#79c0ff;font-weight:700}.ok{fill:#3fb950}.bad{fill:#ff7b72}.p{fill:#d2a8ff}
+    .a{opacity:0;animation-duration:24.56s;animation-iteration-count:infinite;animation-timing-function:linear}
+    .type{animation:type 24.56s steps(31,end) infinite}
+    @keyframes type{0%{width:0}6.51%,100%{width:245px}}
+    @keyframes t0{0%,6.92%{opacity:0}7.52%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes s0l0{0%,8.14%{opacity:0}8.74%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes s0l1{0%,9.85%{opacity:0}10.45%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes s0l2{0%,11.56%{opacity:0}12.16%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes s0l3{0%,13.27%{opacity:0}13.87%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes s0l4{0%,14.98%{opacity:0}15.58%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes s0l5{0%,16.69%{opacity:0}17.29%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes s0l6{0%,18.40%{opacity:0}19.00%,33.14%{opacity:1}34.77%,100%{opacity:0}}
+    @keyframes t1{0%,33.55%{opacity:0}34.15%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l0{0%,34.77%{opacity:0}35.37%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l1{0%,36.48%{opacity:0}37.08%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l2{0%,38.19%{opacity:0}38.79%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l3{0%,39.90%{opacity:0}40.50%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l4{0%,41.61%{opacity:0}42.21%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l5{0%,43.32%{opacity:0}43.92%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l6{0%,45.03%{opacity:0}45.63%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l7{0%,46.74%{opacity:0}47.34%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l8{0%,48.45%{opacity:0}49.05%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l9{0%,50.16%{opacity:0}50.76%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l10{0%,51.87%{opacity:0}52.47%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes s1l11{0%,53.58%{opacity:0}54.18%,68.32%{opacity:1}69.95%,100%{opacity:0}}
+    @keyframes t2{0%,68.73%{opacity:0}69.33%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l0{0%,69.95%{opacity:0}70.55%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l1{0%,71.66%{opacity:0}72.26%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l2{0%,73.37%{opacity:0}73.97%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l3{0%,75.08%{opacity:0}75.68%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l4{0%,76.79%{opacity:0}77.39%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l5{0%,78.50%{opacity:0}79.10%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l6{0%,80.21%{opacity:0}80.81%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l7{0%,81.92%{opacity:0}82.52%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @keyframes s2l8{0%,83.63%{opacity:0}84.23%,98.37%{opacity:1}100.00%,100%{opacity:0}}
+    @media (prefers-reduced-motion:reduce){.a,.type{animation:none}.type{width:100%}.last{opacity:1}}
+  </style>
+  <rect class="win" x="0.5" y="0.5" width="879" height="353" rx="10"/>
+  <path class="bar" d="M10.5 .5H869.5A10 10 0 0 1 879.5 10.5V30.5H.5V10.5A10 10 0 0 1 10.5 .5Z"/>
+  <circle cx="20" cy="16" r="6" fill="#ff5f56"/><circle cx="40" cy="16" r="6" fill="#ffbd2e"/><circle cx="60" cy="16" r="6" fill="#27c93f"/>
+  <text class="title" x="440.0" y="20" text-anchor="middle">cadence-core — toy run, no model, no network</text>
+  <clipPath id="c"><rect class="type" x="36" y="40" width="880" height="24"/></clipPath>
+  <text class="p" x="20" y="56">$</text>
+  <g clip-path="url(#c)"><text class="fg" x="36" y="56">python3 examples/toy-run/run.py</text></g>
+  <text class="title a" style="animation-name:t0" x="860" y="56" text-anchor="end">A code edit before the plan passed review</text>
+  <text class="a" style="animation-name:s0l0" x="20" y="83" xml:space="preserve"><tspan class="h">== The edit guard, before the plan passed review</tspan></text>
+  <text class="a" style="animation-name:s0l1" x="20" y="102" xml:space="preserve"><tspan class="fg">  Edit src/toy_pkg/core.py                     </tspan><tspan class="bad">DENY</tspan><tspan class="dim"></tspan></text>
+  <text class="a" style="animation-name:s0l2" x="20" y="121" xml:space="preserve"><tspan class="dim">    BLOCKED: gated path `src/toy_pkg/core.py` requires entry invariant (prefixes=[&#x27;src/&#x27;, &#x27;lib/&#x27;, &#x27;app/…</tspan></text>
+  <text class="a" style="animation-name:s0l3" x="20" y="140" xml:space="preserve"><tspan class="fg">  Shell &quot;echo &#x27;# x&#x27; &gt;&gt; src/toy_pkg/core.py&quot;    </tspan><tspan class="bad">DENY</tspan><tspan class="dim"></tspan></text>
+  <text class="a" style="animation-name:s0l4" x="20" y="159" xml:space="preserve"><tspan class="fg">  Edit README.md                               </tspan><tspan class="ok">allow</tspan><tspan class="dim"></tspan></text>
+  <text class="a" style="animation-name:s0l5" x="20" y="178" xml:space="preserve"><tspan class="fg">  Read .env                                    </tspan><tspan class="bad">DENY</tspan><tspan class="dim"></tspan></text>
+  <text class="a" style="animation-name:s0l6" x="20" y="197" xml:space="preserve"><tspan class="dim">    BLOCKED: .env matches a secret path (.env). A Cadence run does not read a secret file.</tspan></text>
+  <text class="title a" style="animation-name:t1" x="860" y="56" text-anchor="end">The gates decide when a block is done</text>
+  <text class="a" style="animation-name:s1l0" x="20" y="83" xml:space="preserve"><tspan class="h">== A1-E4  Gates in stages.json order (scripts/headless.py next)</tspan></text>
+  <text class="a" style="animation-name:s1l1" x="20" y="102" xml:space="preserve"><tspan class="ok">OK    A1  activate-session</tspan></text>
+  <text class="a" style="animation-name:s1l2" x="20" y="121" xml:space="preserve"><tspan class="bad">FAIL  P1  plan-create</tspan></text>
+  <text class="a" style="animation-name:s1l3" x="20" y="140" xml:space="preserve"><tspan class="dim">        - plan-create: no artifact matching plans/*.plan.md</tspan></text>
+  <text class="a" style="animation-name:s1l4" x="20" y="159" xml:space="preserve"><tspan class="ok">OK    P1  plan-create</tspan></text>
+  <text class="a" style="animation-name:s1l5" x="20" y="178" xml:space="preserve"><tspan class="ok">OK    P3  plan-review</tspan></text>
+  <text class="a" style="animation-name:s1l6" x="20" y="197" xml:space="preserve"><tspan class="ok">OK    P4  plan-update</tspan></text>
+  <text class="a" style="animation-name:s1l7" x="20" y="216" xml:space="preserve"><tspan class="ok">OK    P9  entry-invariant</tspan></text>
+  <text class="a" style="animation-name:s1l8" x="20" y="235" xml:space="preserve"><tspan class="bad">FAIL  E1  implement</tspan></text>
+  <text class="a" style="animation-name:s1l9" x="20" y="254" xml:space="preserve"><tspan class="fg">  Edit src/toy_pkg/core.py                     </tspan><tspan class="ok">allow</tspan><tspan class="dim"></tspan></text>
+  <text class="a" style="animation-name:s1l10" x="20" y="273" xml:space="preserve"><tspan class="ok">  committed: feat: subtract()</tspan></text>
+  <text class="a" style="animation-name:s1l11" x="20" y="292" xml:space="preserve"><tspan class="ok">OK    E1  implement</tspan></text>
+  <text class="title a last" style="animation-name:t2" x="860" y="56" text-anchor="end">A finding closes on evidence, not on a claim</text>
+  <text class="a last" style="animation-name:s2l0" x="20" y="83" xml:space="preserve"><tspan class="h">== R4-R5  The findings ledger, on its own (no PR)</tspan></text>
+  <text class="a last" style="animation-name:s2l1" x="20" y="102" xml:space="preserve"><tspan class="fg">  A reviewer files a must-fix finding:         </tspan><tspan class="ok">exit 0</tspan><tspan class="dim">  status: open</tspan></text>
+  <text class="a last" style="animation-name:s2l2" x="20" y="121" xml:space="preserve"><tspan class="fg">  The agent sets it to verified:               </tspan><tspan class="bad">exit 1</tspan><tspan class="dim">  error: status &#x27;verified&#x27; not settable here (allo…</tspan></text>
+  <text class="a last" style="animation-name:s2l3" x="20" y="140" xml:space="preserve"><tspan class="fg">  The agent sets it to fixed, with no commit:  </tspan><tspan class="bad">exit 1</tspan><tspan class="dim">  error: status=fixed requires fixed_in, the sha o…</tspan></text>
+  <text class="a last" style="animation-name:s2l4" x="20" y="159" xml:space="preserve"><tspan class="fg">  ledger_verify.py runs the check of the row:  </tspan><tspan class="bad">exit 1</tspan><tspan class="dim">  error: cd-12-F1: check failed (1): PYTHONPATH=sr…</tspan></text>
+  <text class="a last" style="animation-name:s2l5" x="20" y="178" xml:space="preserve"><tspan class="fg">  The agent adds the missing test and commits it.</tspan></text>
+  <text class="a last" style="animation-name:s2l6" x="20" y="197" xml:space="preserve"><tspan class="fg">  The agent sets fixed_in to the fix commit:   </tspan><tspan class="ok">exit 0</tspan><tspan class="dim">  status: fixed</tspan></text>
+  <text class="a last" style="animation-name:s2l7" x="20" y="216" xml:space="preserve"><tspan class="fg">  ledger_verify.py runs the check again:       </tspan><tspan class="ok">exit 0</tspan><tspan class="dim">  verified: 1</tspan></text>
+  <text class="a last" style="animation-name:s2l8" x="20" y="235" xml:space="preserve"><tspan class="fg">  Closure:                                     </tspan><tspan class="ok">exit 0</tspan><tspan class="dim">  ok: True</tspan></text>
+</svg>

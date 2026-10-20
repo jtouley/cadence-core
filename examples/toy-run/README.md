@@ -58,10 +58,15 @@ plan or review is.
 |---|---|
 | `run.py` | The script. Python standard library only. `--keep DIR` keeps the sandbox for you to examine. |
 | `transcript.txt` | The output of `run.py`. Paths and the run id show as `<sandbox>`, `<cadence>` and `<run>`. |
+| `render_demo.py` | Builds the terminal animation `assets/toy-run.svg` from `transcript.txt`. It shows transcript lines only. |
 
 After a change to a gate or a hook, write the transcript again and read the diff:
 
 ```bash
 python3 examples/toy-run/run.py > examples/toy-run/transcript.txt
 git diff examples/toy-run/transcript.txt
+python3 examples/toy-run/render_demo.py
 ```
+
+`render_demo.py` fails when a line of a scene is no longer in the transcript. Then change the
+scene in `SCENES`. A test fails when the SVG is older than the transcript.

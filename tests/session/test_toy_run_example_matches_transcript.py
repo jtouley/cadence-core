@@ -40,3 +40,10 @@ def test_readme_excerpt_comes_from_the_transcript():
                       if (transcript[i].startswith(head) if cut else transcript[i] == line)), None)
         assert found is not None, f"not in the transcript, in this order: {line!r}"
         at = found + 1
+
+
+def test_the_terminal_demo_is_rendered_from_the_transcript():
+    """assets/toy-run.svg shows only transcript lines, and it is rebuilt when the transcript changes."""
+    proc = subprocess.run([sys.executable, str(EXAMPLE / "render_demo.py"), "--check"],
+                          capture_output=True, text=True, check=False)
+    assert proc.returncode == 0, proc.stderr

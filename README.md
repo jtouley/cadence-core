@@ -63,6 +63,13 @@ git clone https://github.com/jtouley/cadence-core.git && cd cadence-core
 python3 examples/toy-run/run.py
 ```
 
+<p align="center">
+  <img src="assets/toy-run.svg" alt="The toy run in a terminal: the edit guard denies a code edit and a secret read before the plan passed review, the gates fail each block until its evidence exists, and the findings ledger closes a finding only after its check passes" width="100%">
+</p>
+
+<details>
+<summary>The same output as text</summary>
+
 ```text
 == The edit guard, before the plan passed review
   Edit src/toy_pkg/core.py                     DENY
@@ -72,6 +79,8 @@ python3 examples/toy-run/run.py
   The agent sets it to verified:               exit 1  error: status 'verified' not settable here (...)
   The agent sets it to fixed, with no commit:  exit 1  error: status=fixed requires fixed_in (...)
 ```
+
+</details>
 
 **Run it for real.** Install, then start a run in the repository you want to change:
 
