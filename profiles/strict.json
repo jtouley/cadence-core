@@ -1,10 +1,28 @@
 {
-  "packs": ["preflight", "tracker", "spec-review", "architecture", "test-plan", "deferrals"],
-  "context_budget": {"mode": "enforce"},
-  "cognitive_complexity": {"unsupported": "fail"},
-  "duplication": {"unsupported": "fail"},
-  "code_shape": {"unsupported": "fail"},
-  "test_shape": {"unsupported": "fail"},
-  "bugs": {"unsupported": "fail"},
-  "types": {"unsupported": "fail"}
+  "packs": [
+    "preflight",
+    "tracker",
+    "spec-review",
+    "architecture",
+    "test-plan",
+    "deferrals"
+  ],
+  "cognitive_complexity": {
+    "unsupported": "fail"
+  },
+  "duplication": {
+    "unsupported": "fail"
+  },
+  "code_shape": {
+    "unsupported": "fail"
+  },
+  "test_shape": {
+    "unsupported": "fail"
+  },
+  "bugs": {
+    "unsupported": "fail"
+  },
+  "types": {
+    "unsupported": "fail"
+  }
 }

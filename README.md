@@ -90,10 +90,12 @@ python3 examples/toy-run/run.py
 ```
 
 ```text
-/cadence Add monthly budgets to the CLI. Ticket #12.
+/cadence:cadence Add monthly budgets to the CLI. Ticket #12.
 ```
 
-The [quickstart](docs/quickstart.md) walks a full run, host by host.
+A plugin namespaces its skills, so the plugin install names the skill `/cadence:cadence`. With an
+`install.sh` install it is `/cadence`. The [quickstart](docs/quickstart.md) walks a full run, host
+by host.
 
 ## Install
 

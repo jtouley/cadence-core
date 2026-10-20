@@ -123,7 +123,8 @@ Read the script output (`task_id`, `resume_block`, artifacts) before planning or
 
 ## 4. One conversation: ship with `/cadence`
 
-Give the agent a concrete shippable ask (a feature, bugfix, or refactor that must end in a PR):
+Give the agent a concrete shippable ask (a feature, bugfix, or refactor that must end in a PR).
+On the Claude Code plugin the skill is `/cadence:cadence`; with `install.sh` it is `/cadence`:
 
 ```text
 /cadence

@@ -196,3 +196,11 @@ def test_the_record_holds_the_sha256_of_each_layer_file(project, user_home):
     record = load(project).record()
     import hashlib
     assert {"name": "project", "path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()} in record["layers"]
+
+
+def test_the_strict_profile_does_not_enforce_the_context_budget(project, user_home):
+    """A 25-block run goes past the default 90,000 orchestrator tokens before R1 (an end-to-end run
+    stopped there). Strict tightens the evidence gates; the context budget is a cost control."""
+    write(project / ".cadence.json", {"profile": "strict"})
+    resolved = load(project)
+    assert resolved.get("context_budget.mode") == "shadow" and resolved.source("context_budget.mode") == "default"

@@ -94,7 +94,7 @@ values). A resumed run keeps the config of its first activation.
 |---|---|
 | `minimal` | `subagent_hygiene.mode: shadow`, `context_budget.mode: off` |
 | `standard` | None. The twelve core blocks |
-| `strict` | Every stage pack on (25 blocks), `context_budget.mode: enforce`, each measure `unsupported: fail` |
+| `strict` | Every stage pack on (25 blocks), and each measure `unsupported: fail`. The context budget stays in `shadow`: it is a cost control, not evidence, and a 25-block run goes past 90,000 orchestrator tokens. Set `context_budget.mode: enforce` and a `max_tokens` that fits your runs to turn it on |
 
 A profile applies over the defaults and under every other layer. A higher layer changes a value of
 the profile like any other value.
