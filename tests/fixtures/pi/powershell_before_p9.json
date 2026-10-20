@@ -1,0 +1,21 @@
+{
+  "probe": "S03",
+  "run_state": "before_p9",
+  "pi": {
+    "toolName": "powershell",
+    "input": {
+      "command": "Set-Content -Path src/a.py -Value 'a = 2'"
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "Set-Content -Path src/a.py -Value 'a = 2'"
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": "allow",
+    "guard_secret_read.py": "allow"
+  }
+}

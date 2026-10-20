@@ -1,0 +1,15 @@
+{
+  "name": "_sample_fail_gate",
+  "version": "0.1.0",
+  "description": "Reference pack that always fails its gate — proves the pack plugin contract is wired.",
+  "triggers": [{ "pattern": "**/*", "type": "glob" }],
+  "phases": ["planning"],
+  "rules": [
+    {
+      "id": "_sample_fail_gate:always-fails",
+      "name": "Sample gate that always reports a must-fix finding",
+      "severity": "must-fix"
+    }
+  ],
+  "gate_script": "gate.py"
+}

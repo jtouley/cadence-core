@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "thesis": "Cadence is a complete standalone package. The peers of the core and stage-pack blocks live in this repo. Install publishes them. The runtime never reads the content of a host command or skill tree. A gate can lstat and resolve a host entry with a peer's name to find a peer shadow. Config binds another peer to a block (peers.<block> in the config layers).",
+  "peers": [
+    {
+      "slash": "/vibe-test",
+      "kind": "skill",
+      "path": "skills/vibe-test/SKILL.md",
+      "blocks": [
+        "A5"
+      ]
+    },
+    {
+      "slash": "/plan-create",
+      "kind": "command",
+      "path": "commands/plan-create.md",
+      "blocks": [
+        "P1"
+      ]
+    },
+    {
+      "slash": "/plan-review",
+      "kind": "command",
+      "path": "commands/plan-review.md",
+      "blocks": [
+        "P3"
+      ]
+    },
+    {
+      "slash": "/plan-update",
+      "kind": "command",
+      "path": "commands/plan-update.md",
+      "blocks": [
+        "P4"
+      ]
+    },
+    {
+      "slash": "/de-adversarial-reviewer",
+      "kind": "skill",
+      "path": "skills/de-adversarial-reviewer/SKILL.md",
+      "blocks": [
+        "P6"
+      ]
+    },
+    {
+      "slash": "/test-benchmark",
+      "kind": "skill",
+      "path": "skills/test-benchmark/SKILL.md",
+      "blocks": [
+        "P7",
+        "R2"
+      ]
+    },
+    {
+      "slash": "/spec-driven",
+      "kind": "command",
+      "path": "commands/spec-driven.md",
+      "blocks": [
+        "E1"
+      ]
+    },
+    {
+      "slash": "/pr-review-local",
+      "kind": "command",
+      "path": "commands/pr-review-local.md",
+      "blocks": [
+        "R1"
+      ]
+    },
+    {
+      "slash": "/commit-push-pr",
+      "kind": "command",
+      "path": "commands/commit-push-pr.md",
+      "blocks": [
+        "E4"
+      ]
+    }
+  ],
+  "supporting_commands": [
+    {
+      "slash": "/pr-review-update",
+      "path": "commands/pr-review-update.md",
+      "why": "R4 re-review: a peer reviews the commits since the last reviewed commit and appends a Last reviewed commit line; final_consolidate.py then checks that line against HEAD."
+    }
+  ]
+}

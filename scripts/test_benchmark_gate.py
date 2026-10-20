@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+"""P7 / R2 — test-benchmark peer gate.
+
+In code mode the gate also computes the DRY lists of the changed test files itself
+(scripts/test_shape.py, ADR-0008) and fails on each list that is over its limit.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from artifact_requirements import (  # noqa: E402
+    peer_written_filter,
+    require_artifact,
+    require_lean_delegation,
+    stage_rejections,
+)
+import test_shape  # noqa: E402
+from findings_io import FindingsValidationError, ledger_must_fix_ids  # noqa: E402
+from gate_common import ctx, fail, ok, write_gate_breadcrumb  # noqa: E402
+
+SLUG = "test-benchmark-gate"
+_MARKERS = ("RUN_BY_SKILL: test-benchmark",)
+_MODES = {
+    "plan": {"globs": ("benchmarks/*_plan.json",), "label": "test-benchmark-plan", "stage_slug": "test-benchmark-plan"},
+    "code": {
+        "globs": ("benchmarks/*_code.json", "benchmarks/*benchmark*.json"),
+        "label": "test-benchmark-code",
+        "stage_slug": "test-benchmark-pr",
+    },
+}
+
+
+_ENTRY_KEYS = ("input", "expected", "observed")
+
+
+def _card_value(path: Path, key: str) -> object:
+    """One key of the scorecard, or None when the card or the key cannot be read."""
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get(key)
+    except (OSError, json.JSONDecodeError, AttributeError):
+        return None
+
+
+def _adversarial_input_problems(path: Path) -> list[str]:
+    """R2 rigor (references/review-rigor.md): a non-empty list of complete entries."""
+    entries = _card_value(path, "adversarial_inputs")
+    complete = (
+        isinstance(entries, list)
+        and bool(entries)
+        and all(
+            isinstance(e, dict)
+            and all(e.get(k) is not None and str(e[k]).strip() for k in _ENTRY_KEYS)
+            for e in entries
+        )
+    )
+    problems = [] if complete else [
+        f"no adversarial_inputs entries with {list(_ENTRY_KEYS)} (references/review-rigor.md)"
+    ]
+    return problems + _score_problems(path) + _must_fix_ledger_problems(path)
+
+
+DRY_MEASUREMENT_KEYS = ("helpers_reimplemented", "helpers_reused", "thin_files")
+
+
+def _shape_problems(shape: dict | str) -> list[str]:
+    """ADR-0008: each entry of a computed list that is over its limit. No change to read fails closed."""
+    if isinstance(shape, str):
+        return [f"test shape cannot be measured: {shape}"]
+    lines = [f"{m['measure']}: {entry}" for m in shape["measures"] if m["verdict"] == "fail"
+             for entry in m["offenders"] or m["unmeasured"]]  # an unsupported layout fails with no offender
+    if lines:
+        lines.append("scripts/test_shape.py computes these lists: import the conftest helper, and add the "
+                     "tests of a thin file to the test file of its module")
+    return lines
+
+
+def _entry_key(entry: object) -> str:
+    return str(entry).split(" (")[0].strip()
+
+
+def _dry_mismatch(path: Path, shape: dict | str) -> list[str]:
+    """The peer's optional dry_measurement against the computed lists. A note only: it does not change the verdict."""
+    dry = _card_value(path, "dry_measurement")
+    if dry is None or isinstance(shape, str):
+        return []
+    if not (isinstance(dry, dict) and all(isinstance(dry.get(k), list) for k in DRY_MEASUREMENT_KEYS)):
+        return [f"dry_measurement is not three lists {list(DRY_MEASUREMENT_KEYS)}; R2 uses the computed lists"]
+    computed = {m["measure"]: m["offenders"] for m in shape["measures"]} | {"helpers_reused": shape["helpers_reused"]}
+    notes = []
+    for key in DRY_MEASUREMENT_KEYS:
+        peer, gate = {_entry_key(e) for e in dry[key]}, {_entry_key(e) for e in computed[key]}
+        if peer != gate:
+            notes.append(f"dry_measurement.{key} differs from the computed list: "
+                         f"peer only {sorted(peer - gate)}, gate only {sorted(gate - peer)}")
+    return notes
+
+
+def score_floor() -> int:
+    """`benchmark_score_floor` of the resolved config. A layer can only raise it."""
+    import cadence_config
+
+    return cadence_config.load(Path(__file__).resolve().parent.parent).get("benchmark_score_floor")
+
+
+MUST_FIX_DIMENSIONS = ("layer", "dry", "assert")
+
+
+def _score_problems(path: Path) -> list[str]:
+    """R2 passes only on a passing scorecard: every dimension at or above `benchmark_score_floor`, no FAIL verdict.
+
+    A low score is a must-fix: fix the tests, then score again.
+    """
+    try:
+        card = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ["unreadable scorecard"]
+    scores = card.get("scores") if isinstance(card, dict) else None
+    if not isinstance(scores, dict) or not scores:
+        return ["no scores (skills/test-benchmark/SKILL.md: dimensions 1-10)"]
+    problems = []
+    bad = {k: v for k, v in scores.items() if not isinstance(v, (int, float))}
+    if bad:
+        return [f"scores must be numbers: {bad}"]
+    # skills/test-benchmark/SKILL.md: below 7 is must-fix for layer, DRY and assertions.
+    floor = score_floor()
+    must = {k: v for k, v in scores.items() if any(w in k.lower() for w in MUST_FIX_DIMENSIONS) and v < floor}
+    if must:
+        problems.append(f"must-fix dimensions below {floor}: {must}. Fix the tests, then score again")
+    mean = sum(scores.values()) / len(scores)
+    if mean < floor:
+        problems.append(f"mean score {mean:.1f} is below {floor} (benchmark_score_floor)")
+    verdict = card.get("verdict")
+    if isinstance(verdict, str) and verdict.strip().upper() != "PASS":
+        problems.append(f"verdict is {verdict}")
+    return problems
+
+
+_MUST_FIX_SEVERITIES = {"must-fix", "high", "critical"}
+
+
+def _is_must_fix(finding: object) -> bool:
+    """`must_fix: true`, or a severity of must-fix, HIGH or critical (skills/test-benchmark)."""
+    if not isinstance(finding, dict):
+        return False
+    severity = str(finding.get("severity", "")).strip().lower()
+    return _flag_true(finding.get("must_fix")) or severity in _MUST_FIX_SEVERITIES
+
+
+def _flag_true(value: object) -> bool:
+    """`true`, `1`, `"true"` or `"yes"` (any case). JSON writers do not agree on one form (#43)."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value == 1
+    return isinstance(value, str) and value.strip().lower() in ("true", "yes")
+
+
+def _must_fix_ledger_problems(path: Path) -> list[str]:
+    """Each must-fix in the scorecard has a must-fix row in the findings ledger.
+
+    R4 and R5 read the ledger only. A finding that lives only in the scorecard
+    JSON has no owner and cannot block closure. A row that is already fixed,
+    verified or deferred still counts, so a rescore does not reopen R2.
+    """
+    findings = _card_value(path, "findings")
+    must = [f for f in findings if _is_must_fix(f)] if isinstance(findings, list) else []
+    if not must:
+        return []
+    try:
+        ledger_ids = ledger_must_fix_ids(path.parent.parent)
+    except FindingsValidationError as exc:
+        return [f"findings ledger is unreadable, so must-fix rows cannot be checked: {exc}"]
+    return [
+        f"must-fix finding {f.get('id')!r} has no must-fix row in the findings ledger (findings_io.py append)"
+        for f in must
+        if f.get("id") not in ledger_ids
+    ]
+
+
+def _code_validator(shape: dict | str, notes: list[str]):
+    def validate(path: Path) -> list[str]:
+        notes[:] = _dry_mismatch(path, shape)
+        return _adversarial_input_problems(path)
+    return validate
+
+
+def run(context_dir: Path, *, mode: str = "plan", check: bool = False) -> int:
+    spec = _MODES[mode]
+    slug = f"{SLUG}-{mode}"
+    shape = test_shape.for_change(context_dir) if mode == "code" else None  # None in plan mode
+    notes: list[str] = []
+    errors = require_artifact(
+        context_dir,
+        relative_globs=spec["globs"],
+        markers=_MARKERS,
+        label=spec["label"],
+        validate=_code_validator(shape, notes) if shape is not None else None,
+        accept=peer_written_filter(context_dir, slug=spec["stage_slug"]),
+        rejections=lambda paths: stage_rejections(context_dir, paths, slug=spec["stage_slug"]),
+    )
+    errors.extend(require_lean_delegation(context_dir, spec["stage_slug"]))
+    errors.extend(_shape_problems(shape) if shape is not None else [])
+    if errors:
+        return fail(slug, errors)
+    extra = {"mode": mode, "test_shape": shape, "dry_mismatch": notes} if shape is not None else {"mode": mode}
+    if not check:
+        write_gate_breadcrumb(slug, extra, context_dir=context_dir)
+    if isinstance(shape, dict):  # a str shape failed above in _shape_problems
+        counts = ", ".join(f"{m['measure']} {m['value']} ({m['verdict']})" for m in shape["measures"])
+        return ok(slug, "; ".join([f"{counts}, helpers_reused {len(shape['helpers_reused'])}", *notes]))
+    return ok(slug)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="P7 / R2 — test-benchmark peer gate.")
+    parser.add_argument("--mode", choices=("plan", "code"), default="plan")
+    parser.add_argument("--plan", action="store_true", help="Alias for --mode plan")
+    parser.add_argument("--code", action="store_true", help="Alias for --mode code")
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args()
+    mode = "code" if args.code else ("plan" if args.plan else args.mode)
+    return run(ctx(), mode=mode, check=args.check)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

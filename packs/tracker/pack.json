@@ -1,0 +1,8 @@
+{
+  "name": "tracker",
+  "version": "0.1.0",
+  "description": "Stage pack (ADR-0007): Ticket binding check and the PR comment after closure. Its rows in stages.json are A4, R6.",
+  "triggers": [],
+  "phases": [],
+  "rules": []
+}

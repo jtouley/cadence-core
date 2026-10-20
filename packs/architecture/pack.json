@@ -1,0 +1,8 @@
+{
+  "name": "architecture",
+  "version": "0.1.0",
+  "description": "Stage pack (ADR-0007): Domain analysis and the architecture reviews of the plan and the diff. Its rows in stages.json are P2, P5, E3.",
+  "triggers": [],
+  "phases": [],
+  "rules": []
+}

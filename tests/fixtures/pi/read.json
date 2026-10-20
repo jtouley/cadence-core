@@ -1,0 +1,11 @@
+{
+  "probe": "-",
+  "run_state": "before_p9",
+  "pi": {
+    "toolName": "read",
+    "input": {
+      "path": "src/a.py"
+    }
+  },
+  "hooks": {}
+}

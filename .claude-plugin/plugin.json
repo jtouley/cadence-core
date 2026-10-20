@@ -1,0 +1,25 @@
+{
+  "name": "cadence",
+  "displayName": "Cadence",
+  "version": "0.1.0",
+  "description": "Gated plan-to-PR harness: plan, review, TDD, draft PR and review closure, held in order by hooks and gate scripts.",
+  "author": {
+    "name": "jtouley",
+    "url": "https://github.com/jtouley"
+  },
+  "homepage": "https://github.com/jtouley/cadence-core",
+  "repository": "https://github.com/jtouley/cadence-core",
+  "license": "MIT",
+  "keywords": [
+    "harness",
+    "plan-to-pr",
+    "tdd",
+    "code-review",
+    "hooks",
+    "gates",
+    "config"
+  ],
+  "skills": [
+    "./"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CadenceFinding",
+  "description": "Schema for findings logged during Cadence review stages",
+  "type": "object",
+  "required": [
+    "id",
+    "stage",
+    "rule_ref",
+    "class",
+    "severity",
+    "location",
+    "evidence",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+-F\\d+$",
+      "description": "Unique finding ID formatted as {TASK}-F{nn}"
+    },
+    "stage": {
+      "type": "string",
+      "description": "Stable slug from stages.json"
+    },
+    "rule_ref": {
+      "type": "string",
+      "description": "Rule ID, ADR ID, or specification citation"
+    },
+    "class": {
+      "type": "string",
+      "enum": ["bug", "spec-gap", "fast-follow"],
+      "description": "Classification of the finding"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["must-fix", "nit"],
+      "description": "Severity level"
+    },
+    "location": {
+      "type": "string",
+      "description": "File path and line range (path:Lstart-Lend) or hunk ID"
+    },
+    "evidence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Verbatim diff quote or command output demonstrating the issue"
+    },
+    "check": {
+      "type": "string",
+      "description": "Deterministic command that passes when fixed (required for must-fix), or 'manual' with approver"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["open", "fixed", "verified", "deferred", "spec_gap"],
+      "description": "Lifecycle state of the finding"
+    },
+    "commit_sha": {
+      "type": "string",
+      "description": "Commit SHA where fix was introduced"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when ledger_verify recorded passing check"
+    },
+    "verification_exit_code": {
+      "type": "integer",
+      "description": "Exit code recorded by ledger_verify execution"
+    },
+    "human_confirmed": {
+      "type": "boolean",
+      "description": "Whether finding matches human review comment"
+    }
+  },
+  "if": {
+    "properties": {
+      "severity": { "const": "must-fix" }
+    }
+  },
+  "then": {
+    "required": ["check"]
+  }
+}

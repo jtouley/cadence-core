@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" width="960" height="300" role="img" aria-labelledby="title desc">
+  <title id="title">The Cadence pipeline</title>
+  <desc id="desc">Four phases run in order: Align (A1), Plan (P1, P3, P4, P9), Build (E1, E4) and Review (R1, R2, R3, R5, R7). A gate script between each block decides when the block is done. P9 opens code edits. R5 closes the run on ledger evidence.</desc>
+  <style>
+    .phase { fill: #eef2f7; stroke: #8796a8; stroke-width: 1.2; }
+    .block { fill: #ffffff; stroke: #5b6b7f; stroke-width: 1.2; }
+    .key { fill: #1f6feb; stroke: #1f6feb; }
+    .label { font: 600 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: #1f2328; }
+    .id { font: 600 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #1f2328; }
+    .idk { font: 600 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #ffffff; }
+    .note { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; fill: #57606a; }
+    .gate { fill: #2da44e; }
+    .arrow { stroke: #8796a8; stroke-width: 1.5; fill: none; marker-end: url(#tip); }
+    @media (prefers-color-scheme: dark) {
+      .phase { fill: #161b22; stroke: #3d4654; }
+      .block { fill: #0d1117; stroke: #6e7a8a; }
+      .key { fill: #1f6feb; stroke: #388bfd; }
+      .label { fill: #e6edf3; }
+      .id { fill: #e6edf3; }
+      .note { fill: #9da7b3; }
+    }
+  </style>
+  <defs>
+    <marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8796a8"/>
+    </marker>
+  </defs>
+
+  <!-- phases -->
+  <rect class="phase" x="16" y="40" width="120" height="170" rx="10"/>
+  <rect class="phase" x="160" y="40" width="250" height="170" rx="10"/>
+  <rect class="phase" x="434" y="40" width="160" height="170" rx="10"/>
+  <rect class="phase" x="618" y="40" width="326" height="170" rx="10"/>
+  <text class="label" x="76" y="28" text-anchor="middle">Align</text>
+  <text class="label" x="285" y="28" text-anchor="middle">Plan</text>
+  <text class="label" x="514" y="28" text-anchor="middle">Build</text>
+  <text class="label" x="781" y="28" text-anchor="middle">Review</text>
+
+  <!-- blocks -->
+  <rect class="block" x="44" y="100" width="64" height="40" rx="8"/><text class="id" x="76" y="125" text-anchor="middle">A1</text>
+
+  <rect class="block" x="176" y="100" width="48" height="40" rx="8"/><text class="id" x="200" y="125" text-anchor="middle">P1</text>
+  <rect class="block" x="236" y="100" width="48" height="40" rx="8"/><text class="id" x="260" y="125" text-anchor="middle">P3</text>
+  <rect class="block" x="296" y="100" width="48" height="40" rx="8"/><text class="id" x="320" y="125" text-anchor="middle">P4</text>
+  <rect class="block key" x="356" y="100" width="44" height="40" rx="8"/><text class="idk" x="378" y="125" text-anchor="middle">P9</text>
+
+  <rect class="block" x="454" y="100" width="52" height="40" rx="8"/><text class="id" x="480" y="125" text-anchor="middle">E1</text>
+  <rect class="block" x="522" y="100" width="52" height="40" rx="8"/><text class="id" x="548" y="125" text-anchor="middle">E4</text>
+
+  <rect class="block key" x="632" y="100" width="50" height="40" rx="8"/><text class="idk" x="657" y="125" text-anchor="middle">R1</text>
+  <rect class="block" x="694" y="100" width="50" height="40" rx="8"/><text class="id" x="719" y="125" text-anchor="middle">R2</text>
+  <rect class="block" x="756" y="100" width="50" height="40" rx="8"/><text class="id" x="781" y="125" text-anchor="middle">R3</text>
+  <rect class="block key" x="818" y="100" width="50" height="40" rx="8"/><text class="idk" x="843" y="125" text-anchor="middle">R5</text>
+  <rect class="block" x="880" y="100" width="50" height="40" rx="8"/><text class="id" x="905" y="125" text-anchor="middle">R7</text>
+
+  <!-- the gate after each block -->
+  <circle class="gate" cx="76" cy="152" r="4"/>
+  <circle class="gate" cx="200" cy="152" r="4"/><circle class="gate" cx="260" cy="152" r="4"/>
+  <circle class="gate" cx="320" cy="152" r="4"/><circle class="gate" cx="378" cy="152" r="4"/>
+  <circle class="gate" cx="480" cy="152" r="4"/><circle class="gate" cx="548" cy="152" r="4"/>
+  <circle class="gate" cx="657" cy="152" r="4"/><circle class="gate" cx="719" cy="152" r="4"/>
+  <circle class="gate" cx="781" cy="152" r="4"/><circle class="gate" cx="843" cy="152" r="4"/>
+  <circle class="gate" cx="905" cy="152" r="4"/>
+
+  <!-- phase arrows -->
+  <path class="arrow" d="M 136 120 L 158 120"/>
+  <path class="arrow" d="M 410 120 L 432 120"/>
+  <path class="arrow" d="M 594 120 L 616 120"/>
+
+  <!-- notes -->
+  <text class="note" x="76" y="184" text-anchor="middle">ticket, branch</text>
+  <text class="note" x="285" y="184" text-anchor="middle">plan, review loop, P9 opens edits</text>
+  <text class="note" x="514" y="184" text-anchor="middle">TDD by phase, draft PR</text>
+  <text class="note" x="781" y="184" text-anchor="middle">review, measures, closure on evidence</text>
+
+  <!-- legend -->
+  <circle class="gate" cx="24" cy="262" r="4"/>
+  <text class="note" x="34" y="266">gate script: exit 0 or the block stays open</text>
+  <rect class="key" x="300" y="254" width="16" height="16" rx="4"/>
+  <text class="note" x="324" y="266">evidence gate: an overlay can change its peer, never its gate</text>
+  <text class="note" x="944" y="266" text-anchor="end">12 core blocks · 25 with every pack</text>
+</svg>

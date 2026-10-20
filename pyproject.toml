@@ -1,0 +1,37 @@
+[project]
+name = "cadence-core"
+version = "0.1.0"
+description = "Cadence core: a gated plan-to-PR harness for coding agents, held in order by hooks and gate scripts."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "jtouley" }]
+keywords = ["agent", "harness", "claude-code", "cursor", "pi", "skill", "tdd", "code-review"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+# Core runtime is standard library only (stdlib `json`), by design.
+# No PyYAML. No third-party runtime deps. This keeps `install.sh` a copy + symlink.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://github.com/jtouley/cadence-core"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts", "shared"]

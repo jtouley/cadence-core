@@ -1,0 +1,23 @@
+{
+  "probe": "-",
+  "run_state": "none",
+  "pi": {
+    "toolName": "write",
+    "input": {
+      "path": "src/a.py",
+      "content": "a = 3\n"
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "src/a.py",
+      "content": "a = 3\n"
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": "allow",
+    "guard_primary_context_artifacts.py": "allow"
+  }
+}

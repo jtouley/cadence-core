@@ -1,0 +1,23 @@
+{
+  "probe": "-",
+  "run_state": "none",
+  "pi": {
+    "toolName": "write",
+    "input": {
+      "path": "~/x.txt",
+      "content": "x"
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "<HOME>/x.txt",
+      "content": "x"
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": null,
+    "guard_primary_context_artifacts.py": null
+  }
+}

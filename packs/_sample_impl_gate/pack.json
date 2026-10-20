@@ -1,0 +1,15 @@
+{
+  "name": "_sample_impl_gate",
+  "version": "0.1.0",
+  "description": "Reference pack whose gate judges the change in E3 and R3: it flags a file named SAMPLE_IMPL_GATE_PLANTED.txt.",
+  "triggers": [],
+  "phases": ["impl", "review"],
+  "rules": [
+    {
+      "id": "_sample_impl_gate:planted-file",
+      "name": "The change holds the planted file name",
+      "severity": "must-fix"
+    }
+  ],
+  "gate_script": "gate.py"
+}

@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: git config --global user.email ci@example.com && git config --global user.name ci
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: uv sync --frozen --extra dev
+      - run: ./install.sh --tools
+      - run: uv run pytest
+        env:
+          CADENCE_REQUIRE_NODE: "1"
+          CADENCE_REQUIRE_TOOLS: "1"
+
+  complexity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - id: sync
+        run: uv sync --frozen --extra dev
+      - name: Complexity ratchet
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: uv run python scripts/cognitive_complexity_gate.py --check --base "origin/$BASE_REF"
+      - name: Complexity report
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          {
+            echo '### Cognitive complexity'
+            echo '```'
+            uv run python scripts/cognitive_complexity.py .
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,21 @@
+{
+  "probe": "S07",
+  "run_state": "finished",
+  "pi": {
+    "toolName": "bash",
+    "input": {
+      "command": "echo hi > src/a.py"
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "echo hi > src/a.py"
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": "allow",
+    "guard_secret_read.py": "allow"
+  }
+}

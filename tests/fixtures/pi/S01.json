@@ -1,0 +1,33 @@
+{
+  "probe": "S01",
+  "run_state": "before_p9",
+  "pi": {
+    "toolName": "edit",
+    "input": {
+      "path": "src/a.py",
+      "edits": [
+        {
+          "oldText": "a = 1",
+          "newText": "a = 2"
+        }
+      ]
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "src/a.py",
+      "edits": [
+        {
+          "oldText": "a = 1",
+          "newText": "a = 2"
+        }
+      ]
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": "deny",
+    "guard_primary_context_artifacts.py": "allow"
+  }
+}

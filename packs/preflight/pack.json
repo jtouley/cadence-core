@@ -1,0 +1,8 @@
+{
+  "name": "preflight",
+  "version": "0.1.0",
+  "description": "Stage pack (ADR-0007): Environment, branch and clean-state check, and the ops-only triage. Its rows in stages.json are A2, A3.",
+  "triggers": [],
+  "phases": [],
+  "rules": []
+}

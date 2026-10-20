@@ -1,0 +1,15 @@
+{
+  "name": "cadence-core",
+  "description": "Cadence core plugin marketplace",
+  "owner": {
+    "name": "jtouley",
+    "url": "https://github.com/jtouley"
+  },
+  "plugins": [
+    {
+      "name": "cadence",
+      "description": "Gated plan-to-PR harness: plan, review, TDD, draft PR and review closure, held in order by hooks and gate scripts.",
+      "source": "./"
+    }
+  ]
+}

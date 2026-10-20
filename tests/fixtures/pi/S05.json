@@ -1,0 +1,23 @@
+{
+  "probe": "S05",
+  "run_state": "e1",
+  "pi": {
+    "toolName": "write",
+    "input": {
+      "path": ".context/findings.jsonl",
+      "content": "{\"id\": \"F-1\", \"severity\": \"must-fix\", \"status\": \"verified\", \"check\": \"true\"}\n"
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": ".context/findings.jsonl",
+      "content": "{\"id\": \"F-1\", \"severity\": \"must-fix\", \"status\": \"verified\", \"check\": \"true\"}\n"
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": "deny",
+    "guard_primary_context_artifacts.py": "allow"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "probe": "S03",
+  "run_state": "before_p9",
+  "pi": {
+    "toolName": "bash",
+    "input": {
+      "command": "sed -i '' 's/a/b/' src/a.py"
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "sed -i '' 's/a/b/' src/a.py"
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": "deny",
+    "guard_secret_read.py": "allow"
+  }
+}

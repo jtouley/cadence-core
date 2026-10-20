@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jtouley/cadence-core/references/cadence.config.schema.json",
+  "title": "Cadence config layer",
+  "description": "One layer of Cadence config: cadence.defaults.json, a profile, ~/.config/cadence/config.json, .cadence.json or .cadence.local.json. scripts/cadence_config.py reads this schema. A list may also be a patch {\"append\": [...], \"remove\": [...]} of the list below it. x-cadence-stricter marks a limit that a higher layer can only make stricter. x-cadence-grow-only marks a list that a higher layer can only extend.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "A path or URL of this schema, for editors. The loader ignores it."
+    },
+    "profile": {
+      "type": "string",
+      "enum": [
+        "minimal",
+        "standard",
+        "strict"
+      ],
+      "description": "A named set of packs and limits in profiles/<name>.json. It applies over cadence.defaults.json and under every other layer."
+    },
+    "adapter": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The tracker adapter: adapters/<adapter>.json. `none` runs with no tracker."
+    },
+    "packs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_][a-z0-9_-]*$"
+      },
+      "description": "The packs that are on. Each name is a directory under packs/ or a pack that cadence.lock.json pins."
+    },
+    "pack_config": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      },
+      "description": "The settings of each pack that is on: pack_config.<pack>.<key>. The pack's manifest declares the keys, their types and their defaults."
+    },
+    "peers": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[APER][0-9]+$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The peer of a block: `/<name>` (a host command or skill) or `<plugin>:<name>` (a skill of another plugin). It must write the lines in docs/peer-output-contract.md. The default is the row in references/bundled-peers.json."
+    },
+    "stages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "overlays": {
+          "type": "array",
+          "x-cadence-merge": "concat",
+          "description": "Changes to the block order of stages.json, applied in layer order.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "insert_before",
+                  "insert_after",
+                  "replace",
+                  "remove"
+                ]
+              },
+              "block": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The block id or slot name that the operation changes."
+              },
+              "row": {
+                "type": "object",
+                "description": "The stages.json row to insert, or the row that replaces the block."
+              }
+            }
+          }
+        }
+      }
+    },
+    "gated_prefixes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Path prefixes, from the repo root, that the edit gate holds until P9 passes."
+    },
+    "secret_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "x-cadence-grow-only": true,
+      "description": "Glob patterns of secret files that a run cannot read, in addition to the built-in patterns."
+    },
+    "layer_map": {
+      "type": "object",
+      "description": "Architecture layers for the E3 dependency rules: a layer name to its path prefixes."
+    },
+    "decision_frontmatter_required": {
+      "type": "boolean",
+      "description": "true: decision coverage needs an ADR or proposal with decision frontmatter. false: any architecture document counts."
+    },
+    "peer_models": {
+      "description": "Claude Code only: a peer stage slug (or `default`) to a model alias. scripts/peer_models.py checks the keys and the values at A1."
+    },
+    "subagent_hygiene": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "shadow",
+            "enforce"
+          ]
+        },
+        "rewrite_prompt": {
+          "type": "boolean"
+        },
+        "classifier": {
+          "type": "string"
+        },
+        "classifier_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "classifier_timeout": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "on_classifier_error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "deny",
+            "allow",
+            null
+          ]
+        }
+      }
+    },
+    "context_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "shadow",
+            "enforce"
+          ]
+        },
+        "warn_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "cognitive_complexity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max": {
+          "type": "integer",
+          "minimum": 1,
+          "x-cadence-stricter": "lower"
+        },
+        "unsupported": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        }
+      }
+    },
+    "duplication": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_percent": {
+          "type": "integer",
+          "minimum": 1,
+          "x-cadence-stricter": "lower"
+        },
+        "min_block_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "x-cadence-stricter": "lower"
+        },
+        "unsupported": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        }
+      }
+    },
+    "code_shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_function_statements": {
+          "type": "integer",
+          "minimum": 1,
+          "x-cadence-stricter": "lower"
+        },
+        "max_branch_chain": {
+          "type": "integer",
+          "minimum": 1,
+          "x-cadence-stricter": "lower"
+        },
+        "unsupported": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        }
+      }
+    },
+    "test_shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_helpers_reimplemented": {
+          "type": "integer",
+          "minimum": 0,
+          "x-cadence-stricter": "lower"
+        },
+        "max_thin_files": {
+          "type": "integer",
+          "minimum": 0,
+          "x-cadence-stricter": "lower"
+        },
+        "unsupported": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "test_dirs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "conftest": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "runtime_dirs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "bugs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max": {
+          "type": "integer",
+          "minimum": 0,
+          "x-cadence-stricter": "lower"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "x-cadence-stricter": "lower"
+        },
+        "unsupported": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        }
+      }
+    },
+    "types": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max": {
+          "type": "integer",
+          "minimum": 0,
+          "x-cadence-stricter": "lower"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "x-cadence-stricter": "lower"
+        },
+        "unsupported": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        }
+      }
+    },
+    "measure_exclude": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Path prefixes that R2 and R3 do not measure, such as a corpus of planted faults."
+    },
+    "plan_review_cycles": {
+      "type": "integer",
+      "minimum": 1,
+      "x-cadence-stricter": "lower",
+      "description": "The most /plan-review cycles before P4 carries the open findings or stops."
+    },
+    "adversarial_cycles": {
+      "type": "integer",
+      "minimum": 1,
+      "x-cadence-stricter": "lower",
+      "description": "The most P6 adversarial review cycles."
+    },
+    "review_fix_rounds": {
+      "type": "integer",
+      "minimum": 1,
+      "x-cadence-stricter": "lower",
+      "description": "The most R1 to R4 fix rounds (## Update sections of the PR review)."
+    },
+    "benchmark_score_floor": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "x-cadence-stricter": "higher",
+      "description": "The lowest mean test-benchmark score that P7 and R2 pass."
+    }
+  }
+}

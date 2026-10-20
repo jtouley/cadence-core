@@ -1,0 +1,4 @@
+{
+  "subagent_hygiene": {"mode": "shadow"},
+  "context_budget": {"mode": "off"}
+}

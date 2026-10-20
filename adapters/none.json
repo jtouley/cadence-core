@@ -1,0 +1,6 @@
+{
+  "name": "none",
+  "ticket_pattern": "\\bLOCAL-\\d+\\b",
+  "local_tracker": ".context/issues/{task_id}.md",
+  "cli": null
+}

@@ -1,0 +1,337 @@
+{
+  "version": 1,
+  "description": "Registry SSOT for feature-pipeline stages across Alignment, Planning, Execution, and Review phases",
+  "stages": [
+    {
+      "slug": "activate-session",
+      "block": "A1",
+      "phase": "alignment",
+      "command": "python3 scripts/activate_session.py",
+      "gate_script": "scripts/activate_session.py --check",
+      "manifest_type": "session",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Initialize or bind active session for feature branch and worktree"
+    },
+    {
+      "slug": "preflight",
+      "block": "A2",
+      "phase": "alignment",
+      "command": "python3 scripts/preflight.py",
+      "gate_script": "scripts/preflight.py --check",
+      "manifest_type": "preflight",
+      "trigger": "always",
+      "pack": "preflight",
+      "description": "Environment, branch, and clean state preflight check"
+    },
+    {
+      "slug": "ops-gate",
+      "block": "A3",
+      "phase": "alignment",
+      "command": "python3 scripts/ops_gate.py",
+      "gate_script": "scripts/ops_gate.py --check",
+      "manifest_type": "ops-gate",
+      "trigger": "always",
+      "pack": "preflight",
+      "description": "Triage ops-only vs code changes; route catalog-stale and overlay-only tasks"
+    },
+    {
+      "slug": "ticket-gate",
+      "block": "A4",
+      "phase": "alignment",
+      "command": "python3 scripts/ticket_gate.py",
+      "gate_script": "scripts/ticket_gate.py --check",
+      "manifest_type": "ticket-gate",
+      "trigger": "always",
+      "pack": "tracker",
+      "description": "Validate issue/ticket binding and acceptance criteria"
+    },
+    {
+      "slug": "validate",
+      "block": "A5",
+      "phase": "alignment",
+      "command": "/vibe-test",
+      "gate_script": "scripts/validate_gate.py",
+      "manifest_type": "vibe-test",
+      "trigger": "always",
+      "pack": "spec-review",
+      "description": "Pressure-test specifications and assumptions before planning",
+      "writer_stages": [
+        "vibe-test"
+      ],
+      "inputs": [
+        "ticket"
+      ]
+    },
+    {
+      "slug": "plan-create",
+      "block": "P1",
+      "phase": "planning",
+      "command": "/plan-create",
+      "gate_script": "scripts/plan_create_gate.py",
+      "manifest_type": "plan",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Author structured execution plan (.cursor/plans/*.plan.md)",
+      "inputs": [
+        "ticket"
+      ]
+    },
+    {
+      "slug": "domain-analysis",
+      "block": "P2",
+      "phase": "planning",
+      "command": "python3 scripts/domain_analysis.py",
+      "gate_script": "scripts/domain_analysis.py --check",
+      "manifest_type": "domain-analysis",
+      "trigger": "always",
+      "pack": "architecture",
+      "description": "Analyze domain boundaries and select relevant domain packs"
+    },
+    {
+      "slug": "plan-review",
+      "block": "P3",
+      "phase": "planning",
+      "command": "/plan-review",
+      "gate_script": "scripts/plan_review_gate.py",
+      "manifest_type": "plan-review",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Staff-level review of plan readiness and blocking items",
+      "writer_stages": [
+        "plan-review"
+      ],
+      "inputs": [
+        "plan",
+        "plan-review-previous"
+      ]
+    },
+    {
+      "slug": "plan-update",
+      "block": "P4",
+      "phase": "planning",
+      "command": "/plan-update",
+      "gate_script": "scripts/plan_update_gate.py",
+      "manifest_type": "plan-update",
+      "trigger": "on_review_changes",
+      "pack": "core",
+      "description": "Address review feedback until plan is READY TO EXECUTE",
+      "inputs": [
+        "plan",
+        "plan-review"
+      ]
+    },
+    {
+      "slug": "architecture-review-plan",
+      "block": "P5",
+      "phase": "planning",
+      "command": "python3 scripts/architecture_review.py --phase plan",
+      "gate_script": "scripts/architecture_review.py --phase plan --check",
+      "manifest_type": "arch-review-plan",
+      "trigger": "always",
+      "pack": "architecture",
+      "description": "Core architecture review (dependency direction, boundaries, decision coverage)"
+    },
+    {
+      "slug": "adversarial-review",
+      "block": "P6",
+      "phase": "planning",
+      "command": "/de-adversarial-reviewer",
+      "gate_script": "scripts/adversarial_review_gate.py",
+      "manifest_type": "adversarial-review",
+      "trigger": "always",
+      "pack": "spec-review",
+      "description": "Adversarial review pressure-testing edge cases and assumptions",
+      "writer_stages": [
+        "de-adversarial-reviewer"
+      ],
+      "command_args": [
+        "plan-gate"
+      ],
+      "inputs": [
+        "plan"
+      ]
+    },
+    {
+      "slug": "test-benchmark-plan",
+      "block": "P7",
+      "phase": "planning",
+      "command": "/test-benchmark plan",
+      "gate_script": "scripts/test_benchmark_gate.py --plan",
+      "manifest_type": "test-benchmark-plan",
+      "trigger": "always",
+      "pack": "test-plan",
+      "description": "Audit proposed test plan for rigor, layers, and mutation awareness",
+      "writer_stages": [
+        "test-benchmark-plan"
+      ],
+      "inputs": [
+        "plan"
+      ]
+    },
+    {
+      "slug": "deferral-register",
+      "block": "P8",
+      "phase": "planning",
+      "command": "python3 scripts/deferral_adjudication_check.py",
+      "gate_script": "scripts/deferral_adjudication_check.py --check",
+      "manifest_type": "deferrals",
+      "trigger": "always",
+      "pack": "deferrals",
+      "description": "Register and adjudicate approved deferred work with ticket links"
+    },
+    {
+      "slug": "entry-invariant",
+      "block": "P9",
+      "phase": "planning",
+      "command": "python3 scripts/entry_invariant.py --phase execution",
+      "gate_script": "scripts/entry_invariant.py --phase execution",
+      "manifest_type": "entry-invariant",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Verify all alignment and planning artifacts are registered and valid before editing code"
+    },
+    {
+      "slug": "implement",
+      "block": "E1",
+      "phase": "execution",
+      "command": "/spec-driven",
+      "gate_script": "scripts/implement_gate.py",
+      "manifest_type": "implementation",
+      "trigger": "always",
+      "pack": "core",
+      "description": "TDD implementation with red-green-refactor loop",
+      "inputs": [
+        "plan"
+      ]
+    },
+    {
+      "slug": "impl-artifact",
+      "block": "E2",
+      "phase": "execution",
+      "command": "python3 scripts/impl_artifact.py",
+      "gate_script": "scripts/impl_artifact.py --check",
+      "manifest_type": "impl-artifact",
+      "trigger": "always",
+      "pack": "deferrals",
+      "description": "Collect implementation diff and commit manifest"
+    },
+    {
+      "slug": "architecture-review-impl",
+      "block": "E3",
+      "phase": "execution",
+      "command": "python3 scripts/architecture_review.py --phase impl",
+      "gate_script": "scripts/architecture_review.py --phase impl --check",
+      "manifest_type": "arch-review-impl",
+      "trigger": "always",
+      "pack": "architecture",
+      "description": "Verify plan conformance, layer integrity, and boundary compliance on code diff"
+    },
+    {
+      "slug": "draft-pr",
+      "block": "E4",
+      "phase": "execution",
+      "command": "/commit-push-pr --draft",
+      "gate_script": "scripts/draft_pr_gate.py",
+      "manifest_type": "draft-pr",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Create or update draft PR",
+      "inputs": []
+    },
+    {
+      "slug": "pr-review-local",
+      "block": "R1",
+      "phase": "review",
+      "command": "/pr-review-local",
+      "gate_script": "scripts/pr_review_local_gate.py",
+      "manifest_type": "pr-review",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Local staff-level review of the PR branch",
+      "writer_stages": [
+        "pr-review-local",
+        "pr-review-update"
+      ],
+      "inputs": [
+        "pr-number"
+      ]
+    },
+    {
+      "slug": "test-benchmark-pr",
+      "block": "R2",
+      "phase": "review",
+      "command": "/test-benchmark",
+      "gate_script": "scripts/test_benchmark_gate.py --code",
+      "manifest_type": "test-benchmark-code",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Evaluate test quality and mutation kill rate on changed code",
+      "writer_stages": [
+        "test-benchmark-pr"
+      ],
+      "inputs": [
+        "pr-number"
+      ]
+    },
+    {
+      "slug": "cognitive-complexity",
+      "block": "R3",
+      "phase": "review",
+      "command": "python3 scripts/cognitive_complexity_gate.py",
+      "gate_script": "scripts/cognitive_complexity_gate.py",
+      "manifest_type": "cognitive-complexity",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Fail a changed function over the cognitive complexity limit (each language with an analyzer) or the statement and branch-chain limits (Python), and a changed Python file over the duplication limit, when it is new or got worse"
+    },
+    {
+      "slug": "final-consolidate",
+      "block": "R4",
+      "phase": "review",
+      "command": "python3 scripts/final_consolidate.py",
+      "gate_script": "scripts/final_consolidate.py --check",
+      "manifest_type": "consolidate",
+      "trigger": "always",
+      "pack": "deferrals",
+      "description": "Two-pass review consolidation (close pass then delta pass) via findings ledger",
+      "writer_stages": [
+        "pr-review-local",
+        "pr-review-update"
+      ]
+    },
+    {
+      "slug": "closure",
+      "block": "R5",
+      "phase": "review",
+      "command": "python3 scripts/closure.py",
+      "gate_script": "scripts/closure.py --check",
+      "manifest_type": "closure",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Verify all must-fix findings are verified, deferred, or spec_gap"
+    },
+    {
+      "slug": "pr-comment",
+      "block": "R6",
+      "phase": "review",
+      "command": "python3 scripts/guard_gh_pr_comment.py",
+      "gate_script": "scripts/guard_gh_pr_comment.py --check",
+      "manifest_type": "pr-comment",
+      "trigger": "always",
+      "pack": "tracker",
+      "description": "Post structured closure ledger comment to GitHub PR"
+    },
+    {
+      "slug": "session-close",
+      "block": "R7",
+      "phase": "review",
+      "command": "python3 scripts/activate_session.py --deactivate",
+      "gate_script": "scripts/activate_session.py --status",
+      "manifest_type": "session-close",
+      "trigger": "always",
+      "pack": "core",
+      "description": "Clean session deactivation after PR readiness confirmed"
+    }
+  ]
+}

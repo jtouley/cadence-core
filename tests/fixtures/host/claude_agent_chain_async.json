@@ -1,0 +1,38 @@
+{
+  "host_version": "2.1.287 (Claude Code)",
+  "method": "2 (claude -p --setting-sources project --settings <recording hooks>)",
+  "pre": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Agent",
+    "tool_use_id": "toolu_017R6v3CD4b47Ux63SpiaLFT",
+    "cwd": "<redacted>",
+    "tool_input": {
+      "description": "Write hello to sub_bg.txt",
+      "subagent_type": "general-purpose",
+      "run_in_background": true,
+      "prompt": "<redacted>"
+    }
+  },
+  "post": {
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Agent",
+    "tool_use_id": "toolu_017R6v3CD4b47Ux63SpiaLFT",
+    "cwd": "<redacted>",
+    "tool_response": {
+      "agentId": "ae19f31e3a054f760",
+      "resolvedModel": "claude-haiku-4-5-20251001",
+      "status": "async_launched"
+    }
+  },
+  "inner_write": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_use_id": "toolu_01PK9MJ8EsHdYTGpxTSLvUFM",
+    "agent_id": "ae19f31e3a054f760",
+    "cwd": "<redacted>",
+    "tool_input": {
+      "file_path": "<redacted>",
+      "content": "<redacted>"
+    }
+  }
+}

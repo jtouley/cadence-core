@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/guard_lean_task_prompt.py",
+        "matcher": "Task",
+        "failClosed": true,
+        "timeout": 15
+      },
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/guard_skill_gate.py",
+        "matcher": "StrReplace|Write|EditNotebook|ApplyPatch",
+        "failClosed": true,
+        "timeout": 15
+      },
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/guard_primary_context_artifacts.py",
+        "matcher": "StrReplace|Write|EditNotebook|ApplyPatch",
+        "failClosed": true,
+        "timeout": 15
+      },
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/guard_secret_read.py",
+        "matcher": "Read",
+        "failClosed": true,
+        "timeout": 15
+      }
+    ],
+    "beforeReadFile": [
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/guard_secret_read.py",
+        "failClosed": true,
+        "timeout": 15
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/guard_skill_gate.py",
+        "failClosed": true,
+        "timeout": 15
+      },
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/guard_secret_read.py",
+        "failClosed": true,
+        "timeout": 15
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/pipeline_stop_guard.py --subagent",
+        "failClosed": true,
+        "timeout": 15,
+        "loop_limit": 3
+      }
+    ],
+    "stop": [
+      {
+        "command": "python3 ${CADENCE_SKILL_ROOT:-$HOME/.cursor/skills/cadence}/hooks/pipeline_stop_guard.py",
+        "failClosed": true,
+        "timeout": 15,
+        "loop_limit": 3
+      }
+    ]
+  }
+}

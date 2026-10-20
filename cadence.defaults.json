@@ -1,0 +1,69 @@
+{
+  "$schema": "references/cadence.config.schema.json",
+  "profile": "standard",
+  "adapter": "github-issues",
+  "packs": [],
+  "pack_config": {},
+  "peers": {},
+  "stages": {
+    "overlays": []
+  },
+  "gated_prefixes": [
+    "src/",
+    "lib/",
+    "app/",
+    "packages/"
+  ],
+  "secret_paths": [],
+  "layer_map": {},
+  "decision_frontmatter_required": true,
+  "peer_models": {},
+  "subagent_hygiene": {
+    "mode": "enforce",
+    "rewrite_prompt": true,
+    "classifier": "none",
+    "classifier_threshold": 0.5,
+    "classifier_timeout": 10,
+    "on_classifier_error": null
+  },
+  "context_budget": {
+    "mode": "shadow",
+    "warn_tokens": 60000,
+    "max_tokens": 90000
+  },
+  "cognitive_complexity": {
+    "max": 15,
+    "unsupported": "warn"
+  },
+  "duplication": {
+    "max_percent": 3,
+    "min_block_lines": 6,
+    "unsupported": "warn"
+  },
+  "code_shape": {
+    "max_function_statements": 50,
+    "max_branch_chain": 6,
+    "unsupported": "warn"
+  },
+  "test_shape": {
+    "max_helpers_reimplemented": 0,
+    "max_thin_files": 0,
+    "unsupported": "warn",
+    "layout": {}
+  },
+  "bugs": {
+    "max": 0,
+    "timeout_seconds": 60,
+    "unsupported": "warn"
+  },
+  "types": {
+    "max": 0,
+    "timeout_seconds": 60,
+    "unsupported": "warn"
+  },
+  "measure_exclude": [],
+  "plan_review_cycles": 5,
+  "adversarial_cycles": 3,
+  "review_fix_rounds": 2,
+  "benchmark_score_floor": 7
+}

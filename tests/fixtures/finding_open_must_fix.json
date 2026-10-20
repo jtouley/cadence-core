@@ -1,0 +1,11 @@
+{
+  "id": "demo-task-F1",
+  "stage": "pr-review-local",
+  "rule_ref": "ADR-001",
+  "class": "bug",
+  "severity": "must-fix",
+  "location": "src/foo.py:L10-L12",
+  "evidence": "null deref on empty list",
+  "check": "uv run pytest tests/test_foo.py -q",
+  "status": "open"
+}

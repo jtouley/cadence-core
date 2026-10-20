@@ -1,0 +1,38 @@
+{
+  "host_version": "2.1.287 (Claude Code)",
+  "method": "2 (claude -p --setting-sources project --settings <recording hooks>)",
+  "pre": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Agent",
+    "tool_use_id": "toolu_01PBKP5NmfRhkKncf8iDDHMM",
+    "cwd": "<redacted>",
+    "tool_input": {
+      "description": "Write hello to file",
+      "subagent_type": "general-purpose",
+      "run_in_background": false,
+      "prompt": "<redacted>"
+    }
+  },
+  "post": {
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Agent",
+    "tool_use_id": "toolu_01PBKP5NmfRhkKncf8iDDHMM",
+    "cwd": "<redacted>",
+    "tool_response": {
+      "agentId": "ab3550aeac54aaee9",
+      "resolvedModel": "claude-haiku-4-5-20251001",
+      "status": "completed"
+    }
+  },
+  "inner_write": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_use_id": "toolu_01HuXTMvn67RyNMgiKGXagba",
+    "agent_id": "ab3550aeac54aaee9",
+    "cwd": "<redacted>",
+    "tool_input": {
+      "file_path": "<redacted>",
+      "content": "<redacted>"
+    }
+  }
+}

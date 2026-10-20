@@ -1,0 +1,6 @@
+{
+  "$schema": "references/cadence.config.schema.json",
+  "packs": ["preflight", "tracker", "spec-review", "architecture", "test-plan", "deferrals"],
+  "gated_prefixes": {"append": ["scripts/", "hooks/", "shared/", "install.sh"]},
+  "measure_exclude": ["tests/fixtures/golden/"]
+}

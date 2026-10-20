@@ -1,0 +1,23 @@
+{
+  "probe": "S04",
+  "run_state": "before_p9",
+  "pi": {
+    "toolName": "write",
+    "input": {
+      "path": "@.context/gates/entry-invariant.ok",
+      "content": "ok"
+    }
+  },
+  "payload": {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": ".context/gates/entry-invariant.ok",
+      "content": "ok"
+    }
+  },
+  "hooks": {
+    "guard_skill_gate.py": "deny",
+    "guard_primary_context_artifacts.py": "allow"
+  }
+}

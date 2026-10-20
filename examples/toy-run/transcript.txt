@@ -1,0 +1,74 @@
+Cadence toy run: add subtract() to a toy package. No model, no network.
+
+== A1  Activate on branch feature/gh-12-add-subtract
+  task cd-12, run <run>, resume at A1
+
+== The edit guard, before the plan passed review
+  Edit src/toy_pkg/core.py                     DENY
+    BLOCKED: gated path `src/toy_pkg/core.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])
+  Shell "echo '# x' >> src/toy_pkg/core.py"    DENY
+    BLOCKED: gated path `src/toy_pkg/core.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])
+  Edit README.md                               allow
+  Read .env                                    DENY
+    BLOCKED: .env matches a secret path (.env). A Cadence run does not read a secret file.
+
+== A1-E4  Gates in stages.json order (scripts/headless.py next)
+OK    A1  activate-session
+FAIL  P1  plan-create
+        - plan-create: no artifact matching plans/*.plan.md
+  Task '/plan-create cd-12'                    allow
+OK    P1  plan-create
+FAIL  P3  plan-review
+        - plan-review: no artifact matching reviews/plan_*.md
+        - plan-review: missing lean delegation record
+  The orchestrator writes the review itself, with no peer call:
+  gate plan_review_gate.py: exit 1
+    - plan-review: missing lean delegation record
+  Now the orchestrator calls the peer, and the peer writes nothing:
+  Task '/plan-review plans/cd-12.plan.md'      allow
+  On Cursor, no hook records who wrote a verdict, so the gate takes this file (V4).
+OK    P3  plan-review
+OK    P4  plan-update
+OK    P9  entry-invariant
+FAIL  E1  implement
+        - implement-gate: no commits since main. Implement the plan and commit
+  Task '/spec-driven cd-12'                    allow
+  Edit src/toy_pkg/core.py                     allow
+  committed: feat: subtract()
+OK    E1  implement
+FAIL  E4  draft-pr
+        - draft-pr: no draft-PR record for this run; write .context/prs/draft-pr-<run>.md after the PR exists (run id: activate_session.py --status), with RUN_BY_COMMAND: commit-push-pr, PR: and Branch: feature/gh-12-add-subtract
+  E4 needs a draft PR on GitHub. The toy run stops here.
+
+== The plan, after P9
+  Edit .context/plans/cd-12.plan.md            DENY
+    BLOCKED: the plan is frozen while the P9 marker exists (.context/gates/entry-invariant-<run>.ok). A plan change in execution is a new review cycle. Plan file: `.context/plans/cd-12.plan.md`
+
+== R4-R5  The findings ledger, on its own (no PR)
+  A reviewer files a finding, check `true`:    exit 1  error: check 'true' is a shell no-op (true): name the test or the script that proves the fix
+  A reviewer files a must-fix finding:         exit 0  status: open
+  Closure:                                     exit 1  - cd-12-F1: must-fix status='open' not terminal
+  The agent sets it to verified:               exit 1  error: status 'verified' not settable here (allowed: ['deferred', 'fixed', 'open', 'spec_gap']); verified comes only from ledger_verify.py
+  The agent sets it to fixed, with no commit:  exit 1  error: status=fixed requires fixed_in, the sha of the commit that holds the fix (set-status --fixed-in <sha>)
+  The agent sets it to fixed, with no fix:     exit 0  status: fixed
+  ledger_verify.py runs the check of the row:  exit 1  error: cd-12-F1: check failed (1): PYTHONPATH=src python3 -c "from tests.test_core import test_subtract_below_zero as t; t()"
+  Closure:                                     exit 1  - cd-12-F1: must-fix status='fixed' not terminal
+  The agent adds the missing test and commits it.
+  The agent sets fixed_in to the fix commit:   exit 0  status: fixed
+  ledger_verify.py runs the check again:       exit 0  verified: 1
+  Closure:                                     exit 0  ok: True
+
+== P3 again, with the Claude Code hooks (hooks/hooks.json)
+  Bash activate_session.py                     allow
+  task cd-12, run <run>
+  The orchestrator writes the review:
+  Write .context/reviews/plan_cd-12.md         DENY
+    BLOCKED: only a delegated peer writes `reviews/plan_cd-12.md`.
+  The file appears anyway, for example from a shell write that the hook did not parse:
+  Agent '/plan-review plans/cd-12.plan.md'     allow
+  The peer call is recorded, but no peer wrote the file:
+  gate plan_review_gate.py: exit 1
+    - plan-review: no verdict file whose content matches what a delegated peer last wrote. The orchestrator does not write verdict files. The peer saves it with the Write or Edit tool (a shell write is not attested); if an Edit was not attested, the peer rewrites the file with Write
+  The peer writes the same text:
+  Write .context/reviews/plan_cd-12.md         allow
+  gate plan_review_gate.py: exit 0

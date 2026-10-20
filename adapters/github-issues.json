@@ -1,0 +1,6 @@
+{
+  "name": "github-issues",
+  "ticket_pattern": "(?:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#\\d+",
+  "ticket_url_template": "https://github.com/{owner}/{repo}/issues/{number}",
+  "cli": "gh"
+}
