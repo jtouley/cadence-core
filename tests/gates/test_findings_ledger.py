@@ -260,10 +260,14 @@ def test_supersede_refuses_a_manual_check():
 
 
 def test_a_check_that_is_not_valid_shell_stays_fixed(tmp_path, fix_repo):
+    """A row written before the append rule: verify refuses its check, and the row stays fixed."""
+    from conftest import head_sha
+
     path = tmp_path / "f.jsonl"
-    row = _fixed_row(path, "pytest assert_fn(")
-    with pytest.raises(RuntimeError, match="check failed"):
-        verify_finding(row)
+    row = {**FIXTURE, "status": "fixed", "check": "pytest assert_fn(", "fixed_in": head_sha(Path.cwd())}
+    path.write_text(json.dumps(row) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="not valid shell"):
+        verify_finding(load_findings(path)[0])
     assert load_findings(path)[0]["status"] == "fixed"
 
 
@@ -485,3 +489,12 @@ def test_ledger_verify_runs_a_check_under_cadence_home(tmp_path, fix_repo, monke
     monkeypatch.delenv("CADENCE_HOME", raising=False)
     row = _fixed_row(tmp_path / "f.jsonl", "python3 $CADENCE_HOME/scripts/ledger_verify.py --help")
     assert verify_finding(row)["status"] == "verified"
+
+
+@pytest.mark.parametrize("check", [
+    "python3 -m pytest tests/test_recurring.py -q (cases are parametrize rows; one shared helper)",
+    "pytest -q 'tests/a.py",
+])
+def test_append_rejects_a_check_that_is_not_valid_shell(tmp_path, check):
+    with pytest.raises(FindingsValidationError, match="not valid shell"):
+        append_finding(tmp_path / "f.jsonl", {**ROW, "check": check})
