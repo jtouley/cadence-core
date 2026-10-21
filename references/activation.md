@@ -70,7 +70,13 @@ The agent that runs activation is the orchestrator of the run. It does not write
 - It adds the new agent id to `orchestrator_agent_ids` and sets `resumed_at`.
 - It deletes `hard_stop`.
 
-When no run can resume (no session, a completed run, or another task), `--resume` starts a fresh run. It prints `--resume: no resumable run for <task_id> in this worktree; started a fresh run` and sets `resume_fallback: "fresh"`. `--fresh` always starts a new run id and a new orchestrator list.
+`--resume` reopens a completed run of this worktree with the same `task_id` when the run opened its
+draft PR (`.context/prs/draft-pr-<pipeline_run_id>.md`). It keeps `pipeline_run_id`, sets
+`reopened_at`, and resumes at P9: deactivation deletes the P9 marker, and P9 writes it again. The
+gates then walk to the first open block. A commit after R7 holds R1 until the PR review covers
+HEAD, so the next block is `/pr-review-update`.
+
+When no run can resume (no session, a completed run with no draft PR, or another task), `--resume` starts a fresh run. It prints `--resume: no resumable run for <task_id> in this worktree; started a fresh run` and sets `resume_fallback: "fresh"`. `--fresh` always starts a new run id and a new orchestrator list.
 
 ## PR guard
 

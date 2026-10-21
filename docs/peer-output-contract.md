@@ -112,6 +112,12 @@ The P7 gate reads no other key.
 |---|---|---|---|
 | A commit since the base | A subject that names a phase: `^(?:\[[^\]]*\]\s*)?(?:(?:fixup\|squash)!\s*)?(?:\w+(?:\([^)]*\))?!?:\s*)?phase[\s_-]*(\d+)\b` (any case), for example `phase N: <title>`, `phase 2: wiring` or `feat(x): phase 2 wiring`. A later revert undoes the phase. | Yes, one for each `### Phase N:` of the plan | `scripts/phase_ledger.py:phase_of`, `scripts/phase_ledger.py:done_phases`, `scripts/implement_gate.py:run` |
 | The phase commits | No two phase commits with the same author time (to the second) | If the plan has three or more phases | `scripts/phase_ledger.py:one_shell` |
+| `implementation/<task>_stage4.md` | `RUN_BY_COMMAND: spec-driven`, and the final message `ARTIFACT: .context/implementation/<task>_stage4.md` | Yes | `scripts/peer_return.py:return_reason` (the return line) |
+
+The same peer runs each review fix round as `/spec-driven --fix <review>`, with the PR review
+`.context/prs/reviews/PR_REVIEW_#<N>.md` as its input. For each open must-fix row of the run, it
+commits a red test and a fix, and sets the row to `fixed` with `fixed_in` through
+`scripts/findings_io.py`. R4 and R5 read the ledger ([Findings ledger rows](#findings-ledger-rows)).
 
 ## E4: /commit-push-pr --draft
 

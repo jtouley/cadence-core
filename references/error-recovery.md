@@ -96,8 +96,9 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 
 | Block | Failure text starts with | Cause | Next command |
 |---|---|---|---|
-| E1 | `implement-gate: phase N of M (<title>) is not done` | A plan phase has no commit | Implement phase N with TDD, then `git commit -m "phase N: <subject>"` |
-| E1 | Stop hold `Continue E1: phase N (<label>)` | A plan phase has no commit | Implement phase N with TDD, then `git commit -m "phase N: <subject>"` |
+| E1 | `implement-gate: phase N of M (<title>) is not done` | A plan phase has no commit | Send `/spec-driven <plan>` again. On a host with no peers, implement phase N with TDD, then `git commit -m "phase N: <subject>"` |
+| E1 | Stop hold `Continue E1: send the /spec-driven peer the plan again` | The E1 peer returned with a plan phase open | Send `/spec-driven <plan>` again |
+| E1 | Stop hold `Continue E1: phase N (<label>)` (the E1 peer, or a host with no peers) | A plan phase has no commit | Implement phase N with TDD, then `git commit -m "phase N: <subject>"` |
 | E1 | `implement-gate: the phase commits '<a>' and '<b>' have the same author time` | One shell wrote the phase commits, not phase by phase. A rebase keeps the author time, so it does not cause this | `git reset <base>`, then implement, test and commit each phase in its own step. Or stop and tell the user |
 | E1 | `implement-gate: the plan <plan> has no ### Phase N: headers` | The plan has no task list, and P9 froze the plan | Stop and tell the user. A plan change is a new run: `python3 "$C/activate_session.py" --from-branch --fresh` |
 | E1 | `implement-gate: <marker> missing` | P9 did not pass for this run | `python3 "$C/entry_invariant.py" --phase execution` |
@@ -164,7 +165,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | Handoff | `BLOCKED: lean peer prompt rejected: <reason>` | The prompt is not a peer command | The command that the text names |
 | Handoff | `BLOCKED: peer_models sets <slug> to <model>` | The Agent call has the wrong model | The Agent call with `model: "<model>"`, not a fork |
 | Handoff | `BLOCKED: a peer call may not be a fork` | A fork carries the parent context | A new Agent call that is not a fork |
-| Handoff | `BLOCKED: the orchestrator context is N tokens` | The context is over `context_budget.max_tokens` | `python3 "$C/activate_session.py" --hard-stop context --reason "..."`, then `--from-branch --resume` in a new session |
+| Scope | `BLOCKED: the orchestrator does not read or write <path>` | The orchestrator read a run artifact, the code or the diff, or wrote the code (Claude Code) | Run the block's gate, or send its peer the command. E1 is `/spec-driven <plan>`, a fix round is `/spec-driven --fix <review>` |
 | Handoff | `BLOCKED: the cadence session file is unreadable, so no handoff packet can be found` | The session file is not readable | `python3 "$C/activate_session.py" --from-branch --fresh` |
 | PR | `BLOCKED: gh pr <verb> needs a Cadence run past E1` (or E3) | A PR before the run reached E1 or E3 | Do the next block (`python3 "$C/headless.py" next --json`), or get a peer review of HEAD |
 | Stop | `BLOCKED early stop in <phase>. Continue paceline: next <block> (<slug>) via <command>` | The run has an open block | Run `<command>` |

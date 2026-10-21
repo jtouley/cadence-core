@@ -1,17 +1,17 @@
 """Orchestrator context budget (gh-96).
 
-The orchestrator sends its whole context again on each turn. Peer returns, hook
-messages and file reads stay in it, so a long run grows it without a limit. Haiku 5.5
-costs five times more per token above 100K prompt tokens, and a large context
-dilutes the agent's attention.
+The orchestrator sends its whole context again on each turn. An orchestrator that only
+routes (ADR-0017) adds a gate result and a one-line peer return for each block, so its
+context stays near the host's own prompt plus the skill. A context that grows past that
+means the orchestrator read files that a peer reads.
 
 Before each orchestrator Agent or Task call during an active run, the hook reads the
 size of the orchestrator's last request from the host transcript and writes one row
-to .context/attest/<run>.context.jsonl. Config: `context_budget` (scripts/cadence_config.py).
+to .context/attest/<run>.context.jsonl. It never denies the call: the call hands work
+to a peer, which is what keeps the context small. Config: `context_budget`.
 
-  mode         off | shadow | enforce (default shadow)
-  warn_tokens  shadow and enforce write a notice above this size (default 60000)
-  max_tokens   enforce denies the call above this size (default 90000)
+  mode         off | shadow (default shadow)
+  warn_tokens  shadow writes a notice above this size (default 60000)
 
 Only the hooks call this module. It uses the standard library only.
 """
@@ -31,10 +31,7 @@ USAGE_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_t
 
 def load_config(root: Path, workspace: Path | None = None) -> dict[str, Any]:
     """The context_budget settings for `workspace`. A bad value raises (fail closed)."""
-    cfg = cadence_config.load(root, workspace).section("context_budget")
-    if cfg["warn_tokens"] > cfg["max_tokens"]:
-        raise ValueError("context_budget.warn_tokens must not be more than max_tokens")
-    return cfg
+    return cadence_config.load(root, workspace).section("context_budget")
 
 
 def _usage_tokens(row: dict[str, Any], *, own: bool) -> int | None:
@@ -80,11 +77,9 @@ def orchestrator_transcript(payload: dict[str, Any]) -> tuple[str | None, str]:
 
 
 def judge(cfg: dict[str, Any], tokens: int | None) -> str:
-    """unknown | ok | warn | deny for one call."""
+    """unknown | ok | warn for one call."""
     if tokens is None:
         return "unknown"
-    if cfg["mode"] == "enforce" and tokens > cfg["max_tokens"]:
-        return "deny"
     if tokens > cfg["warn_tokens"]:
         return "warn"
     return "ok"

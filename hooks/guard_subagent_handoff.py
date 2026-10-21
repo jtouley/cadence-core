@@ -23,9 +23,9 @@ SubagentStart is not checked.
 
 Context budget (gh-96): before each orchestrator Agent or Task call during an
 active run, the hook reads the orchestrator's last request size from the host
-transcript and writes one row to .context/attest/<run>.context.jsonl. In
-`enforce` mode it denies the call above `context_budget.max_tokens`. It runs
-first, in every host, and fails closed on a bad config.
+transcript and writes one row to .context/attest/<run>.context.jsonl. It never
+denies: the call hands work to a peer (ADR-0017). It runs first, in every host, and
+fails closed on a bad config.
 
 SubagentStart adds the data rule and the lean return rule (gh-96) to each subagent.
 
@@ -339,40 +339,27 @@ def lean_check(
     return "allow"
 
 
-def budget_check(host: str, payload: dict[str, Any], ctx: Path, workspace: Path | None = None) -> str | None:
-    """"deny" after writing the deny, else None. Records each orchestrator call during an active run."""
+def budget_check(payload: dict[str, Any], ctx: Path, workspace: Path | None = None) -> None:
+    """Record the orchestrator's context size before each of its calls during an active run."""
     session = active_run(ctx, workspace)
     if session is None or not orchestrator_call(payload, ctx):
-        return None
-    root = Path(os.environ["CADENCE_HOME"])
-    cfg = context_budget.load_config(root, workspace)
+        return
+    cfg = context_budget.load_config(Path(os.environ["CADENCE_HOME"]), workspace)
     if cfg["mode"] == "off":
-        return None
+        return
     transcript, source = context_budget.orchestrator_transcript(payload)
     tokens = context_budget.prompt_tokens(transcript, own=source == "subagent")
     decision = context_budget.judge(cfg, tokens)
-    run_id = str(session["pipeline_run_id"])
-    context_budget.record(ctx, run_id, {
+    context_budget.record(ctx, str(session["pipeline_run_id"]), {
         "prompt_tokens": tokens, "decision": decision, "mode": cfg["mode"], "source": source,
-        "warn_tokens": cfg["warn_tokens"], "max_tokens": cfg["max_tokens"],
+        "warn_tokens": cfg["warn_tokens"],
         "tool_use_id": payload.get("tool_use_id"), "agent_id": payload.get("agent_id"),
     })
-    if decision == "deny":
-        stop = display_command(
-            'python3 scripts/activate_session.py --hard-stop context --reason "orchestrator context over budget"', root)
-        tool_deny(host, (
-            f"BLOCKED: the orchestrator context is {tokens} tokens. "
-            f"context_budget.max_tokens is {cfg['max_tokens']}.\n"
-            f"ACTION: {stop}. Then resume the run in a new session with "
-            f"{display_command('python3 scripts/activate_session.py --from-branch --resume', root)}."
-        ))
-        return "deny"
     if decision == "warn":
         sys.stderr.write(
-            f"Cadence: the orchestrator context is {tokens} tokens, over "
-            f"context_budget.warn_tokens {cfg['warn_tokens']}.\n"
+            f"Cadence: the orchestrator context is {tokens} tokens, over context_budget.warn_tokens "
+            f"{cfg['warn_tokens']}. The orchestrator reads only gate results and peer returns.\n"
         )
-    return None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -432,8 +419,7 @@ def pre_tool_use(
         row = prompt_shape.peer_command_row(prompt, rows)
         reason = prompt_shape.lean_peer_reason(prompt, row, rows) if row else None
     # gh-96: the context budget runs first. A bad config fails closed.
-    if budget_check(host, payload, ctx, workspace) == "deny":
-        return 0, "deny", row
+    budget_check(payload, ctx, workspace)
     # cd-58 D3: the model check runs first, outside the shadow try block (fail closed).
     checked, call = model_check(host, payload, ctx, row, reason, workspace)
     if checked == "deny":

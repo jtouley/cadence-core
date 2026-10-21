@@ -20,7 +20,7 @@ from gate_common import current_branch
 from load_stages import load_registry
 from phase_ledger import select_plan
 
-KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number")
+KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review")
 OPTIONAL = frozenset({"plan-review-previous"})
 
 # What a missing kind is, and the stages.json slug of the block that writes it.
@@ -29,6 +29,7 @@ _MISSING = {
     "plan": ("plan of the run in .cursor/plans/ or .context/plans/ with RUN_BY_COMMAND: plan-create", "plan-create"),
     "plan-review": ("plan review of the run with a verdict in .context/reviews/plan_<slug>.md", "plan-review"),
     "pr-number": ("draft-PR record of the run with a PR URL in .context/prs/", "draft-pr"),
+    "pr-review": ("PR review of the run's PR in .context/prs/reviews/PR_REVIEW_#<N>.md", "pr-review-local"),
 }
 
 
@@ -83,9 +84,17 @@ def _pr_number(run: Run) -> Found | None:
     return ([str(number)], record) if number is not None else None
 
 
+def _pr_review(run: Run) -> Found | None:
+    """The R1 review of the run's PR, as the fix round's one input (ADR-0017)."""
+    record = artifact_requirements.draft_pr_record(run.ctx, run.session, current_branch(run.workspace))
+    number = artifact_requirements.draft_pr_number(record) if record is not None else None
+    review = run.ctx / "prs" / "reviews" / f"PR_REVIEW_#{number}.md" if number is not None else None
+    return ([_shown(review, run)], review) if review is not None and review.is_file() else None
+
+
 _RESOLVERS: dict[str, Callable[[Run], Found | None]] = {
     "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "plan-review-previous": _previous_review,
-    "pr-number": _pr_number,
+    "pr-number": _pr_number, "pr-review": _pr_review,
 }
 
 

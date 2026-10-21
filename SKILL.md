@@ -49,13 +49,13 @@ A recoverable gate failure is not a stop condition. Do these steps:
 3. If the scope or the tests change before P9, run `/plan-update`. After P9 the plan is frozen: stop and tell the user. A plan change is a new run (`--fresh`).
 4. Run the gate again.
 
-Stop only for destructive risk, missing credentials with no fallback, a security or data-safety risk, no retries left, or a context budget deny.
-Record each one with `activate_session.py --hard-stop {destructive,credentials,security,retries,a5-gap,not-needed,context} --reason "..."`.
+Stop only for destructive risk, missing credentials with no fallback, a security or data-safety risk, or no retries left.
+Record each one with `activate_session.py --hard-stop {destructive,credentials,security,retries,a5-gap,not-needed} --reason "..."`.
 `a5-gap` and `not-needed` are the two no-PR ends (see "A Cadence run always ends in a PR"). An ops-only handoff stops at **A3**.
 `--deactivate` refuses an open run that has no hard stop.
 A peer can set a hard stop by mistake, for example a user-level copy of a peer with an old rule (a peer shadow).
 To clear it: Remove the cause, and run `scripts/preflight.py` until it passes. Start a new host session. Then run `activate_session.py --from-branch --resume`.
-Fix each review finding with `/spec-driven`, or open a ticket under the parent issue. Do not leave a must-fix finding without an owner.
+Fix the review findings with one `/spec-driven --fix <review>` peer call for each round, or open a ticket under the parent issue. Do not leave a must-fix finding without an owner.
 
 ## Hard preflight
 
@@ -206,6 +206,15 @@ An explicit `/cadence` does **not** cancel the ops-only stop when the fix type i
 
 ## Paceline (delegation)
 
+**The orchestrator routes.** For each block, run its gate, or send its peer the slash command
+and its arguments, and read the peer's one-line return (`ARTIFACT: <path>`). A peer gets a
+markdown file and gives back a markdown file: the plan, a review, the implementation artifact.
+The gates and the peers read those files and the code. The orchestrator does not. On Claude Code a hook
+denies an orchestrator read of a run artifact, of the code or of the diff, and an orchestrator
+write to the code (ADR-0017). E1 is one peer call, `/spec-driven <plan>`: the peer makes a task
+for each plan phase and commits each phase. Each review fix round is one peer call,
+`/spec-driven --fix <review>`.
+
 **Cursor:** give **P1** (`plan-create`), **P3** (`plan-review`), and **P6**
 (`adversarial-review`) to **separate Task calls**. Each Task `prompt=` is the slash command and its arguments only.
 Keep prompts short. While a cadence session is active, `hooks/guard_lean_task_prompt.py` rejects a Task prompt that is not one short line, and it rejects a parent briefing. It stores an allowed peer prompt. A peer gate accepts the artifact only when that record is present and the prompt is still lean.
@@ -218,10 +227,12 @@ Do not write a peer artifact, or accept one, unless the peer ran.
 **one after another in the same session**, in registry order. The gates, the artifacts, and the fail-closed CLI checks stay the same.
 Only the delegation host changes.
 
-The main agent runs **E1** (`implement`) with TDD. The plan's `### Phase N:` headers are the E1 task list.
-Make one todo for each phase. Do the phases in order. Commit each phase with a subject that starts with `phase N:`, or with a conventional prefix and then `phase N` (`feat(x): phase 2 wiring`).
-`python3 scripts/phase_ledger.py --json` shows the next open phase. The E1 gate fails until each phase has a commit.
-After you commit the last phase, write the **E2** impl artifact. Then continue into **E3** and **E4** in the same turn, unless a hard stop applies (see Self-healing).
+**E1** (`implement`) is one `/spec-driven <plan>` peer call on Claude Code and Cursor. The peer turns
+the plan's `### Phase N:` headers into its task list, commits each phase, and returns the path of
+`.context/implementation/<task>_stage4.md`. The E1 gate fails until each phase has a commit. When
+it fails, send the peer again: the stop hook names the next open phase.
+On Pi and headless hosts the main agent runs `commands/spec-driven.md` itself.
+After E1 passes, run **E2**. Then continue into **E3** and **E4** in the same turn, unless a hard stop applies (see Self-healing).
 
 ## Review phase (short)
 
@@ -230,9 +241,9 @@ R2. The reviewer reproduces each finding, walks the documented path, runs
 adversarial inputs, and tests each design choice three ways with strict TDD.
 
 1. Run **R1** `/pr-review-local`. Check the artifact, the provenance, and the rigor sections.
-2. Resolve each must-fix finding: fix it or open a ticket.
+2. Resolve each must-fix finding: send `/spec-driven --fix <review>`, or open a ticket.
 3. Run **R2** `/test-benchmark --code`. Resolve each HIGH item. Record `adversarial_inputs`.
-4. Run **R3** cognitive complexity. Split each function that the gate names. Fix each `bugs` (ruff) and `types` (mypy) finding that it names.
+4. Run **R3** cognitive complexity. When it fails, do the fix step that it names, or send `/spec-driven --fix <review>`. That peer fixes each `offenders` entry of the R3 record, with the `bugs` (ruff) and `types` (mypy) findings.
 5. After fix commits, run `/pr-review-update` on the new head. **R1** `pr_review_local_gate.py --check` fails while the newest PR review does not cite HEAD. When the deferrals pack is on, **R4** `final_consolidate.py --check` also fails while a must-fix is open.
 6. Run **R5** `closure.py`, then **R6** the PR comment, then **R7** deactivate.
 
@@ -291,7 +302,7 @@ Do not report status when a background task finishes during this loop. Continue 
 ```
 - [ ] A1 activate + pipeline_status + A2–A5
 - [ ] P1–P9 through entry-invariant
-- [ ] E1 implement → E2 artifact → E3 arch-review → E4 draft PR (same turn)
+- [ ] E1 `/spec-driven <plan>` peer → E2 artifact → E3 arch-review → E4 draft PR (same turn)
 - [ ] R1 → R2 → R3? → R4 consolidate → R5 closure → R6 comment → R7 deactivate
 ```
 

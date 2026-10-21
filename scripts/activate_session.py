@@ -143,7 +143,7 @@ def load_run_session(context_dir: Path, workspace: Path) -> dict | None:
     return None if is_redirect else data
 
 
-HARD_STOP_CLASSES = ("destructive", "credentials", "security", "retries", "a5-gap", "not-needed", "context")
+HARD_STOP_CLASSES = ("destructive", "credentials", "security", "retries", "a5-gap", "not-needed")
 
 
 def closure_done(workspace: Path) -> bool:
@@ -167,17 +167,19 @@ def save_run_session(context_dir: Path, workspace: Path, session: dict) -> Path:
     return session_store.save_session(session, workspace)
 
 
-def resumable_run(workspace: Path, task_id: str) -> dict | None:
+def resumable_run(workspace: Path, task_id: str, context_dir: Path) -> dict | None:
     """This worktree's run of ``task_id`` that ``--resume`` keeps (cd-47 D9).
 
-    Active or hard-stopped (both keep active_skill); a completed run is not resumed.
+    Active or hard-stopped (both keep active_skill). A completed run that opened its draft PR is
+    reopened: a commit after R7 goes through the review blocks again. A run that ended without a
+    PR is not resumed.
     """
     record = session_store.load_worktree_session(workspace) if session_store is not None else None
-    if not record or record.get("task_id") != task_id or record.get("active_skill") != SKILL_NAME:
+    if not record or record.get("task_id") != task_id or not record.get("pipeline_run_id"):
         return None
-    if record.get("status") == "completed" or not record.get("pipeline_run_id"):
-        return None
-    return record
+    if record.get("status") == "completed":
+        return record if (context_dir / "prs" / f"draft-pr-{record['pipeline_run_id']}.md").is_file() else None
+    return record if record.get("active_skill") == SKILL_NAME else None
 
 
 def first_slug() -> str:
@@ -185,9 +187,12 @@ def first_slug() -> str:
     return slugs[0] if slugs else "activate-session"
 
 
-def compute_resume_slug(*, fresh_run: bool, matching: dict[str, str]) -> tuple[str, str]:
+def compute_resume_slug(*, fresh_run: bool, matching: dict[str, str], reopened: bool = False) -> tuple[str, str]:
     if fresh_run:
         return first_slug(), "Fresh run — start at A1 (activate-session)"
+    if reopened:
+        # Deactivation removed the P9 marker. P9 writes it again; the gates then walk to the first open block.
+        return "entry-invariant", "Reopen: the run closed with a draft PR. Run P9, then the first open block"
     if matching.get("review"):
         return "implement", f"Resume: matching review for this ticket: {matching['review']}"
     if matching.get("plan"):
@@ -471,7 +476,8 @@ def _start_run(args: argparse.Namespace, ctx: dict, resumed: dict | None, snapsh
     tokens = ticket_tokens_for(task_id, ctx["branch"])
     matching, superseded_paths = _prepare_run(args, context_dir, fresh_run, pipeline_run_id, task_id, tokens)
 
-    resume_slug, resume_reason = compute_resume_slug(fresh_run=fresh_run, matching=matching)
+    reopened = bool(resumed and resumed.get("status") == "completed")
+    resume_slug, resume_reason = compute_resume_slug(fresh_run=fresh_run, matching=matching, reopened=reopened)
     # Validate slug against registry (fail loud if registry broken)
     if resume_slug not in set(stage_slugs(SKILL_ROOT)):
         print(f"ERROR: resume slug {resume_slug!r} not in stages.json", file=sys.stderr)
@@ -509,6 +515,8 @@ def _start_run(args: argparse.Namespace, ctx: dict, resumed: dict | None, snapsh
         "registry_version": 1,
         "env_exports": _env_exports(task_id, fresh_run, pipeline_run_id),
     }
+    if reopened:
+        session["reopened_at"] = datetime.now(timezone.utc).isoformat()
     _add_run_marks(session, args, resumed, snapshot, ctx.get("config"))
     apply_verdict_join(session, host=session["host"], resumed=resumed, workspace=workspace)
     _report_activation(session, save_run_session(context_dir, workspace, session))
@@ -539,7 +547,7 @@ def _activate(args: argparse.Namespace, workspace: Path, primary: Path, context_
     config_record: dict | None = None
     if not already_active:
         # cd-58 D1: the config is read once per run, before anything is written or taken.
-        resumed = resumable_run(workspace, task_id) if args.resume else None
+        resumed = resumable_run(workspace, task_id, context_dir) if args.resume else None
         try:
             resolved = cadence_config.load(SKILL_ROOT, workspace)
         except cadence_config.ConfigError as exc:

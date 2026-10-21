@@ -24,10 +24,13 @@ import prompt_shape  # noqa: E402
 PLAN = HANDOFF_PLAN
 REVIEW = ".context/reviews/plan_feature.md"
 RECORD = ".context/prs/draft-pr-run-1.md"
+PR_REVIEW = ".context/prs/reviews/PR_REVIEW_#42.md"
 REPORT = ".context/adversarial/adversarial_feature.md"
 FILES = {
     "review": {REVIEW: "RUN_BY_COMMAND: plan-review\nTicket: gh-1\nVerdict: READY WITH CHANGES\n"},
     "record": {RECORD: "Branch: feature/gh-1-x\nPR: https://github.com/o/r/pull/42\n"},
+    "pr-review": {RECORD: "Branch: feature/gh-1-x\nPR: https://github.com/o/r/pull/42\n",
+                  PR_REVIEW: "RUN_BY_COMMAND: pr-review-local\nVerdict: NO MERGE\n"},
     "report": {REPORT: "RUN_BY_SKILL: de-adversarial-reviewer\nMode: plan-gate\nTicket: gh-1\n\n"
                        "Verdict: REQUEST CHANGES\n"},
 }
@@ -73,6 +76,7 @@ ROWS = [
     pytest.param("R1", ("record",), "/pr-review-local 42", (RECORD,), id="R1-pr-number"),
     pytest.param("R2", ("record",), "/test-benchmark 42", (RECORD,), id="R2-pr-number"),
     pytest.param("R4", ("record",), "/pr-review-update 42", (RECORD,), id="R4-pr-number"),
+    pytest.param("RF", ("pr-review",), f"/spec-driven --fix {PR_REVIEW}", (PR_REVIEW,), id="RF-fix-round-pr-review"),
 ]
 
 

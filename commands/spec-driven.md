@@ -1,6 +1,6 @@
 ---
-description: Cadence E1: TDD implementation of the plan, phase by phase.
-argument-hint: '<plan-path>'
+description: Cadence E1 and the review fix rounds: TDD implementation of the plan, or the fixes of a PR review.
+argument-hint: '<plan-path> | --fix <pr-review-path>'
 ---
 
 # Spec-driven (Cadence E1)
@@ -10,9 +10,28 @@ Load `$CADENCE_HOME/references/peer-contract.md` and
 
 ## Role
 
-Judgment first, TDD second. Do not write tests or code until Step 0 is
-answered in chat (3–8 lines): problem, done, design decisions, blast radius,
-whether the plan is wrong.
+You are the peer that writes the code. You get one markdown file, the plan or the PR review, and
+you give back one: the implementation artifact. Read every other file you need yourself: the
+code, the tests and the ledger. The orchestrator reads none of them.
+
+| Command | Input | Work |
+|---|---|---|
+| `/spec-driven <plan>` | the plan of the run | Each `### Phase N:` of the plan, in order (E1) |
+| `/spec-driven --fix <review>` | the PR review, `.context/prs/reviews/PR_REVIEW_#<N>.md` | Each open must-fix finding of that review |
+
+Judgment first, TDD second. Before you write a test or code, write Step 0 (3–8 lines) at the top
+of the implementation artifact: the problem, what done means, the design decisions, the blast
+radius, and whether the plan is wrong.
+
+## Tasks
+
+With a plan, make one task for each `### Phase N:` heading, in order, in the task list of your
+host. Do the phases in order. `python3 $CADENCE_HOME/scripts/phase_ledger.py --json` names the
+next open phase.
+
+With `--fix <review>`, make one task for each open `must-fix` row of this run in
+`.context/findings.jsonl`: the review's items, and each row that was added after the review. Make one
+more for each `offenders` entry of a failing R3 record (`.context/gates/cognitive-complexity.json`).
 
 ## Cycle
 
@@ -26,6 +45,17 @@ Commit each plan phase with a subject that starts with `phase N:`, or with a con
 `phase N` (`feat(x): phase 2 wiring`). The E1 gate reads the phase from the start of the subject.
 Commit each phase when it is done, not all phases at the end: with three or more phases, the E1 gate
 fails when two phase commits have the same author time.
+
+## A fix round
+
+For each finding of `--fix <review>`:
+
+1. Commit a failing test that reproduces it: `test: <finding id> <behavior> (red)`.
+2. Commit the fix: `fix: <finding id> <behavior>`.
+3. Record it: `python3 $CADENCE_HOME/scripts/findings_io.py set-status --id <id> --status fixed --fixed-in <sha>`.
+
+A finding that you cannot fix in this PR gets `--status deferred --ticket <ticket>` after its
+register row (ADR-0012). Do not set `verified`: `ledger_verify.py` does.
 
 ## Rules
 
@@ -52,7 +82,7 @@ Do not go back to P3 for a choice inside a phase. P3 reviews the plan, not the o
 When the local R3 run still fails after the options of a phase, do the fix step:
 
 1. Run `python3 $CADENCE_HOME/scripts/cognitive_complexity_gate.py` without `--check`. It writes the R3 record `.context/gates/cognitive-complexity.json`.
-2. Delegate `$CADENCE_HOME/subagents/simplify-code.md` in one Agent call. The R3 record is its one input. Its `offenders` lists are the task list.
+2. Follow `$CADENCE_HOME/subagents/simplify-code.md` yourself, with the R3 record as its one input. Its `offenders` lists are the task list. A peer cannot start another agent.
 3. Run R3 again.
 
 Do the fix step one time. Then apply the rule of ADR-0009. A pass ends the step. An offender that stays is a must-fix: fix it, then run R3 again.
@@ -75,14 +105,17 @@ Apply `core:dry-extension` in `$CADENCE_HOME/references/architecture-core-rules.
 ## Cadence binding
 
 Before gated source edits, `entry_invariant.py --phase execution` must be
-green. Write `.context/implementation/{task}_stage4.md` when tests pass:
+green. When the tests pass, follow `$CADENCE_HOME/subagents/deslop.md` yourself on the
+branch. Then write `.context/implementation/{task}_stage4.md`:
 
 ```
 RUN_BY_COMMAND: spec-driven
 ```
 
-Include Implementation Summary and Verification (commands + passed). Before E2,
-delegate `$CADENCE_HOME/subagents/deslop.md` on the branch in one Agent call. Then
-continue E2→E4 in the same turn. Do not ask permission to open the draft PR.
+Include Step 0, the Implementation Summary, and Verification (commands + passed). A fix round
+adds a `## Fix round <date>` section to the same file.
+
+End with one line: `ARTIFACT: .context/implementation/{task}_stage4.md`. The orchestrator runs
+E2 to E4. Do not open the PR. When a phase stays open, the stop hook names it: commit it, then end.
 Do not answer a finished or aborted shell with status only.
 Resume the open cycle in that turn.

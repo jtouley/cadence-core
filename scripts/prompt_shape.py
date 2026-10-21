@@ -68,8 +68,12 @@ SLASH_TO_STAGE = {
 # delegated peer, but its stages.json row is the final_consolidate.py gate.
 # handoff._peer_stages appends these rows to the stages.json peer rows, so the lean check,
 # the call row and the handoff packet (ADR-0010) cover the R4 peer call.
+# A review fix round (ADR-0017) runs /spec-driven --fix on the PR review between R1 and R4.
+# Its longer command wins over the E1 row, so the hook does not render it as E1.
 EXTRA_PEER_ROWS = ({"slug": "pr-review-update", "block": "R4", "command": "/pr-review-update",
-                    "inputs": ["pr-number"]},)
+                    "inputs": ["pr-number"]},
+                   {"slug": "review-fix", "block": "RF", "command": "/spec-driven --fix",
+                    "inputs": ["pr-review"]})
 
 # A Claude Code plugin install lists the peers as /cadence:<name>. Only Cadence's
 # own prefix is stripped: /other:plan-review is not a Cadence peer call.
@@ -97,7 +101,7 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     "pr-review-local": re.compile(r"^/pr-review-local(\s+\S+)?\s*$"),
     "pr-review-update": re.compile(r"^/pr-review-update(\s+\S+)?\s*$"),
     "vibe-test": re.compile(r"^/vibe-test(\s+\S+)?\s*$"),
-    "spec-driven": re.compile(r"^/spec-driven(\s+\S+)?\s*$"),
+    "spec-driven": re.compile(r"^/spec-driven(\s+--fix)?(\s+\S+)?\s*$"),
     "commit-push-pr": re.compile(r"^/commit-push-pr(\s+--draft)?\s*$"),
 }
 

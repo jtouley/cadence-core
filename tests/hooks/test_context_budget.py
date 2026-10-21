@@ -2,9 +2,9 @@
 
 Before each orchestrator Agent or Task call during an active run, the handoff hook
 reads the size of the orchestrator's last request from the host transcript and
-writes one row to .context/attest/<run>.context.jsonl. `enforce` denies a call
-above `context_budget.max_tokens`. The sizes below are the final requests of the
-harness-benchmark pilot (2026-10-13): 111,736 and 156,578 prompt tokens on Haiku 5.5.
+writes one row to .context/attest/<run>.context.jsonl, and a notice above
+`context_budget.warn_tokens`. It never denies (ADR-0017). The sizes below are the final
+requests of the harness-benchmark pilot (2026-10-13): 111,736 and 156,578 prompt tokens.
 """
 
 from __future__ import annotations
@@ -55,10 +55,9 @@ def test_a_transcript_with_no_usage_is_no_size(tmp_path):
 
 # --- the config -----------------------------------------------------------------------------------
 
-def test_the_default_is_shadow_below_the_haiku_price_step(tmp_path):
+def test_the_default_is_shadow(tmp_path):
     cfg = context_budget.load_config(install_config(tmp_path / "skill"), git_repo(tmp_path / "ws"))
-    assert cfg == {"mode": "shadow", "warn_tokens": 60000, "max_tokens": 90000}
-    assert cfg["max_tokens"] < 100_000
+    assert cfg == {"mode": "shadow", "warn_tokens": 60000}
 
 
 def test_the_shipped_config_is_valid(tmp_path):
@@ -67,11 +66,12 @@ def test_the_shipped_config_is_valid(tmp_path):
 
 @pytest.mark.parametrize("value", [
     {"mode": "strict"},
+    {"mode": "enforce"},
     {"warn_tokens": 0},
-    {"max_tokens": "90000"},
-    {"max_tokens": True},
-    {"warn_tokens": 95000, "max_tokens": 90000},
-    "enforce",
+    {"warn_tokens": "60000"},
+    {"warn_tokens": True},
+    {"max_tokens": 90000},
+    "shadow",
 ])
 def test_a_bad_config_raises(tmp_path, value):
     root, ws = install_config(tmp_path / "skill"), git_repo(tmp_path / "ws")
@@ -80,17 +80,15 @@ def test_a_bad_config_raises(tmp_path, value):
         context_budget.load_config(root, ws)
 
 
-@pytest.mark.parametrize("mode, tokens, want", [
-    ("shadow", None, "unknown"),
-    ("shadow", 50000, "ok"),
-    ("shadow", 111736, "warn"),
-    ("enforce", 70000, "warn"),
-    ("enforce", 111736, "deny"),
-    ("enforce", 90000, "warn"),
+@pytest.mark.parametrize("tokens, want", [
+    (None, "unknown"),
+    (50000, "ok"),
+    (60000, "ok"),
+    (111736, "warn"),
+    (1_000_000, "warn"),
 ])
-def test_judge(mode, tokens, want):
-    cfg = {"mode": mode, "warn_tokens": 60000, "max_tokens": 90000}
-    assert context_budget.judge(cfg, tokens) == want
+def test_judge_never_denies(tokens, want):
+    assert context_budget.judge({"mode": "shadow", "warn_tokens": 60000}, tokens) == want
 
 
 # --- the hook -------------------------------------------------------------------------------------
@@ -130,27 +128,15 @@ def test_a_small_context_is_ok_and_silent(agent_call):
     assert rows[0]["decision"] == "ok"
 
 
-def test_enforce_denies_above_the_limit_with_the_hard_stop(agent_call):
-    decision, out, _, rows = agent_call(PILOT_ALL_HAIKU, budget={"mode": "enforce"})
-    assert decision == "deny"
-    text = out["hookSpecificOutput"]["permissionDecisionReason"]
-    assert "--hard-stop context" in text and "--resume" in text and "111736" in text
-    assert rows[0]["decision"] == "deny"
-
-
-def test_enforce_denies_a_peer_call_too(agent_call):
-    decision, _, _, _ = agent_call(PILOT_ALL_HAIKU, budget={"mode": "enforce"},
-                                   prompt="/plan-review plan.md")
-    assert decision == "deny"
-
-
-def test_enforce_allows_below_the_limit(agent_call):
-    decision, _, _, rows = agent_call({"input_tokens": 80000}, budget={"mode": "enforce"})
+@pytest.mark.parametrize("prompt", ["Explore the repo.", "/plan-review plan.md", "/spec-driven plan.md"])
+def test_a_large_context_never_denies_a_call(agent_call, prompt):
+    """The call hands work to a peer; denying it would keep the work in the orchestrator."""
+    decision, _, _, rows = agent_call({"input_tokens": 400000}, prompt=prompt)
     assert decision == "allow" and rows[0]["decision"] == "warn"
 
 
 def test_no_transcript_is_recorded_as_unknown_and_allowed(agent_call):
-    decision, _, _, rows = agent_call("none", budget={"mode": "enforce"})
+    decision, _, _, rows = agent_call("none")
     assert decision == "allow"
     assert rows[0]["prompt_tokens"] is None and rows[0]["decision"] == "unknown"
 
@@ -170,7 +156,7 @@ def test_a_bad_config_fails_closed(agent_call, run_hook, make_root, repo):
 
 def test_a_peer_call_inside_a_peer_is_not_judged(agent_call):
     # A peer's own nested call is not the orchestrator's context (agent_id not an orchestrator).
-    decision, _, _, rows = agent_call(PILOT_ALL_HAIKU, budget={"mode": "enforce"}, agent_id="peer-1")
+    decision, _, _, rows = agent_call(PILOT_ALL_HAIKU, agent_id="peer-1")
     assert decision == "allow" and rows == []
 
 
@@ -178,7 +164,7 @@ def test_no_active_run_writes_nothing(tmp_path, run_hook, make_root):
     from conftest import git_repo
 
     plain = git_repo(tmp_path / "plain")
-    root = make_root(context_budget={"mode": "enforce"})
+    root = make_root(context_budget={"mode": "shadow"})
     body = {"hook_event_name": "PreToolUse", "tool_name": "Agent", "cwd": str(plain),
             "transcript_path": str(_transcript(tmp_path, PILOT_ALL_HAIKU)),
             "tool_input": {"prompt": "Explore.", "subagent_type": "general-purpose"}}
@@ -187,10 +173,10 @@ def test_no_active_run_writes_nothing(tmp_path, run_hook, make_root):
     assert not (plain / ".context").exists()
 
 
-def test_activation_accepts_the_context_hard_stop():
+def test_the_context_size_is_no_hard_stop():
     import activate_session
 
-    assert "context" in activate_session.HARD_STOP_CLASSES
+    assert "context" not in activate_session.HARD_STOP_CLASSES
 
 
 # --- PR #97 review: MF-1, MF-2, N4 -------------------------------------------------------------
@@ -223,19 +209,19 @@ def _session_transcripts(tmp_path: Path, main: int | list[dict], own: int | None
 
 
 @pytest.mark.parametrize("agent, main, own, want, size", [
-    (None, 120000, None, "deny", 120000),       # S1: the main agent orchestrates
-    ("orch", 120000, 5000, "allow", 5000),      # S2: a small subagent orchestrator under a large main session
-    ("orch", 3000, 150000, "deny", 150000),     # S3: a large subagent orchestrator under a small main session
-    ("orch", 120000, None, "allow", None),      # S4: no own transcript: unknown, never the main size
+    (None, 120000, None, "warn", 120000),       # S1: the main agent orchestrates
+    ("orch", 120000, 5000, "ok", 5000),         # S2: a small subagent orchestrator under a large main session
+    ("orch", 3000, 150000, "warn", 150000),     # S3: a large subagent orchestrator under a small main session
+    ("orch", 120000, None, "unknown", None),    # S4: no own transcript: unknown, never the main size
     # S5: an older main layout with a newer sidechain row: the main agent's own size counts
-    (None, [_host_row(120000, sidechain=False), _host_row(5, sidechain=True, agent="x")], None, "deny", 120000),
+    (None, [_host_row(120000, sidechain=False), _host_row(5, sidechain=True, agent="x")], None, "warn", 120000),
 ], ids=["S1-main", "S2-small-sub", "S3-large-sub", "S4-no-own-transcript", "S5-main-with-sidechain-row"])
 def test_a_subagent_orchestrator_is_measured_by_its_own_transcript(tmp_path, run_hook, make_root, repo, agent, main,
                                                                     own, want, size):
     from conftest import hook_session
 
     hook_session(repo, "single", resume_slug="plan-review", orchestrator_agent_ids=["orch"])
-    root = make_root(context_budget={"mode": "enforce"})
+    root = make_root(context_budget={"mode": "shadow"})
     body = {"hook_event_name": "PreToolUse", "tool_name": "Agent", "cwd": str(repo),
             "transcript_path": _session_transcripts(tmp_path, main, own),
             "tool_input": {"prompt": "Explore.", "subagent_type": "general-purpose"}}
@@ -243,34 +229,9 @@ def test_a_subagent_orchestrator_is_measured_by_its_own_transcript(tmp_path, run
         body["agent_id"] = agent
     code, out, err = run_hook(HANDOFF_HOOK, repo, body, "claude", hooks_dir=root / "hooks")
     assert code == 0, err
-    assert tool_decision("claude", out) == want
+    assert tool_decision("claude", out) == "allow"
     row = json.loads((repo / ".context" / "attest" / "run-1.context.jsonl").read_text(encoding="utf-8").splitlines()[-1])
-    assert (row["prompt_tokens"], row["source"]) == (size, "subagent" if agent else "session")
-
-
-def test_the_deny_commands_run(tmp_path, run_hook, make_root):
-    """MF-1: run the hard stop and the resume exactly as the deny text names them."""
-    import re
-    import shlex
-    import subprocess
-
-    from conftest import activated_repo, clean_env, read_session
-
-    repo = activated_repo(tmp_path / "proj")
-    run_id = read_session(repo)["pipeline_run_id"]
-    root = make_root(context_budget={"mode": "enforce"})
-    body = {"hook_event_name": "PreToolUse", "tool_name": "Agent", "cwd": str(repo),
-            "transcript_path": str(_transcript(tmp_path, PILOT_ALL_HAIKU)),
-            "tool_input": {"prompt": "Explore.", "subagent_type": "general-purpose"}}
-    _, out, _ = run_hook(HANDOFF_HOOK, repo, body, "claude", hooks_dir=root / "hooks")
-    text = json.loads(out)["hookSpecificOutput"]["permissionDecisionReason"]
-    commands = re.findall(r'python3 \S+activate_session\.py (?:--hard-stop context --reason "[^"]*"|[-\w ]*--resume)', text)
-    assert len(commands) == 2 and commands[1].endswith("--from-branch --resume"), text
-    for command in commands:
-        proc = subprocess.run(shlex.split(command), cwd=repo, capture_output=True, text=True, env=clean_env(root))
-        assert proc.returncode == 0, (command, proc.stdout, proc.stderr)
-    session = read_session(repo)
-    assert session["pipeline_run_id"] == run_id and not session.get("hard_stop")
+    assert (row["prompt_tokens"], row["decision"], row["source"]) == (size, want, "subagent" if agent else "session")
 
 
 def test_an_unknown_key_raises(tmp_path):
