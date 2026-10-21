@@ -117,8 +117,10 @@ def _vibetest(run: Run) -> Found | None:
 
 
 def _plan_benchmark(run: Run) -> Found | None:
-    """The P7 scorecard of the run while its verdict is not PASS: the plan peer applies its findings."""
-    path = _task_file(run, "benchmarks", "_plan.json")
+    """The newest P7 scorecard of the run, any name that the P7 gate reads, while its verdict is not PASS."""
+    accept = artifact_requirements.run_scope_accept(run.ctx, session=run.session)
+    cards = [p for p in run.ctx.glob("benchmarks/*_plan.json") if accept(p)]
+    path = max(cards, key=lambda p: p.stat().st_mtime) if cards else None
     try:
         verdict = json.loads(path.read_text(encoding="utf-8")).get("verdict") if path else "PASS"
     except (ValueError, AttributeError):

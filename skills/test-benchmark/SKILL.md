@@ -107,5 +107,7 @@ code. The P7 gate fails while the plan scorecard does not pass. The plan peer ap
 findings, and a new plan scorecard closes them.
 
 If mutants were not run, say so. Do not invent a kill rate.
+Run each mutant in a copy outside the worktree, made with `mktemp -d`, and delete the copy after the
+run. Leave no file in the worktree: a mutant copy there fails R3 on duplication.
 
 Chat: C.O.R.E. with the scorecard path. When a Cadence run delegates this peer, replace the C.O.R.E. close with the one-line return in `peer-contract.md`.

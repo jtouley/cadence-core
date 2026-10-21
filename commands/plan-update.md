@@ -89,7 +89,7 @@ is `REQUEST CHANGES` or `APPROVE WITH CONDITIONS`, take in its blocking items an
 
 ## Test benchmark (P7)
 
-When the packet pins the plan scorecard `.context/benchmarks/<task_id>_plan.json`, its verdict is not
+When the packet pins a plan scorecard (`.context/benchmarks/*_plan.json`), its verdict is not
 `PASS`. Apply each must-fix finding of its `findings` list to the test spec of the plan, and write one
 row for each finding id in the revision ledger. Write the ledger heading with the first 12 characters of
 the sha256 of the scorecard. Then the orchestrator sends `/test-benchmark plan <plan>` again. A plan

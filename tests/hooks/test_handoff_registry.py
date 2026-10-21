@@ -131,6 +131,14 @@ def test_a_scorecard_that_now_passes_leaves_the_p4_packet(repo, monkeypatch):
     assert handoff.verify_packet(packet, repo, ROOT, repo / ".context") == []
 
 
+def test_p4_pins_a_failing_scorecard_named_after_the_plan(repo, monkeypatch):
+    """k6 e2e: the peer named the card `<plan slug>_plan.json`, which the P7 gate reads too."""
+    monkeypatch.chdir(repo)
+    card = ".context/benchmarks/gh-1-feature_p1_plan.json"
+    write_files(repo, {**FILES["review"], card: '{"RUN_BY_SKILL": "test-benchmark", "verdict": "FAIL"}\n'})
+    assert built(repo, "P4")["inputs"] == pins(repo, PLAN, REVIEW, card)
+
+
 # --- a required input that does not resolve --------------------------------------------------------
 
 @pytest.mark.parametrize("block, kind, writer", [

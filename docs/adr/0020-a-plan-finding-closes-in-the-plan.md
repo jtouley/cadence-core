@@ -46,9 +46,9 @@ was, so the check of `F01` still failed. The run stopped at R2 with `F01` open.
 1. In plan mode, the P7 gate applies the scorecard rules of R2: each must-fix dimension at or above
    7, a mean at or above 7, and `verdict` `PASS`. A failing scorecard fails P7 with the route
    `/plan-update <plan>`, then `/test-benchmark plan <plan>`.
-2. The P4 packet has an optional input, `plan-benchmark`: the run's plan scorecard while its verdict
-   is not `PASS`. `/plan-update` applies its must-fix findings and writes a revision ledger row for
-   each finding id.
+2. The P4 packet has an optional input, `plan-benchmark`: the newest plan scorecard of the run,
+   with any name that the P7 gate reads, while its verdict is not `PASS`. `/plan-update` applies
+   its must-fix findings and writes a revision ledger row for each finding id.
 3. A packet on disk stays only while each of its pins is current. A scorecard that now passes
    leaves the P4 packet, so the handoff check does not refuse the next P4 for a stale pin.
 4. In plan mode, `/test-benchmark` writes no findings ledger row. A new plan scorecard closes the
