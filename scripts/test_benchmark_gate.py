@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """P7 / R2 — test-benchmark peer gate.
 
-In code mode the gate also computes the DRY lists of the changed test files itself
-(scripts/test_shape.py, ADR-0008) and fails on each list that is over its limit.
+Both modes fail on a scorecard that does not pass. In code mode the gate also computes the DRY
+lists of the changed test files itself (scripts/test_shape.py, ADR-0008) and fails on each list
+that is over its limit.
 """
 
 from __future__ import annotations
@@ -185,6 +186,14 @@ def _must_fix_ledger_problems(path: Path) -> list[str]:
     ]
 
 
+def _plan_problems(path: Path) -> list[str]:
+    """P7 passes only on a passing plan scorecard. A plan finding has no ledger row: a rescore of the
+    updated plan closes it, because the plan freezes at P9 and no commit can fix it after that."""
+    problems = _score_problems(path)
+    return problems + [f"send /plan-update <plan>: the plan peer applies the must-fix findings of {path.name}. "
+                       "Then send /test-benchmark plan <plan> again"] if problems else []
+
+
 def _code_validator(shape: dict | str, notes: list[str]):
     def validate(path: Path) -> list[str]:
         notes[:] = _dry_mismatch(path, shape)
@@ -202,7 +211,7 @@ def run(context_dir: Path, *, mode: str = "plan", check: bool = False) -> int:
         relative_globs=spec["globs"],
         markers=_MARKERS,
         label=spec["label"],
-        validate=_code_validator(shape, notes) if shape is not None else None,
+        validate=_code_validator(shape, notes) if shape is not None else _plan_problems,
         accept=peer_written_filter(context_dir, slug=spec["stage_slug"]),
         rejections=lambda paths: stage_rejections(context_dir, paths, slug=spec["stage_slug"]),
     )

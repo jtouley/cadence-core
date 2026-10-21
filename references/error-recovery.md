@@ -89,6 +89,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | P6 | `adversarial-review: cycle limit reached` | `adversarial_cycles` P6 cycles ran (default 3) | `/plan-update <plan> --from-review <report>` with each open `B-n` carried. Do not run P6 again |
 | P6 | `adversarial-review: <report> does not name the plan` or `has no readable verdict` | The report is not complete | `/de-adversarial-reviewer plan-gate <plan>` |
 | P7 | `test-benchmark-plan: no artifact matching benchmarks/*_plan.json` | No plan scorecard | `/test-benchmark plan <plan>` |
+| P7 | `test-benchmark-plan: ... verdict is FAIL` or `must-fix dimensions below 7` | The plan scorecard does not pass | `/plan-update <plan>`, then `/test-benchmark plan <plan>`, then `/plan-review <plan>` |
 | P8 | `deferral-register: <file>: <code>: <message>` | A register row breaks `references/deferral-framework.md` | `/plan-update <plan>`: the peer fixes the row. Then `python3 "$C/deferral_adjudication_check.py"` |
 | P9 | `spec-gaps: the register logs no assumption for G-n of <report> under ## Assumptions` | A blocking A5 gap has no logged assumption | `/plan-update <plan>`, then `/plan-review <plan>`, then `python3 "$C/entry_invariant.py" --phase execution` |
 | P9 | `entry-invariant: ...` with the lines of earlier blocks | An earlier block did not pass | Do the row of each line, then `python3 "$C/entry_invariant.py" --phase execution` |

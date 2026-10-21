@@ -87,6 +87,14 @@ is `REQUEST CHANGES` or `APPROVE WITH CONDITIONS`, take in its blocking items an
   Add that heading and map each `B-n` and `C-n` of that report to the phase whose test settles it.
 - `APPROVE WITH CONDITIONS`: add the heading for that report and map each `C-n` under it before P9.
 
+## Test benchmark (P7)
+
+When the packet pins the plan scorecard `.context/benchmarks/<task_id>_plan.json`, its verdict is not
+`PASS`. Apply each must-fix finding of its `findings` list to the test spec of the plan, and write one
+row for each finding id in the revision ledger. Write the ledger heading with the first 12 characters of
+the sha256 of the scorecard. Then the orchestrator sends `/test-benchmark plan <plan>` again. A plan
+finding has no row in the findings ledger, so do not write one.
+
 One budget: a P3 review that a P6 round causes counts in the P3 limit. At the P3 limit the P3 carry rule applies.
 A carry-only update (P3 or P6 at its limit) needs no new review. The gates check the carried ids.
 Chat: C.O.R.E. When a Cadence run delegates this peer, replace the C.O.R.E. close with the one-line return in `peer-contract.md`.

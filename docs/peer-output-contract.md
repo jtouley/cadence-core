@@ -109,8 +109,10 @@ A `READY WITH CHANGES` or `NOT READY` verdict blocks P9 until the loop ends
 | Artifact path | Line or marker (exact form) | Required? | Read by |
 |---|---|---|---|
 | `benchmarks/*_plan.json` (`benchmarks/<task_id>_plan.json`) | A JSON object with the top-level key `"RUN_BY_SKILL": "test-benchmark"` | Yes | `scripts/test_benchmark_gate.py:run`, `scripts/artifact_requirements.py:check_required_before_execution` |
+| Same | `scores`: an object of numbers. Each layer, DRY and assertion score is 7 or more, and so is the mean | Yes | `scripts/test_benchmark_gate.py:_score_problems` |
+| Same | `verdict`: `PASS`. While it is not `PASS`, the P4 packet pins the scorecard (ADR-0020) | Yes | `scripts/test_benchmark_gate.py:_plan_problems`, `scripts/handoff_inputs.py:_plan_benchmark` |
 
-The P7 gate reads no other key.
+A plan finding gets no findings ledger row. A new plan scorecard that passes closes it.
 
 ## E1: /spec-driven
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- A plan finding closes in the plan (ADR-0020). P7 fails while the plan scorecard does not pass, as
+  R2 does, and names `/plan-update` and then `/test-benchmark plan`. The P4 packet pins the failing
+  plan scorecard. The plan benchmark writes no findings ledger row, because the plan freezes at P9
+  and no commit can close the row.
 - A5 gaps are carried into the plan (ADR-0019). The vibe-test report labels each blocking gap `G-n`.
   The plan peer logs an assumption for each one under `## Assumptions` in the register, next to the
   deferrals. P9 fails while one has no row, and the R6 comment lists the assumptions.

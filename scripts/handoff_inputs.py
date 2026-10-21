@@ -8,6 +8,7 @@ cannot find gives one message that names the artifact and the block that writes 
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -22,9 +23,10 @@ from load_stages import load_registry
 from phase_ledger import select_plan
 
 KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review", "manifest",
-         "request", "vibetest")
+         "request", "vibetest", "plan-benchmark")
 # The request and the vibe-test report are pinned when they exist (ADR-0019); A5 is in a pack.
-OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest"})
+# A plan scorecard is pinned while it fails, so that P4 applies its findings.
+OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest", "plan-benchmark"})
 
 # What a missing kind is, and the stages.json slug of the block that writes it.
 _MISSING = {
@@ -96,10 +98,17 @@ def _pr_review(run: Run) -> Found | None:
     return ([_shown(review, run)], review) if review is not None and review.is_file() else None
 
 
+def _task_file(run: Run, folder: str, suffix: str) -> Path | None:
+    """`.context/<folder>/<task_id><suffix>` when the session names a task and the file exists."""
+    task = re.sub(r"[\\/]", "-", str(run.session.get("task_id") or ""))
+    path = run.ctx / folder / f"{task}{suffix}"
+    return path if task and path.is_file() else None
+
+
 def _request(run: Run) -> Found | None:
     """The user's request that activation saved (ADR-0018)."""
-    path = run.ctx / "proposals" / f"{re.sub(r'[\\/]', '-', str(run.session.get('task_id') or ''))}.md"
-    return ([], path) if path.is_file() else None
+    path = _task_file(run, "proposals", ".md")
+    return ([], path) if path else None
 
 
 def _vibetest(run: Run) -> Found | None:
@@ -107,17 +116,26 @@ def _vibetest(run: Run) -> Found | None:
     return ([], report) if report is not None else None
 
 
+def _plan_benchmark(run: Run) -> Found | None:
+    """The P7 scorecard of the run while its verdict is not PASS: the plan peer applies its findings."""
+    path = _task_file(run, "benchmarks", "_plan.json")
+    try:
+        verdict = json.loads(path.read_text(encoding="utf-8")).get("verdict") if path else "PASS"
+    except (ValueError, AttributeError):
+        verdict = None
+    return ([], path) if str(verdict).strip().upper() != "PASS" else None
+
+
 def _manifest(run: Run) -> Found | None:
     """The run's session manifest, which `activate_session.py --deactivate` writes (ADR-0018)."""
-    task = re.sub(r"[\\/]", "-", str(run.session.get("task_id") or ""))
-    path = run.ctx / "manifests" / f"{task}.md"
-    return ([_shown(path, run)], path) if task and path.is_file() else None
+    path = _task_file(run, "manifests", ".md")
+    return ([_shown(path, run)], path) if path else None
 
 
 _RESOLVERS: dict[str, Callable[[Run], Found | None]] = {
     "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "plan-review-previous": _previous_review,
     "pr-number": _pr_number, "pr-review": _pr_review, "manifest": _manifest,
-    "request": _request, "vibetest": _vibetest,
+    "request": _request, "vibetest": _vibetest, "plan-benchmark": _plan_benchmark,
 }
 
 
@@ -161,10 +179,16 @@ def resolve(row: dict[str, Any], run: Run) -> Resolved:
 
 
 def _covers(packet: dict[str, Any], command: str, inputs: list[str], run: Run) -> bool:
-    """True when a packet has this command and pins each input at its current sha256."""
+    """True when a packet has this command, pins each input, and pins no file at an old sha256.
+
+    An optional input that the row no longer resolves, such as a plan scorecard that now passes,
+    must not keep a stale pin: the handoff check would refuse the packet."""
     pinned = {(r.get("path"), r.get("sha256")) for r in packet["inputs"] if isinstance(r, dict)}
-    want = {(rel, handoff.input_sha(run.workspace, rel, run.ctx)) for rel in inputs}
-    return packet.get("command") == command and want <= pinned
+    try:
+        current = {(rel, handoff.input_sha(run.workspace, str(rel), run.ctx)) for rel, _ in pinned}
+    except (handoff.HandoffError, OSError):
+        return False
+    return packet.get("command") == command and pinned == current and set(inputs) <= {rel for rel, _ in pinned}
 
 
 def packet_for(block: str, run: Run, extra: list[str] | tuple[str, ...] = ()) -> tuple[dict[str, Any] | None, list[str]]:

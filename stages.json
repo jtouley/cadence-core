@@ -122,7 +122,8 @@
       "inputs": [
         "plan",
         "plan-review",
-        "vibetest"
+        "vibetest",
+        "plan-benchmark"
       ]
     },
     {
