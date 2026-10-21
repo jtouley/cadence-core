@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cognitive complexity per function, for every language with an analyzer (gh-100).
+"""Cognitive complexity per function, for every language with an analyzer.
 
 The metric is SonarSource cognitive complexity:
   - +1 for each break in linear flow: if, else if, else, loops, catch/except,
@@ -263,7 +263,7 @@ TYPESCRIPT = CFamily(
     arrows=True,
     methods_without_keyword=True,
 )
-# Go, Java and C/C++ (cd-100) are approximations, as TypeScript is. Known gaps, not fixed:
+# Go, Java and C/C++ are approximations, as TypeScript is. Known gaps, not fixed:
 # - Java: an anonymous class in a field initializer or in a call nests as a function (G4, R3.3);
 #   a lambda without braces does not nest (CH5); enum constants with a body are reported as
 #   functions (SF-3); a compact record constructor `P { ... }` is not scored (R5.4); a guarded
@@ -271,7 +271,7 @@ TYPESCRIPT = CFamily(
 # - Go: `range` over a composite literal (`range []int{1, 2} {`) does not nest (SF-1); the name of a
 #   closure that returns a func or a generic type can be wrong, never its score (R2 nit).
 # - Go, C and Java: `goto` and labeled jumps (`continue label`) add 0, not +1, as in TypeScript and
-#   Rust (#118 N1).
+#   Rust.
 # - C/C++: `operator[]` is scored under the name `<lambda>`; `operator()` is scored under the name
 #   `operator`; the other operator overloads are not scored (CH6, R7.1). A constructor with a member
 #   brace initializer (`K() : a{1} { ... }`, `: m_{std::move(m)}`): the `{1}` opens and closes the
@@ -284,7 +284,7 @@ TYPESCRIPT = CFamily(
 #   headers for one function under `#ifdef` make the file unmeasured (SF-2). C++14 digit separators
 #   (`1'000`) read as a char literal to the end of the line. Some C++ headers give a wrong name,
 #   never a wrong score: `std::function<void(int)> make() {` is named `void`, and
-#   `int (*getf(void))(int) {` is named `int` (#118 N5).
+#   `int (*getf(void))(int) {` is named `int`.
 # - All: code outside a function is not scored (Java `static {}`, C K&R definitions; G5), and a
 #   braceless nested control statement does not nest (VT#37). A text block or raw string with no
 #   close makes the file unmeasured.
@@ -536,7 +536,7 @@ def _insert_line_semicolons(tokens: list[tuple[str, int]]) -> list[tuple[str, in
     A line that ends with `{`, `(`, `,` or an operator gets no `;`, so a header on two lines goes on.
     A multi-line raw string is one `""` token on its first line, so the `;` goes after that line,
     not after the last line of the string; inside parentheses a `;` does not end the header.
-    Equivalent mutant (cd-100 F28): dropping `++`/`--` from the line ends changes no score of
+    Equivalent mutant: dropping `++`/`--` from the line ends changes no score of
     valid Go, because such a line is a statement in a body, where the next header decides
     only control and nesting, not a function name.
     """
@@ -649,7 +649,7 @@ def _method_name(header: list[str], lang: CFamily) -> str | None:
 def _switch_rule(header: list[str], lang: CFamily) -> bool:
     """Java `case 1 -> {`, `case P(int x) when x > 0 -> {`: one arrow at the end, balanced parens, no `:`.
 
-    Equivalent mutant (cd-100 E1): without the paren test the rows still pass, because a lambda in
+    Equivalent mutant: without the paren test the rows still pass, because a lambda in
     a call after a label has a second arrow (a rule) or a `:` (a label). The test stays (R4.1).
     """
     arrow = lang.arrow_token
@@ -715,7 +715,7 @@ class _CScorer:
             self.score_token(tok, nxt)
 
     def inline_brace(self) -> bool:
-        """A `{` inside parentheses that is not a block (PR #101 MF-4, MF-5)."""
+        """A `{` inside parentheses that is not a block."""
         if self.parens <= 0:
             return False
         if self.lang.block_expressions:
@@ -728,7 +728,7 @@ class _CScorer:
     def _function_literal(self) -> bool:
         """A function keyword at depth 0 after the last open `(` of the header: the `{` opens its body.
 
-        Equivalent mutants (cd-100 F29): without the stop at the open `(`, or with the keyword at any
+        Equivalent mutants: without the stop at the open `(`, or with the keyword at any
         depth, no row changes. A keyword in a closed group (`g((func())(nil), T{...})`) comes before
         a composite literal, whose braces hold no scored structure. The two guards stay.
         """
@@ -792,7 +792,7 @@ class _CScorer:
         if self.current is None:
             return
         if self.prev in (".", "?."):
-            return  # `p.catch(e)`, `gen.if(...)`, `gen.else()`: a property, not control flow (PR #101 N21)
+            return  # `p.catch(e)`, `gen.if(...)`, `gen.else()`: a property, not control flow
         if tok in self.lang.control:
             self.score_control()
         elif tok == "else":

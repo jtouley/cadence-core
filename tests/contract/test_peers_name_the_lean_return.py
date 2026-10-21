@@ -1,4 +1,4 @@
-"""Every delegated peer that closes with C.O.R.E. also names the one-line return (PR #97 MF-3, gh-96).
+"""Every delegated peer that closes with C.O.R.E. also names the one-line return.
 
 A peer that obeys its own command must not be held by the SubagentStop return check.
 """

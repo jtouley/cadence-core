@@ -30,7 +30,7 @@ PEER_ARTIFACT_GLOBS = (
 )
 
 
-# Other logs in attest/ (gh-66 PD12: call and join rows also carry agent_id). Only <run>.jsonl attests.
+# Other logs in attest/ (call and join rows also carry agent_id). Only <run>.jsonl attests.
 NOT_ATTEST_LOGS = (".agents.jsonl", ".models.jsonl", ".returns.jsonl", ".context.jsonl", ".calls.jsonl", ".joins.jsonl")
 
 
@@ -90,7 +90,7 @@ def _entries(context_dir: Path, run_id: str) -> list[dict]:
 
 
 def orchestrator_ids(context_dir: Path) -> frozenset[str]:
-    """Agent ids that ran activation in any run of this .context (cd-47 D2, G-D5).
+    """Agent ids that ran activation in any run of this .context (G-D5).
 
     Their rows never count as a peer's: an orchestrator does not review its own work.
     A Claude agent_id belongs to one subagent, so the union excludes no real peer.
@@ -117,7 +117,7 @@ def attested(context_dir: Path, run_id: str, artifact: Path, exclude_agents: fro
 def attested_any(context_dir: Path, artifact: Path, exclude_agents: frozenset[str] = frozenset()) -> bool:
     """Like ``attested``, over every run's log: the file's newest attested write is this content.
 
-    For a gate in a worktree with no session of its own (cd-47 D1). Rows from
+    For a gate in a worktree with no session of its own. Rows from
     ``exclude_agents`` (orchestrators) never count.
     """
     return _is_current(artifact, newest_attest(context_dir, artifact, exclude_agents))
@@ -138,7 +138,7 @@ def writers(
     context_dir: Path, run_id: str, pattern: str, exclude_agents: frozenset[str] = frozenset(),
     stages: frozenset[str] | None = None,
 ) -> set[str]:
-    """Distinct peers that wrote a file matching `pattern` in this run (gh-66: of `stages` only, when given)."""
+    """Distinct peers that wrote a file matching `pattern` in this run (of `stages` only, when given)."""
     found = {
         e["agent_id"] for e in _entries(context_dir, run_id)
         if fnmatch.fnmatch(e["path"], pattern) and e["agent_id"] not in exclude_agents
@@ -150,7 +150,7 @@ def writer_paths(
     context_dir: Path, run_id: str, pattern: str, exclude_agents: frozenset[str] = frozenset(),
     stages: frozenset[str] | None = None,
 ) -> set[tuple[str, str]]:
-    """Distinct (agent_id, path) pairs of peer writes to files matching `pattern` in this run (cd-63)."""
+    """Distinct (agent_id, path) pairs of peer writes to files matching `pattern` in this run."""
     found = {
         (e["agent_id"], e["path"]) for e in _entries(context_dir, run_id)
         if fnmatch.fnmatch(e["path"], pattern) and e["agent_id"] not in exclude_agents
@@ -158,12 +158,12 @@ def writer_paths(
     return {pair for pair in found if _of_stages(context_dir, pair[0], stages)}
 
 
-# --- peer calls (gh-66): which stage each orchestrator Agent call was for -------------
+# --- peer calls: which stage each orchestrator Agent call was for -------------
 
 
 def _json_rows(path: Path) -> list[dict]:
     """The JSON objects of a log, one per line. A line that is not a JSON object is skipped
-    (gh-66 PD23: a hook stopped during an append). An unreadable file is no rows."""
+    (a hook stopped during an append). An unreadable file is no rows."""
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except OSError:
@@ -211,10 +211,10 @@ def join_rows(context_dir: Path, run_id: str) -> list[dict]:
     return _json_rows(joins_log(context_dir, run_id))
 
 
-# --- the writer's stage (gh-66 PD1, PD21) ----------------------------------------------
+# --- the writer's stage ----------------------------------------------
 
 NO_JOIN = "no join row: call the peer again from the orchestrator"
-# A foreground peer gets its join row from PostToolUse, after it returns (PR #145 R1 MF-2).
+# A foreground peer gets its join row from PostToolUse, after it returns.
 NO_JOIN_YET = "no join row yet: the peer is still running; the orchestrator checks the join after the peer returns"
 DENIED = "the peer call was denied"
 
@@ -267,7 +267,7 @@ def _newest(context_dir: Path, artifact: Path, logs: list[str], exclude_agents: 
             if e["path"] == rel and e["agent_id"] not in exclude_agents]
     if not rows:
         return None
-    # On a timestamp tie the later row in the log wins, as the old attested() did (PR #145 R1 F1).
+    # On a timestamp tie the later row in the log wins, as the old attested() did.
     _, (entry, run) = max(enumerate(rows), key=lambda item: (float(item[1][0].get("at") or 0), item[0]))
     return rel, entry, run
 

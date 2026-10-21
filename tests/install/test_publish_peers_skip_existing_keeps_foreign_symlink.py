@@ -50,7 +50,7 @@ def test_peer_kind_uses_kind_then_the_path(row, kind):
 
 
 def test_publish_peers_skip_existing_survives_a_resolve_error(tmp_path, resolve_loop):
-    # Python 3.9 to 3.12 raise RuntimeError on a symlink loop (cd-53 c4 N-1).
+    # Python 3.9 to 3.12 raise RuntimeError on a symlink loop.
     skills = tmp_path / "skills"
     skills.mkdir()
     (skills / "vibe-test").symlink_to(tmp_path / "loop")

@@ -1,4 +1,4 @@
-"""Orchestrator context budget (gh-96).
+"""Orchestrator context budget.
 
 The orchestrator sends its whole context again on each turn. An orchestrator that only
 routes adds a gate result and a one-line peer return for each block, so its
@@ -38,7 +38,7 @@ def _usage_tokens(row: dict[str, Any], *, own: bool) -> int | None:
     """Prompt tokens of one assistant row, else None.
 
     In the main transcript a sidechain row is another agent's request and is skipped.
-    In a subagent's own transcript the host marks every row as a sidechain (PR #97 MF-4).
+    In a subagent's own transcript the host marks every row as a sidechain.
     """
     message = host_transcript.message(row, "assistant")
     usage = message.get("usage") if message is not None and (own or not row.get("isSidechain")) else None
@@ -67,7 +67,7 @@ def orchestrator_transcript(payload: dict[str, Any]) -> tuple[str | None, str]:
     """(transcript, source) of the agent that makes this call.
 
     The main agent reads the session transcript. A subagent orchestrator reads only its
-    own transcript (PR #97 MF-2): never the main one, which is another context.
+    own transcript: never the main one, which is another context.
     """
     agent = payload.get("agent_id")
     if not agent:

@@ -1,4 +1,4 @@
-"""The orchestrator is told how to pass the configured peer model (cd-58 D7, AC8)."""
+"""The orchestrator is told how to pass the configured peer model."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""E3 uses the canonical .context, writes a per-run breadcrumb, and supersedes its own rows (cd-47 D4).
+"""E3 uses the canonical .context, writes a per-run breadcrumb, and supersedes its own rows.
 
 In a linked worktree, E3 read `<wt>/.context` by default. The plan of the run is in
 the primary checkout's `.context`, so E3 raised `core:plan-conformance` and wrote the
@@ -289,7 +289,7 @@ def test_check_and_record_report_the_same_findings(tmp_path):
     assert checked["findings"] == recorded["findings"] == 0
 
 
-# --- R2 on PR #52: E3 survivors (M13-M16), in-process ----------------------------------------------
+# --- E3 survivors (M13-M16), in-process ----------------------------------------------
 
 import architecture_review as ar  # noqa: E402
 

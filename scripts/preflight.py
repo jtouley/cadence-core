@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""A2 — preflight gate: a git work tree, no peer shadow (cd-53), a valid config, and the three checks of stages.json.
+"""A2 — preflight gate: a git work tree, no peer shadow, a valid config, and the three checks of stages.json.
 
 The config: each layer is valid (scripts/cadence_config.py), and each pack that is on loads from its lock.
 
 The environment: `gh api user` passes when the adapter is github-issues (adapter none: a note).
 `gh auth status` is not the probe: with a token in GH_TOKEN it can report the token as invalid
-while `gh api` works (gh-188 MF-2).
+while `gh api` works.
 The branch: HEAD is on a branch that is not the default branch (origin/HEAD, else main and master).
 A clean state: `git status` lists nothing outside Cadence's own state (.context/, .cursor/plans/).
 """

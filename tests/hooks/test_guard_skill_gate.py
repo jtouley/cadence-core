@@ -71,7 +71,7 @@ def test_guard_skill_gate_main_corrupt_json_with_session_denied(
 def test_guard_skill_gate_main_corrupt_json_after_deactivate_allowed(
     scripts_path, tmp_path, monkeypatch
 ):
-    # PR #29 review: a finished run (active_skill cleared) must not block a corrupt payload.
+    # A finished run (active_skill cleared) must not block a corrupt payload.
     monkeypatch.chdir(tmp_path)
     make_session(tmp_path / ".context", active_skill=None)
     code, out = _run_main(monkeypatch, "{")
@@ -149,7 +149,7 @@ def test_hook_blocks_gated_edit_before_entry_invariant(tmp_path, write_hook):
     assert write_hook(tmp_path, "README.md")["permission"] == "allow"
 
 
-# --- guard_skill_gate_host_workspace: The skill gate finds the project from the host, not from the hook cwd (cd-82, #82).
+# --- guard_skill_gate_host_workspace: The skill gate finds the project from the host, not from the hook cwd.
 #
 # A user-level Cursor hook starts outside the project. The payload has no `cwd`; the
 # project is in `CURSOR_PROJECT_DIR` and `workspace_roots`. Claude Code sends payload
@@ -292,7 +292,7 @@ def test_missing_payload_cwd_with_no_run_allows_and_makes_no_context(run_hook, d
     assert not (project / ".context").exists()
 
 
-# --- R1 (PR #87): a payload `cwd` must not hide the host project dirs ----------
+# --- R1: a payload `cwd` must not hide the host project dirs ----------
 
 
 def _cursor_case(name, project, outside, tmp_path):

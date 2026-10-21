@@ -29,7 +29,7 @@ P5 and E3 use the canonical `.context` (the `.context` of the primary checkout),
 
 - When E3 finds no must-fix item, it writes `gates/architecture-review-impl-<run_id>.json` with the run id and HEAD. A run with a must-fix item deletes the file of its own run only.
 - An E3 or P5 pass in record mode closes the earlier must-fix rows of that stage and task. Each closed row gets `status: verified` through `ledger_verify` and a `superseded by` note.
-- A must-fix row of another task stays open. Close it with `findings_io set-status`, or with a pass of the stage of that task. R4, R5 and R6 judge only the rows of the run's task. With no run for the cwd, they judge every row (#49).
+- A must-fix row of another task stays open. Close it with `findings_io set-status`, or with a pass of the stage of that task. R4, R5 and R6 judge only the rows of the run's task. With no run for the cwd, they judge every row.
 
 The shell hook guards `gh pr create` and `gh pr ready` when the branch has commits ahead of its base. It applies only to a repository with a Cadence footprint: `.cadence.json`, a run record, or `.context/attest/`. It checks each `gh pr` command in a multi-line or chained shell command. It allows the command in one of these conditions:
 

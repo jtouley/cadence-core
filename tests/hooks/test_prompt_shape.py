@@ -53,7 +53,7 @@ def test_task_prompt_block_reason_multiline_blocks():
     assert "newline" in reason
 
 
-# --- peer_command_matcher: cd-64: one peer-command matcher over stages.json rows, the lean reason, the hook-only marker.
+# --- peer_command_matcher: one peer-command matcher over stages.json rows, the lean reason, the hook-only marker.
 
 ROWS = [s for s in load_stages(ROOT) if str(s.get("command", "")).startswith("/")]
 
@@ -193,7 +193,7 @@ def test_hook_records_only_needs_the_marker_and_claude(session, expected):
 
 # --- plugin_prefixed_peer_prompts: A plugin install lists peer commands as /cadence:<name>. The hooks treat it as /<name>.
 #
-# Regression (PR #38 R1): `/cadence:plan-review x` was not a peer call to the
+# Regression: `/cadence:plan-review x` was not a peer call to the
 # PreToolUse matchers, so it passed with no handoff packet and no lean check.
 
 PREFIXED = [

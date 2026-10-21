@@ -1,4 +1,4 @@
-"""The shared test git helper ignores the developer's git config (#46).
+"""The shared test git helper ignores the developer's git config.
 
 A developer with commit.gpgsign=true and no signing key saw test_phase_ledger and
 test_implement_gate fail. The helper sets GIT_CONFIG_GLOBAL and GIT_CONFIG_NOSYSTEM,

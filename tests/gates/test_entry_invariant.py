@@ -55,11 +55,11 @@ def test_entry_invariant_session_vanished_fails(scripts_path, tmp_path, monkeypa
     monkeypatch.chdir(tmp_path)
     context = tmp_path / ".context"
     context.mkdir()
-    ok_path = context / "gates" / "entry-invariant-run-1.ok"  # cd-76: the run's own marker
+    ok_path = context / "gates" / "entry-invariant-run-1.ok"  # The run's own marker
     ok_path.parent.mkdir(parents=True)
     ok_path.write_text("ok\n", encoding="utf-8")
     monkeypatch.setattr(entry_invariant, "check_execution_entry", lambda *_a, **_k: [])
-    # cd-76: P9 resolves the run with run_for, once before the check and once to write.
+    # P9 resolves the run with run_for, once before the check and once to write.
     runs = iter([{"pipeline_run_id": "run-1", "task_id": "t"}, None])
     monkeypatch.setattr(entry_invariant, "run_for", lambda *_a, **_k: next(runs))
     monkeypatch.setattr(sys, "argv", ["entry_invariant.py"])

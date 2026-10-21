@@ -38,7 +38,7 @@ def test_default_config_e1_done_allows_create(tmp_path):
 
 
 def test_default_config_e1_done_does_not_allow_ready_without_a_review(tmp_path):
-    """MF-1 (PR #168): E1 done is an escape for `create` only; `ready` needs a review of HEAD."""
+    """MF-1: E1 done is an escape for `create` only; `ready` needs a review of HEAD."""
     repo = _default_repo(tmp_path)
     _marker(repo)
     denied, out = _guard(repo, "gh pr ready", "cursor")
@@ -68,7 +68,7 @@ def test_full_config_still_needs_the_e3_breadcrumb(tmp_path):
 
 
 def test_the_deny_text_names_e1_when_the_architecture_pack_is_off(tmp_path):
-    """PR #168 R1 N-15: with E3 off, option (a) must not send the agent to E3."""
+    """With E3 off, option (a) must not send the agent to E3."""
     repo = _default_repo(tmp_path)  # no P9 marker, so the guard denies and prints its options
     denied, out = _guard(repo, "gh pr ready", "cursor")
     assert denied and "past E1 (implement)" in out and "architecture-review-impl" not in out

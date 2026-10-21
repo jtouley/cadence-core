@@ -1,4 +1,4 @@
-"""The P3 and P6 review loops: one loop helper, and each loop converges in its cycle limit (gh-25, cd-47 D10, cd-63)."""
+"""The P3 and P6 review loops: one loop helper, and each loop converges in its cycle limit."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from adversarial_loop import OTHER_RUN, RUN, Loop  # noqa: E402
 from artifact_requirements import check_plan_review_verdict, plan_review_cycle_limit  # noqa: E402
 
 
-# --- review_loop_helper: cd-63 Phase 1: one review-loop helper for P3 and P6 (cycles, newest verdict, carried section).
+# --- review_loop_helper: one review-loop helper for P3 and P6 (cycles, newest verdict, carried section).
 
 @pytest.fixture
 def loop(tmp_path, monkeypatch):
@@ -220,7 +220,7 @@ def test_four_blocking_reviews_still_allow_another(tmp_path, monkeypatch):
     assert errors and f"cycle {PLAN_LIMIT - 1} of {PLAN_LIMIT}" in errors[0] and "/plan-update" in errors[0]
 
 
-# --- adversarial_loop_converges: cd-63 Phase 6: a pilot-shaped P6 loop reaches E1 after round 3 (Acceptance 9, 11; F8; R6-N5-2).
+# --- adversarial_loop_converges: a pilot-shaped P6 loop reaches E1 after round 3 (Acceptance 9, 11; F8; R6-N5-2).
 #
 # A pilot run ran P6 four times, each time with new edge cases, and stopped on `retries` before E1. Here each round is a REQUEST CHANGES with new B-n items. At
 # round 3 the plan carries them; P6 and P9 then pass with no new review.

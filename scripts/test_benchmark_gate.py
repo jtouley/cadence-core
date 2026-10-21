@@ -156,7 +156,7 @@ def _is_must_fix(finding: object) -> bool:
 
 
 def _flag_true(value: object) -> bool:
-    """`true`, `1`, `"true"` or `"yes"` (any case). JSON writers do not agree on one form (#43)."""
+    """`true`, `1`, `"true"` or `"yes"` (any case). JSON writers do not agree on one form."""
     if isinstance(value, bool):
         return value
     if isinstance(value, int):

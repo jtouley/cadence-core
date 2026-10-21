@@ -122,7 +122,7 @@ def test_a_finished_run_allows(tmp_path, probe, host):
     assert probe(host, repo, "read", ".env")[0] == "allow"
 
 
-# --- PR #168 R1 N-2: a pattern, a code string or a code file is not a secret read.
+# --- a pattern, a code string or a code file is not a secret read.
 
 
 @pytest.mark.parametrize("host", HOSTS)
@@ -170,7 +170,7 @@ def test_a_code_file_named_secrets_is_not_a_secret(tmp_path, probe, host, name, 
     assert probe(host, repo, "read", name)[0] == want
 
 
-# --- PR #168 R1 N-3: a copy, an archive, a git object or the Grep tool also reads the file.
+# --- a copy, an archive, a git object or the Grep tool also reads the file.
 
 
 @pytest.mark.parametrize("host", HOSTS)
@@ -225,7 +225,7 @@ def test_a_copy_or_an_encoder_of_a_secret_is_denied(tmp_path, probe, host, comma
     assert probe(host, repo, "shell", command)[0] == want
 
 
-# --- PR #168 R1 N-11: a `cd` earlier in the command moves the bare words.
+# --- a `cd` earlier in the command moves the bare words.
 
 
 @pytest.mark.parametrize("host", HOSTS)

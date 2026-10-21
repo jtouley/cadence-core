@@ -87,7 +87,7 @@ def test_finding_ids_are_ledger_valid_for_owner_repo_ticket(tmp_path, monkeypatc
     assert findings[0]["id"].startswith("jtouley-cadence-16-F")
 
 
-# --- cd-49: the id prefix and the own-row rule come from findings_io -------------------------------
+# --- the id prefix and the own-row rule come from findings_io -------------------------------
 
 def test_ids_come_from_the_shared_prefix_helper(tmp_path, monkeypatch):
     monkeypatch.setenv("CADENCE_HOME", str(ROOT))
@@ -99,7 +99,7 @@ def test_ids_come_from_the_shared_prefix_helper(tmp_path, monkeypatch):
 
 
 def test_supersede_closes_an_upper_case_own_row(tmp_path, monkeypatch):
-    """cd-49 C-3: supersede uses the shared own-row rule, so the task part ignores case."""
+    """Supersede uses the shared own-row rule, so the task part ignores case."""
     monkeypatch.setenv("CADENCE_HOME", str(ROOT))
     import architecture_review as ar
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """P6 — adversarial-review peer gate.
 
-`--heading <report>` prints the carried-findings heading of a report (cd-63 D2), so the
+`--heading <report>` prints the carried-findings heading of a report, so the
 plan-update peer does not compute the hash by hand.
 """
 

@@ -216,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
         tool_allow(host)
         return 0
 
-    # Each host candidate is checked; one deny denies (cd-82 D8). No session is read.
+    # Each host candidate is checked; one deny denies. No session is read.
     for workspace in hook_candidates(payload):
         ctx = primary_context_paths(workspace)
         if ctx is None:

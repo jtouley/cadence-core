@@ -62,7 +62,7 @@ SECRET_PATTERNS = (
     "*credentials*.json", "secrets.*", "*.secret",
 )
 EXAMPLE_NAMES = frozenset({".env.example", ".env.sample", ".env.template"})  # not matched by `.env.*`
-# `secrets.*` is not a code or doc file: scripts/secrets.py is code (PR #168 R1 N-2).
+# `secrets.*` is not a code or doc file: scripts/secrets.py is code.
 CODE_SUFFIXES = (".py", ".js", ".ts", ".go", ".rs", ".java")  # a .txt, .md or .rst named secrets is a secret (R1 MF-2)
 EXTRA_KEY = "secret_paths"
 SHELL_TOOLS = {"Bash", "Shell"}
@@ -72,7 +72,7 @@ READERS = frozenset({
     "cut", "sort", "uniq", "nl", "strings", "xxd", "od", "hexdump", "base64", "diff", "cmp", "jq", "bat",
     "source", ".", "tar", "zip", "7z", "gzip", "bzip2", "xz", "zstd", "cpio", "paste", "openssl",
 })
-# A copier reads its sources: each operand except the destination (PR #168 R1 N-3).
+# A copier reads its sources: each operand except the destination.
 COPIERS = frozenset({"cp", "mv", "scp", "rsync", "install"})
 TARGET_DIR_FLAG = frozenset({"cp", "mv", "install"})  # `-t DIR`; for rsync `-t` keeps the times (R1 MF-3)
 UPLOADERS = frozenset({"curl", "wget", "http", "https"})  # `-d @.env`, `-F f=@.env`, `-T .env`, `--post-file=.env`

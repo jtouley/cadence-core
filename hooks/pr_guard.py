@@ -1,4 +1,4 @@
-"""Guard `gh pr create` and `gh pr ready` (cd-47 D4, #39), and `gh pr comment` and `gh pr review` (gh-178).
+"""Guard `gh pr create` and `gh pr ready`, and `gh pr comment` and `gh pr review`.
 
 On run efcd8404 an orchestrator opened a PR with no Cadence session and no review.
 In a repo with `.context/` and commits ahead of the base, this guard denies those
@@ -23,7 +23,7 @@ from __future__ import annotations
 import re
 
 # Where a shell command word starts: the line start, a new line, `;`, `&`, `|`, `(` or `{`,
-# then env assignments and an optional `env`, `command` or `exec` wrapper (R1 on PR #52).
+# then env assignments and an optional `env`, `command` or `exec` wrapper.
 SEGMENT_START = (
     r"(?:^|[;&|(\n{])\s*((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*)"
     r"(?:(?:env|command|exec)\s+((?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*))?"
@@ -50,7 +50,7 @@ def pr_guard_decision(command: str, cwd, host: str) -> str | None:
 
 
 def _cadence_footprint(primary, context) -> bool:
-    """Cadence ran or is set up here. Other skills also make .context/ (R1 on PR #52, R-2)."""
+    """Cadence ran or is set up here. Other skills also make .context/."""
     return (
         (primary / ".cadence.json").is_file()
         or (context / "cadence-session.json").is_file()
@@ -139,7 +139,7 @@ def _even_with_base(cwd, session: dict | None, git) -> tuple[str | None, bool]:
 
 
 def _talk_gate(context, session: dict | None, guarded: list[str], head: str, cwd, git) -> tuple[str | None, list[str]]:
-    """gh-178: (the deny text of a `gh pr comment` or `gh pr review` segment, or None; the other verbs).
+    """(the deny text of a `gh pr comment` or `gh pr review` segment, or None; the other verbs).
 
     They wait for R5 of the worktree's run at HEAD. A review or an E3 pass does not open them. With
     no run and no commits ahead, the comment is not on a branch of a run (a review of another PR).
@@ -167,7 +167,7 @@ def _talk_gate(context, session: dict | None, guarded: list[str], head: str, cwd
 
 
 def _deny_text(verb: str, reasons: list[str], cwd) -> str:
-    """The BLOCKED text. Option (a) names E3, or E1 when the architecture pack is off (PR #168 R1 N-15)."""
+    """The BLOCKED text. Option (a) names E3, or E1 when the architecture pack is off."""
     from load_stages import stage_slugs
 
     e3_on = "architecture-review-impl" in stage_slugs(workspace=cwd)
@@ -221,7 +221,7 @@ def _e1_problem(context, session: dict, verb: str, cwd) -> str | None:
     the run's own P9 marker and a commit for each plan phase (implement_gate.py).
 
     E1 done does not name a HEAD, so it opens `gh pr create` only. For `gh pr ready`
-    escape (b), a review of HEAD, decides (PR #168 R1 MF-1).
+    escape (b), a review of HEAD, decides.
     """
     if verb == "ready":
         return "`gh pr ready` needs a peer review of HEAD"
@@ -258,9 +258,9 @@ def _head_reviews(context, head: str):
 def _review_of_head(context, head: str, claude: bool, cwd) -> tuple[bool, list[str]]:
     """(a review of HEAD counts, stage lines of the attested reviews that did not count).
 
-    On a verdict_join run (gh-66 PD5), an attested review counts only from a writer of the
+    On a verdict_join run, an attested review counts only from a writer of the
     R4 stages. The stage check reads the same newest attest row as the attest check, over
-    every run log (PR #145 R1 MF-1), and the run of the worktree at `cwd` (S-11).
+    every run log, and the run of the worktree at `cwd` (S-11).
     """
     from artifact_requirements import review_stage_check
 

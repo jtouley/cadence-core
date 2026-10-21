@@ -82,7 +82,7 @@ def test_impl_artifact_check_rejects_empty_diff(scripts_path, tmp_path):
 
 
 def test_an_unknown_base_names_the_failed_merge_base(scripts_path, tmp_path, monkeypatch):
-    """#43: a base ref that does not resolve gave "no change since the merge base", which hid the cause."""
+    """A base ref that does not resolve gave "no change since the merge base", which hid the cause."""
     import subprocess
 
     import impl_artifact

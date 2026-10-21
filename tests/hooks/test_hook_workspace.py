@@ -1,4 +1,4 @@
-"""The hooks find the project and the skill root from the host, not from the hook cwd (cd-82)."""
+"""The hooks find the project and the skill root from the host, not from the hook cwd."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ pytestmark = pytest.mark.integration
 code_paths()
 
 
-# --- hook_workspace: hook_workspace and hook_candidates: the project comes from the host, not the hook cwd (cd-82).
+# --- hook_workspace: hook_workspace and hook_candidates: the project comes from the host, not the hook cwd.
 #
 # A user-level Cursor hook starts outside the project, with the project in
 # `CURSOR_PROJECT_DIR` and `workspace_roots`. Claude Code sends payload `cwd`.
@@ -220,7 +220,7 @@ def test_candidates_skip_a_missing_payload_cwd_but_keep_the_env(hp, outside_cwd,
     assert hp.hook_candidates({"cwd": str(tmp_path / "gone")}) == [project, Path.cwd()]
 
 
-# --- run_hook_host_shape: run_hook starts the hook with the cwd and the project env of each host shape (cd-82).
+# --- run_hook_host_shape: run_hook starts the hook with the cwd and the project env of each host shape.
 
 PROBE = (
     "import json, os, sys\n"
@@ -268,7 +268,7 @@ def test_each_host_shape_reaches_the_hook_process(run_hook, probe_dir, tmp_path,
     assert json.loads(seen["stdin"]) == {"x": 1, **extras}
 
 
-# --- guards_follow_the_host_workspace: The primary-context, lean and handoff guards find the project from the host (cd-82, #82).
+# --- guards_follow_the_host_workspace: The primary-context, lean and handoff guards find the project from the host.
 #
 # The process cwd stays a candidate (D8), so a call that is denied today stays denied.
 # A guard that writes state writes it into one context only (U1 to U3).
@@ -491,7 +491,7 @@ def test_handoff_guard_with_a_missing_payload_cwd_and_no_run_allows(run_hook, ma
 def test_handoff_packet_check_uses_the_payload_repo_when_the_process_cwd_has_no_run(
     run_hook, make_root, handoff_mod, project, tmp_path
 ):
-    # R2 (PR #87): pre_agent must use the workspace that main resolves, not Path.cwd().
+    # R2: pre_agent must use the workspace that main resolves, not Path.cwd().
     root = make_root(mode="enforce", rewrite_prompt=True)
     write_files(project, {HANDOFF_PLAN: HANDOFF_PLAN_TEXT})  # the input exists only in the project
     hook_session(project)
@@ -503,7 +503,7 @@ def test_handoff_packet_check_uses_the_payload_repo_when_the_process_cwd_has_no_
     assert updated["prompt"] == rendered
 
 
-# --- hook_text_names_resolved_skill_root: Hook deny text names the resolved skill root, not the literal `$CADENCE_HOME` (cd-82 D6).
+# --- hook_text_names_resolved_skill_root: Hook deny text names the resolved skill root, not the literal `$CADENCE_HOME`.
 #
 # The agent shell does not export CADENCE_HOME (install.sh sets it only for itself), so
 # `"$CADENCE_HOME/scripts/x.py"` expands to `/scripts/x.py`.

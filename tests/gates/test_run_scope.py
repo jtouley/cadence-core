@@ -1,4 +1,4 @@
-"""Run scope: the planning gates (P1, P3) and the A5 gate accept only the artifacts of this run (cd-47, cd-93)."""
+"""Run scope: the planning gates (P1, P3) and the A5 gate accept only the artifacts of this run."""
 
 from __future__ import annotations
 
@@ -19,10 +19,10 @@ from pipeline_run_binding import artifact_is_current, run_ids_in_text, stamp_mar
 from prompt_shape import write_delegation_record  # noqa: E402
 
 
-# --- planning_gates_accept_only_current_run: P1 and P3 accept only this run's plan and review (cd-47 item 10, D8).
+# --- planning_gates_accept_only_current_run: P1 and P3 accept only this run's plan and review.
 #
-# On run efcd8404 the P1 gate passed for cd-47 before any cd-47 plan existed: a
-# plan-create plan from run cd-32 sat in the shared .context. A planning artifact
+# On one run the P1 gate passed before any plan of the ticket existed: a
+# plan-create plan from another run sat in the shared .context. A planning artifact
 # now counts when it names this run, or names no run and is in ticket scope.
 
 RUN_0 = str(uuid.UUID(int=0x1111_2222_3333_4444_5555_6666_7777_8888))
@@ -144,7 +144,7 @@ def test_stamp_markdown_does_not_add_a_second_run_line():
     assert stamp_markdown(text, RUN_1) == text
 
 
-# --- a5_run_scope: cd-93: the A5 gate judges only the reports of the run of its own worktree (#93).
+# --- a5_run_scope: the A5 gate judges only the reports of the run of its own worktree.
 #
 # Runs live on host `cursor`, where no peer attestation filters reports, so the run scope
 # is the only thing that keeps another run's report out (test rule 1). Each run has a lean
@@ -211,7 +211,7 @@ def runs(tmp_path):
 
 
 def _run_a_active(runs) -> tuple[Path, Path, Path, float]:
-    """Run A (cd-901) active in worktree A since 10 minutes ago, lean. Returns (ctx, a, vibe, start)."""
+    """Run A active in worktree A since 10 minutes ago, lean. Returns (ctx, a, vibe, start)."""
     ctx, a, _b, vibe = runs
     start = vr.now() - 600
     _save(a, _fields(RUN_A, start, "cd-901"))
@@ -220,7 +220,7 @@ def _run_a_active(runs) -> tuple[Path, Path, Path, float]:
 
 
 def test_t9_the_root_pointer_does_not_decide_which_run_a5_judges(runs, capsys):
-    """Acceptance 1 (the cd-63 incident): each worktree's gate judges its own run."""
+    """Acceptance 1: each worktree's gate judges its own run."""
     ctx, a, b, vibe = runs
     start = vr.now() - 600
     run_a, run_b = _fields(RUN_A, start, "cd-901"), _fields(RUN_B, start, "cd-902")

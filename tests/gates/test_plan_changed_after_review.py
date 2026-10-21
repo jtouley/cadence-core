@@ -1,4 +1,4 @@
-"""gh-176: P9 fails when the plan changed after the READY TO EXECUTE review that passed it.
+"""P9 fails when the plan changed after the READY TO EXECUTE review that passed it.
 
 The review's `Last reviewed plan sha256:` line names the plan that the peer read. With no
 such line, P9 compares the plan mtime with the review mtime. A tie passes.

@@ -1,4 +1,4 @@
-"""cd-63: the P6 adversarial verdict: how it is read, which ids count, which reports count, and how the P6 gate and P9 use it."""
+"""The P6 adversarial verdict: how it is read, which ids count, which reports count, and how the P6 gate and P9 use it."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from artifact_requirements import (adversarial_ids, adversarial_verdict_in_text 
                                    carried_heading)
 
 
-# --- adversarial_verdict_read: cd-63 Phase 2: the strict P6 verdict read (D3, R3-C-2).
+# --- adversarial_verdict_read: the strict P6 verdict read (D3, R3-C-2).
 
 @pytest.mark.parametrize(("text", "expected"), [
     ("**Verdict:** REQUEST CHANGES", "REQUEST CHANGES"),
@@ -58,7 +58,7 @@ def test_the_deciding_verdict_line(text):
     assert read(text) == "APPROVE"
 
 
-# --- adversarial_ids_by_section: cd-63 Phase 2: P6 ids come only from item lines in their own section; the carried heading names the bytes.
+# --- adversarial_ids_by_section: P6 ids come only from item lines in their own section; the carried heading names the bytes.
 
 REPORT = """Mode: plan-gate
 
@@ -113,7 +113,7 @@ def test_carried_heading_names_file_and_raw_byte_hash(tmp_path):
     assert carried_heading(lf) != heading
 
 
-# --- adversarial_gate_reads_verdict: cd-63 Phase 3: the P6 gate and P9 read the adversarial verdict (D4, R2 to R6).
+# --- adversarial_gate_reads_verdict: the P6 gate and P9 read the adversarial verdict (D4, R2 to R6).
 
 BLOCKING = "## Blocking issues\n\n### B-1. one\n\n### B-2. two\n"
 CONDS = "## Conditions\n\n### C-1. one\n\n### C-2. two\n"
@@ -411,7 +411,7 @@ def test_p9_names_open_conditions_exactly_once(lp):
     ]
 
 
-# --- p6_report_name_matrix: PR #88 R1 MF-1: a counted P6 report whose name does not use the plan stem is named, never dropped.
+# --- p6_report_name_matrix: a counted P6 report whose name does not use the plan stem is named, never dropped.
 
 SLUG = "p6_limit_ab12"
 BLOCK = "## Blocking issues\n\n### B-1. one\n"

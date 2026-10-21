@@ -1,4 +1,4 @@
-"""/pr-review-update reads the PR's GitHub review threads (#184).
+"""/pr-review-update reads the PR's GitHub review threads.
 
 scripts/pr_threads.py prints the threads as JSON, so the peer runs one command, not raw GraphQL.
 An unresolved thread from a human is a must-fix. With `adapter: none`, no `gh` on PATH, or a

@@ -104,7 +104,7 @@ def planned_checks(payload: dict[str, Any]) -> tuple[list[tuple[str, str]], str 
 from pr_guard import SEGMENT_START  # noqa: E402 - one rule for where a shell command starts
 
 ACTIVATION = re.compile(r"\bactivate_session\.py\b(?![^;&|\n]*--(?:deactivate|status|check|hard-stop)\b)")
-# A shell segment that runs activation (cd-47 D2): the command word is python, uv run
+# A shell segment that runs activation: the command word is python, uv run
 # python or the script path itself. The path may be quoted (SKILL.md quotes it). A
 # command that only names the script (grep, cat, echo "...") does not match.
 ACTIVATION_RUN = re.compile(
@@ -146,7 +146,7 @@ def _shell_path(token: str, base: Path | None) -> Path | None:
     """The directory a `cd` or `--workspace` token names, or None when the hook cannot know it.
 
     A variable set in the same command, a command substitution and `cd -` are not
-    readable here: the hook expands only its own environment (R1 on PR #57).
+    readable here: the hook expands only its own environment.
     With no `base`, only an absolute path counts.
     """
     raw = token.strip("\"'")
@@ -178,7 +178,7 @@ def _closed_before(command: str, start: int, end: int) -> bool:
 
 
 def activation_target(command: str, cwd: Path) -> Path:
-    """The directory an activation command works on (#56).
+    """The directory an activation command works on.
 
     `--workspace <dir>` in the activation segment, else the directory the `cd`
     commands before it lead to, else the payload cwd. A token the hook cannot
@@ -205,11 +205,11 @@ def activation_target(command: str, cwd: Path) -> Path:
 
 
 def note_activation_orchestrator(payload: dict[str, Any]) -> None:
-    """Leave the activating agent's id for activation (cd-47 D2): the orchestrator's id.
+    """Leave the activating agent's id for activation: the orchestrator's id.
 
     The note goes to the canonical .context of the repo the command activates
     (activation_target): a Claude Code subagent's Bash cwd resets to the parent's
-    project, so the payload cwd is often another repo (#56). Only an
+    project, so the payload cwd is often another repo. Only an
     anchored activation command writes it (and may create .context/, as activation
     itself does). Fail-open: a failure here never blocks the command.
     """
@@ -233,7 +233,7 @@ def note_activation_orchestrator(payload: dict[str, Any]) -> None:
 
 
 def pr_guard_denied(host: str, payload: dict[str, Any]) -> bool:
-    """`gh pr create` / `gh pr ready` before planned_checks: they write no file (cd-47 D4, SF-1)."""
+    """`gh pr create` / `gh pr ready` before planned_checks: they write no file."""
     if not (payload.get("hook_event_name") == "beforeShellExecution" or extract_tool_name(payload) in SHELL_TOOLS):
         return False
     command = payload.get("command") or extract_tool_input(payload).get("command")
@@ -278,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # Installed globally: only enforce while a candidate workspace runs a Cadence session.
-    # Each candidate with a session is judged; one deny denies (cd-82 D8).
+    # Each candidate with a session is judged; one deny denies.
     for workspace in _session_workspaces(payload):
         message = _gate_message(workspace, checks, mention)
         if message is None and host == "claude":  # a peer writes the code
@@ -339,7 +339,7 @@ def _claude_runs(context: Path) -> list[dict]:
 
 
 def _attest_runs(runs: list[dict], cwd: Path) -> list[str]:
-    """Run ids for a peer's attest row (cd-47 SF-3).
+    """Run ids for a peer's attest row.
 
     1. The run whose workspace holds the payload cwd (the deepest one).
     2. Else the only active run.
@@ -366,7 +366,7 @@ def _verdict_write_denial(action: str, agent: object, rel: str, context: Path) -
     """The deny text for a write to the peer artifact `rel`, or None when a peer may write it.
 
     A write with no agent_id is the top-level agent, and an agent that ran activation is
-    the run's orchestrator (G-D5): neither writes verdicts, with any tool. #78: a peer's
+    the run's orchestrator (G-D5): neither writes verdicts, with any tool. A peer's
     shell write leaves no content to attest, and it can replace an earlier report, so a
     peer writes a report with Write or Edit only. The orchestrator cases come first, so
     the text never sends an orchestrator to a Write that the next rule denies (R1 N-1).

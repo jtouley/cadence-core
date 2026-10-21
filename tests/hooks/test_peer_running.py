@@ -1,4 +1,4 @@
-"""Which run sees a peer as running: SubagentStart and SubagentStop on Claude Code, the begin record elsewhere (cd-32, cd-76)."""
+"""Which run sees a peer as running: SubagentStart and SubagentStop on Claude Code, the begin record elsewhere."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ import session_store  # noqa: E402
 # --- peer_running_from_host_events: On Claude Code, "a peer is running" comes from SubagentStart/SubagentStop, not from a record.
 #
 # A `begin` record stays `running` when the orchestrator never calls `complete`
-# (cd-32 A5). Trusting it would let planning stops pass for an hour. On a
+#. Trusting it would let planning stops pass for an hour. On a
 # host=claude run the hooks record each subagent's start and stop instead.
 
 def _session_host(repo: Path, host: str) -> None:
@@ -76,7 +76,7 @@ def test_subagent_stops_are_not_logged_without_an_active_run(tmp_path, run_hook)
     assert not (repo / ".context" / "attest").exists()
 
 
-# --- peer_start_in_each_owned_run: cd-76 Phase 5: a peer's start goes to each run the chat owns; re-activation records the orchestrator.
+# --- peer_start_in_each_owned_run: a peer's start goes to each run the chat owns; re-activation records the orchestrator.
 #
 # SubagentStart records `start` in each active run whose owner is this chat, else (no chat id, or
 # no owned run) in the run the handoff hook reads today. A second activation of an active run

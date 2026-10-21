@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A model setting per delegated peer stage (cd-58).
+"""A model setting per delegated peer stage.
 
 A config layer may hold `peer_models`: a map from a delegated peer stage slug
 (or `default`) to a model alias. A1 validates it and copies the resolved map into the
@@ -70,7 +70,7 @@ def resolve(raw: object, host: str) -> tuple[dict[str, str], list[str]]:
 
 
 def activation_snapshot(resumed: dict | None, peer_models: object, host: str) -> tuple[dict[str, str], list[str]]:
-    """The `peer_models` snapshot for an activation, and its errors (cd-58 D1).
+    """The `peer_models` snapshot for an activation, and its errors.
 
     A resumed run keeps its own snapshot, so a later config change cannot change a resumed
     run. A fresh run takes `peer_models` of the resolved config.
@@ -81,7 +81,7 @@ def activation_snapshot(resumed: dict | None, peer_models: object, host: str) ->
     return resolve(peer_models if peer_models is not None else {}, host)
 
 
-# --- evidence rows (cd-58 D2) -------------------------------------------------------------------
+# --- evidence rows -------------------------------------------------------------------
 
 DECISIONS = ("allow", "deny")
 
@@ -119,14 +119,14 @@ def read_rows(context_dir: Path, run_id: str) -> list[dict]:
     return found
 
 
-# --- gate check (cd-58 D4) ----------------------------------------------------------------------
+# --- gate check ----------------------------------------------------------------------
 
 # Lean delegation records name the command stage; two differ from the stages.json slug.
 SLUG_FOR_STAGE = {
     "vibe-test": "validate",
     "de-adversarial-reviewer": "adversarial-review",
     **{slug: slug for slug in PEER_MODEL_SLUGS},
-    "pr-review-update": None,  # gh-66 PD7: an R4 peer stage with no peer_models key
+    "pr-review-update": None,  # An R4 peer stage with no peer_models key
 }
 
 
@@ -163,10 +163,10 @@ def require_peer_model(context_dir: Path, slug: str) -> list[str]:
 
 
 def _joined_allowed_calls(context_dir: Path, run_id: str, slug: str) -> list[dict]:
-    """gh-66 (#59): allowed call rows of `slug` whose call started a peer (a join row exists)."""
+    """Allowed call rows of `slug` whose call started a peer (a join row exists)."""
     import peer_attest
 
-    # PR #145 R1 F2: a join row with no agent names no started peer.
+    # A join row with no agent names no started peer.
     joined = {r.get("tool_use_id") for r in peer_attest.every_run_rows(context_dir, "joins")
               if isinstance(r.get("agent_id"), str) and r.get("agent_id")}
     return [r for r in peer_attest.call_rows(context_dir, run_id)
@@ -175,7 +175,7 @@ def _joined_allowed_calls(context_dir: Path, run_id: str, slug: str) -> list[dic
 
 
 def models_for_stages(configured: object, stages: frozenset[str]) -> dict[str, str]:
-    """gh-66: the configured model of each delegation stage that has a peer_models slug."""
+    """The configured model of each delegation stage that has a peer_models slug."""
     if not isinstance(configured, dict):
         return {}
     out = {}
@@ -186,7 +186,7 @@ def models_for_stages(configured: object, stages: frozenset[str]) -> dict[str, s
     return out
 
 
-# --- report (cd-58 D6) --------------------------------------------------------------------------
+# --- report --------------------------------------------------------------------------
 
 
 def _default_projects_dir() -> Path:
@@ -212,7 +212,7 @@ def _served_model(transcript: Path) -> str:
 
 
 def _join(row: dict, joins: dict[str, dict], projects: Path) -> tuple[str, str]:
-    """(agent id, served model) for one row, from its PostToolUse join row (gh-66).
+    """(agent id, served model) for one row, from its PostToolUse join row.
 
     The served model is the subagent transcript's model, else the join row's resolvedModel.
     """
@@ -262,7 +262,7 @@ def build_report(context_dir: Path, run_id: str | None, projects: Path) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Peer models of a Cadence run (cd-58)")
+    parser = argparse.ArgumentParser(description="Peer models of a Cadence run")
     sub = parser.add_subparsers(dest="command", required=True)
     rep = sub.add_parser("report", help="each recorded peer call, joined to its subagent")
     rep.add_argument("--run", help="pipeline_run_id (default: this worktree's run)")

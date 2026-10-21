@@ -36,7 +36,7 @@ def _repo(tmp_path: Path, host: str = "claude") -> Path:
 
 
 def _body(repo: Path) -> str:
-    """A full R1 review of the repo's HEAD (PR #168 R1 N-1: R1 reads the reviewed commit)."""
+    """A full R1 review of the repo's HEAD (R1 reads the reviewed commit)."""
     return (f"RUN_BY_COMMAND: pr-review-local\nLast reviewed commit: {head_sha(repo)}\n"
             + "".join(f"\n## {h}\nnone\n" for h in REVIEW_RIGOR_SECTIONS))
 
@@ -142,7 +142,7 @@ def test_agents_may_not_write_attestations_or_delegation_records(tmp_path):
     repo = _repo(tmp_path)
     for rel in (".context/attest/run-1.jsonl", ".context/subagent-runs/run-1/pr-review-local.json"):
         assert hook_denied(skill_gate_hook(repo, _write_payload(repo, rel, agent_id="agent-7"))), rel
-    # cd-58 F8: the peer model rows are hook-only too, and the message names their writer.
+    # The peer model rows are hook-only too, and the message names their writer.
     proc = skill_gate_hook(repo, _write_payload(repo, ".context/attest/run-1.models.jsonl", agent_id="agent-7"))
     assert hook_denied(proc)
     assert "guard_subagent_handoff.py" in proc.stdout
@@ -158,7 +158,7 @@ def test_protected_writer_names_both_attest_writers(tmp_path):
 
 
 def test_protected_writer_names_the_hook_for_delegation_records(tmp_path):
-    # cd-64 C-1: on a marked Claude Code run, begin refuses; the message must not send the orchestrator there only.
+    # On a marked Claude Code run, begin refuses; the message must not send the orchestrator there only.
     sys.path[:0] = [str(ROOT / "shared"), str(ROOT / "shared" / "scripts")]
     import skill_gate
 
@@ -167,7 +167,7 @@ def test_protected_writer_names_the_hook_for_delegation_records(tmp_path):
 
 
 def test_attested_any_skips_the_models_rows(tmp_path):
-    """cd-58 F4: a row in <run>.models.jsonl must never count as a peer's write."""
+    """A row in <run>.models.jsonl must never count as a peer's write."""
     sys.path.insert(0, str(ROOT / "shared" / "scripts"))
     import peer_attest
 

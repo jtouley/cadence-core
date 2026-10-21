@@ -92,7 +92,7 @@ def extract_prompt(tool_input: dict[str, Any]) -> str:
 
 def evaluate(payload: dict[str, Any], context_dir: Path, record: bool = True) -> dict[str, Any]:
     """Allow, or deny with a reason. Peer allows also write the delegation record,
-    unless `record` is False (a check of one more candidate, cd-82 U2)."""
+    unless `record` is False (a check of one more candidate)."""
     tool = extract_tool_name(payload)
     if tool.lower() != "task":
         return allow()
@@ -147,7 +147,7 @@ def main() -> int:
         return 0
 
     # Each host candidate with a session is checked with no write; one deny denies. The
-    # record goes into one context only (cd-82 U2). context_path creates no .context.
+    # record goes into one context only. context_path creates no .context.
     try:
         pairs = candidate_contexts(payload, context_path)
         for _workspace, ctx in pairs:

@@ -1,4 +1,4 @@
-"""Verdict join: the call row of each peer call, its PostToolUse join row, and the real hook chain into the P3 gate (gh-66)."""
+"""Verdict join: the call row of each peer call, its PostToolUse join row, and the real hook chain into the P3 gate."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ def logs(repo: Path, kind: str, run: str = "run-1") -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-# --- verdict_call_rows: Each orchestrator peer call gets one call row with its stage and decision (gh-66 D1, D2).
+# --- verdict_call_rows: Each orchestrator peer call gets one call row with its stage and decision.
 #
 # The PreToolUse hook appends `{tool_use_id, stage, model_slug, model, decision, run_id, at}`
 # to .context/attest/<run>.calls.jsonl for each orchestrator peer call of an active run,
@@ -123,7 +123,7 @@ def test_the_stage_vocabulary_names_pr_review_update():
     assert [r["command"] for r in prompt_shape.EXTRA_PEER_ROWS] == ["/pr-review-update", "/spec-driven --fix", "/session-summary"]
 
 
-# --- verdict_join_rows: The PostToolUse Agent hook joins each orchestrator peer call to its subagent (gh-66 D3, PD9, PD10).
+# --- verdict_join_rows: The PostToolUse Agent hook joins each orchestrator peer call to its subagent.
 #
 # Input is the PostToolUse payload recorded on a real host (tests/fixtures/host). The hook
 # appends `{tool_use_id, agent_id, resolved_model, at}` to .context/attest/<run>.joins.jsonl.
@@ -194,7 +194,7 @@ def test_the_claude_fragment_registers_post_tool_use_for_the_join():
     assert "--host claude" in command
 
 
-# --- verdict_join_hook_chain: The real hooks join a peer's verdict to the call that started it (gh-66 R7 C-1, PD21).
+# --- verdict_join_hook_chain: The real hooks join a peer's verdict to the call that started it.
 #
 # One recorded host chain (tests/fixtures/host) runs through the installed hooks in order:
 # PreToolUse Agent (call row), the subagent's Write (attest row), PostToolUse Agent (join
@@ -239,7 +239,7 @@ def _runs(tmp_path: Path, case: str) -> tuple[Path, Path, Path]:
     context = primary / ".context"
     # The enforced handoff pins the run's plan, so the run has one.
     write_files(context, {"plans/x.plan.md": "RUN_BY_COMMAND: plan-create\nTicket: gh-1\n"})
-    # Setup, not the case under test: the gate's run has its lean record (the record run is #113).
+    # Setup, not the case under test: the gate's run has its lean record (another test covers the record run).
     write_delegation_record(context, run_id="run-1", stage="plan-review", command="/plan-review x", source="PreToolUse")
     return primary, trees["w0"], context
 

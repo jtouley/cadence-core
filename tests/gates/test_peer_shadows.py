@@ -1,4 +1,4 @@
-"""The peer shadow finder and its CLI: a host entry with a peer's name that is not the bundled file (cd-53)."""
+"""The peer shadow finder and its CLI: a host entry with a peer's name that is not the bundled file."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import peer_shadows  # noqa: E402
 from peer_shadows import find_peer_shadows, host_dirs  # noqa: E402
 
 
-# --- peer_shadows: The peer shadow finder: a host entry with a peer's name that is not the bundled file (cd-53).
+# --- peer_shadows: The peer shadow finder: a host entry with a peer's name that is not the bundled file.
 
 PEERS = {
     "version": 1,
@@ -289,7 +289,7 @@ def test_host_dirs_dedupes_when_workspace_links_to_home(tmp_path):
     ]
 
 
-# --- peer_shadows_cli: scripts/peer_shadows.py CLI: the install.sh warning (cd-53).
+# --- peer_shadows_cli: scripts/peer_shadows.py CLI: the install.sh warning.
 
 CLI = ROOT / "scripts" / "peer_shadows.py"
 

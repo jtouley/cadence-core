@@ -107,7 +107,7 @@ def test_the_packet_comes_from_the_row(repo, monkeypatch, block, extra, command,
 
 
 def test_a_corrupt_packet_on_disk_is_written_again(repo, monkeypatch):
-    """PR #186 R1 N-2: garbage in the packet file is not a deny; the hook rebuilds the packet from the row."""
+    """Garbage in the packet file is not a deny; the hook rebuilds the packet from the row."""
     monkeypatch.chdir(repo)
     run = run_of(repo)
     path = handoff.packet_path(repo / ".context", str(run.session["pipeline_run_id"]), "P3")
@@ -194,7 +194,7 @@ def test_a_lean_prompt_is_rewritten_to_the_rendered_packet_on_claude_code(call, 
 
 
 def test_a_fat_prompt_is_rewritten_on_claude_code(call, repo):
-    # A nested call is outside the cd-64 lean check, so the handoff meets the fat prompt.
+    # A nested call is outside the lean check, so the handoff meets the fat prompt.
     code, out, err = call(f"/plan-review plan.md\n{SENTINEL}", packet=False, mode="enforce", agent_id="agent-peer")
     assert code == 0, err
     sent = rewritten(out)
@@ -233,7 +233,7 @@ def test_a_manual_packet_that_adds_an_input_stays(call, repo, monkeypatch):
 # --- the cap and the default ------------------------------------------------------------------------
 
 def test_a_long_plan_name_renders_p4_and_the_prompt_holds_only_the_command_and_the_packet(repo, monkeypatch):
-    """PR #186 R1 MF-1: the hook renders this text itself, so a 57-character plan name is not a fat prompt."""
+    """The hook renders this text itself, so a 57-character plan name is not a fat prompt."""
     monkeypatch.chdir(repo)
     write_files(repo, FILES["review"])
     long_plan = f".cursor/plans/{'x' * 57}.plan.md"
@@ -253,7 +253,7 @@ def test_the_shipped_config_enforces_the_handoff_with_the_rewrite():
 
 @pytest.mark.parametrize("rel", [".context/reviews/plan_feature.md", "src/a.py"], ids=["context-file", "worktree-file"])
 def test_the_registry_and_the_packet_writer_give_one_packet_path(tmp_path, rel):
-    """#187: `.context/<x>` under the run's .context (a linked worktree reads the primary's), else the worktree path."""
+    """`.context/<x>` under the run's .context (a linked worktree reads the primary's), else the worktree path."""
     workspace, ctx = tmp_path / "wt", tmp_path / "primary" / ".context"
     parts = Path(rel).parts
     path = (ctx / Path(*parts[1:])) if parts[0] == ".context" else workspace / rel

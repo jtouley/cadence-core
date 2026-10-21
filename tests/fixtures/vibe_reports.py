@@ -1,4 +1,4 @@
-"""cd-93: one writer for marked vibe-test reports and run sessions in the A5 tests (P7 cd-93-F03)."""
+"""One writer for marked vibe-test reports and run sessions in the A5 tests (P7 cd-93-F03)."""
 
 from __future__ import annotations
 

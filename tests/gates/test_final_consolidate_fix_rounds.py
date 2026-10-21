@@ -1,4 +1,4 @@
-"""R4 counts the review's fix rounds and holds at the budget (#182).
+"""R4 counts the review's fix rounds and holds at the budget.
 
 A fix round is one `## Update` section of the PR review. At `review_fix_rounds` (default 2)
 rounds, a loop that is still open holds with the loop rule. A config value can only lower

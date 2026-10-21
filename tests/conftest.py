@@ -17,7 +17,7 @@ import pytest
 collect_ignore_glob = ["fixtures/golden/*"]
 
 # Tests commit in throwaway repos. The developer's own git config (commit.gpgsign,
-# hooks, identity) must not change what those commits do (#46).
+# hooks, identity) must not change what those commits do.
 _GIT_ISOLATION = {
     "GIT_CONFIG_GLOBAL": "/dev/null",
     "GIT_CONFIG_NOSYSTEM": "1",
@@ -46,7 +46,7 @@ def _hermetic_git(monkeypatch):
 
     CLAUDECODE is cleared: when the suite runs inside Claude Code it would turn on the
     Claude-only attestation path in every gate. A test that needs it sets it.
-    The host project dirs are cleared too: the hooks read them (cd-82), so a suite that
+    The host project dirs are cleared too: the hooks read them, so a suite that
     runs inside Cursor or Claude Code must not point a hook at the developer's checkout.
     """
     for key, value in _GIT_ISOLATION.items():
@@ -60,7 +60,7 @@ def _hermetic_git(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _hermetic_home(monkeypatch, tmp_path_factory):
-    """HOME is a temporary directory for each test (cd-53).
+    """HOME is a temporary directory for each test.
 
     A2 and install.sh look for peer shadows under HOME. The developer's own
     ~/.claude and ~/.cursor must not change a result. A test that needs
@@ -110,7 +110,7 @@ def pinned_tools(monkeypatch) -> None:
 def resolve_loop(monkeypatch):
     """resolve_loop(prefix): Path.resolve() raises RuntimeError under prefix.
 
-    Python 3.9 to 3.12 raise it on a symlink loop; 3.13+ do not (cd-53).
+    Python 3.9 to 3.12 raise it on a symlink loop; 3.13+ do not.
     """
     real = Path.resolve
 
@@ -160,7 +160,7 @@ VALID_COT_FIXTURE = (
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-# cd-49: one builder for every ledger row a test writes (no per-file row dicts or writers).
+# One builder for every ledger row a test writes (no per-file row dicts or writers).
 _FINDING_FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "finding_open_must_fix.json"
 
 
@@ -359,7 +359,7 @@ def make_cot_fixture(context: Path, run_id: str = "run-123") -> Path:
 HOOKS_DIR = _REPO_ROOT / "hooks"
 SESSION_LAYOUTS = ("single", "pointer")
 
-# --- Subprocess drivers: one host-free env for every CLI a test runs (#98) ----
+# --- Subprocess drivers: one host-free env for every CLI a test runs ----
 
 # The suite may run inside Claude Code or Cursor. These prefixes carry the host
 # identity (CLAUDECODE, CLAUDE_CODE_SESSION_ID, CURSOR_*) and Cadence overrides.
@@ -505,7 +505,7 @@ def commit_file(repo: Path, message: str, name: str | None = None, text: str | N
 
 
 def fake_gh(bin_dir: Path, code: int = 0) -> Path:
-    """A `gh` in `bin_dir` that exits `code` (1: not logged in). A2 runs `gh api user` (gh-181)."""
+    """A `gh` in `bin_dir` that exits `code` (1: not logged in). A2 runs `gh api user`."""
     bin_dir.mkdir(parents=True, exist_ok=True)
     gh = bin_dir / "gh"
     gh.write_text(f"#!/bin/sh\n[ {code} -eq 0 ] || echo 'not logged in to github.com' >&2\nexit {code}\n",
@@ -612,7 +612,7 @@ def stop_decision(host: str, stdout: str) -> str:
     return "allow"
 
 
-# Host shapes (cd-82): how each host starts a hook. Each value is
+# Host shapes: how each host starts a hook. Each value is
 # (payload extras, hook process cwd, project_env for run_hook).
 HOST_SHAPES = ("cursor_env", "cursor_roots_only", "claude_payload_cwd", "reverse", "missing_payload_cwd")
 
@@ -702,8 +702,8 @@ HANDOFF_HOOK = "guard_subagent_handoff.py"
 def make_root(tmp_path):
     """A copy of the skill tree whose defaults layer carries the given settings.
 
-    `peer_models` goes to the top level of the config (cd-58); `**hygiene` goes to
-    `subagent_hygiene`. `context_budget` (gh-96) goes to the top level.
+    `peer_models` goes to the top level of the config; `**hygiene` goes to
+    `subagent_hygiene`. `context_budget` goes to the top level.
     """
     import shutil
 
@@ -773,7 +773,7 @@ RUN_B = "bbbbbbbb-0000-4000-8000-00000000000b"
 
 @pytest.fixture
 def two_worktree_runs(tmp_path):
-    """cd-76: a primary checkout (no run) and linked worktrees A and B, each with an active run.
+    """A primary checkout (no run) and linked worktrees A and B, each with an active run.
 
     All share the primary's .context. Run B is saved last, so the root redirect names run B.
     The hook cwd in the tests is the primary checkout unless a test says otherwise.
@@ -799,7 +799,7 @@ def stop_guard_module(name: str = "stop_guard"):
 
 
 def p9_marker(repo: Path) -> Path:
-    """cd-76: the P9 marker of the run of `repo` (gates/entry-invariant-<pipeline_run_id>.ok)."""
+    """The P9 marker of the run of `repo` (gates/entry-invariant-<pipeline_run_id>.ok)."""
     return repo / ".context" / "gates" / f"entry-invariant-{read_session(repo)['pipeline_run_id']}.ok"
 
 

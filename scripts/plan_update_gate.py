@@ -29,7 +29,7 @@ _ON_REVIEW_CHANGES_PHRASES = (
 def _reviews_need_update(context_dir: Path) -> bool:
     for path in context_dir.glob(_REVIEW_GLOB):
         try:
-            # PR #143 N-1: a byte that is not UTF-8 must not hide the verdict phrases or stop the gate.
+            # A byte that is not UTF-8 must not hide the verdict phrases or stop the gate.
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
@@ -39,7 +39,7 @@ def _reviews_need_update(context_dir: Path) -> bool:
 
 
 def run(context_dir: Path, *, check: bool = False) -> int:
-    # gh-104 D3: a blocking review that is not older than the plan opens P4, whatever marker the plan has.
+    # A blocking review that is not older than the plan opens P4, whatever marker the plan has.
     # So does a newer plan whose `## Revision ledger (review <sha>)` for the review lacks a row for an open MF-n.
     step = plan_review_step(context_dir)
     if step is not None and step[0] == "P4":

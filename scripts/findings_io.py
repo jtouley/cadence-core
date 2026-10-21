@@ -3,7 +3,7 @@
 
 Models may set status to open|fixed|deferred|spec_gap only.
 status=verified is forbidden here — only ledger_verify.py may set it.
-A written row also needs a real `check` and, when fixed, `fixed_in` (gh-175).
+A written row also needs a real `check` and, when fixed, `fixed_in`.
 
 The ledger is protected by the edit hooks, so agents change it through this CLI:
 
@@ -14,7 +14,7 @@ The ledger is protected by the edit hooks, so agents change it through this CLI:
 
 `--ledger` defaults to findings.jsonl in the canonical .context. In the examples, `gh-1` is the
 task id. On the canonical ledger, `append` takes only an id of the cwd's run task, or of a
-known task when the cwd has no run (cd-49).
+known task when the cwd has no run.
 """
 
 from __future__ import annotations
@@ -33,12 +33,12 @@ CLASSES = frozenset({"bug", "spec-gap", "fast-follow"})
 SEVERITIES = frozenset({"must-fix", "nit"})
 STATUSES_WRITABLE = frozenset({"open", "fixed", "deferred", "spec_gap"})
 STATUSES_ALL = STATUSES_WRITABLE | {"verified"}
-# `<task prefix>-F<n>`, or `<task prefix>-MF-<n>` for the R1 row of a review's MF-n item (gh-174).
+# `<task prefix>-F<n>`, or `<task prefix>-MF-<n>` for the R1 row of a review's MF-n item.
 ID_RE = re.compile(r"^[A-Za-z0-9_-]+-(?:F|MF-)\d+$")
 
 TERMINAL_MUST_FIX = frozenset({"verified", "deferred", "spec_gap"})
 
-# gh-175: a check closes a finding only when it runs a test or a script. `manual` is the human path.
+# A check closes a finding only when it runs a test or a script. `manual` is the human path.
 NO_OP_COMMANDS = frozenset({"true", ":", "echo", "printf", "exit"})
 _SEGMENTS = re.compile(r"&&|\|\||[;|\n]")
 _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
@@ -86,7 +86,7 @@ def _shell_problem(text: str) -> str | None:
 
 
 def validate_write(record: dict[str, Any]) -> dict[str, Any]:
-    """The rules of a row that an agent writes: a real check, and `fixed_in` on a fixed row (gh-175).
+    """The rules of a row that an agent writes: a real check, and `fixed_in` on a fixed row.
 
     load_findings does not apply them, so an older ledger still loads. ledger_verify applies them again.
     """
@@ -100,7 +100,7 @@ def validate_write(record: dict[str, Any]) -> dict[str, Any]:
 
 
 def commit_on_branch(sha: str, cwd: Path | None = None) -> str:
-    """The full sha of ``sha`` when it is HEAD or an ancestor of HEAD in ``cwd``, else raise (gh-175)."""
+    """The full sha of ``sha`` when it is HEAD or an ancestor of HEAD in ``cwd``, else raise."""
     import subprocess
 
     def git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -125,7 +125,7 @@ def blocks_closure(row: dict[str, Any]) -> bool:
     return row.get("severity") == "must-fix" and row.get("status") not in TERMINAL_MUST_FIX
 
 
-# cd-49: the one rule for "a row of this task". Ledger ids are `<task prefix>-F<n>` or `-MF-<n>`; the
+# The one rule for "a row of this task". Ledger ids are `<task prefix>-F<n>` or `-MF-<n>`; the
 # prefix is the task id with characters the id pattern rejects folded to `-` (so a GitHub
 # ticket `owner/repo#12` gives `owner-repo-12`), or `CADENCE` for an empty task id.
 def task_id_prefix(task_id: str) -> str:
@@ -148,7 +148,7 @@ def run_tag(run_id: object) -> str:
 def r1_row_id(task_id: str, run_id: object, n: object) -> str:
     """The ledger id of R1 item `MF-n` for run `run_id`: `<task prefix>-<run tag>-MF-<n>`.
 
-    The run tag keeps a second run of the task from finding the row of the first (PR #188 review B-2).
+    The run tag keeps a second run of the task from finding the row of the first.
     With no run, the id is `<task prefix>-MF-<n>`."""
     tag = run_tag(run_id)
     return f"{task_id_prefix(task_id)}-{tag + '-' if tag else ''}MF-{n}"
@@ -262,7 +262,7 @@ def rewrite_findings(path: Path, records: Iterable[dict[str, Any]]) -> None:
 
 
 def ledger_must_fix_ids(context_dir: Path) -> set[str]:
-    """Ids of must-fix rows in any status in findings.jsonl and findings/*.jsonl: the R1 and R2 row checks (gh-174)."""
+    """Ids of must-fix rows in any status in findings.jsonl and findings/*.jsonl: the R1 and R2 row checks."""
     paths = [context_dir / "findings.jsonl", *sorted((context_dir / "findings").glob("*.jsonl"))]
     return {str(row.get("id")) for path in paths for row in load_findings(path) if row.get("severity") == "must-fix"}
 
@@ -277,7 +277,7 @@ def set_status(path: Path, finding_id: str, status: str, *, ticket: str | None =
                cwd: Path | None = None) -> dict[str, Any]:
     """Move one finding to a model-writable status; verified rows are never touched.
 
-    ``confirmed_by`` is the `--human --by <name>` path of a `manual` check (gh-175).
+    ``confirmed_by`` is the `--human --by <name>` path of a `manual` check.
     """
     if status not in STATUSES_WRITABLE:
         raise FindingsValidationError(
@@ -309,7 +309,7 @@ def set_status(path: Path, finding_id: str, status: str, *, ticket: str | None =
 
 
 def _human_stamp(row: dict[str, Any], confirmed_by: str) -> dict[str, Any]:
-    """The fields of `set-status --human --by <name>`: a person confirms a `manual` check (gh-175)."""
+    """The fields of `set-status --human --by <name>`: a person confirms a `manual` check."""
     from datetime import datetime, timezone
 
     if not confirmed_by.strip():
@@ -331,7 +331,7 @@ def _default_ledger() -> Path:
 
 
 def _append_owner_problem(ledger: Path, record: Any) -> str | None:
-    """cd-49 D9: the canonical ledger takes only ids of the cwd's run task, or of a known task with no run."""
+    """The canonical ledger takes only ids of the cwd's run task, or of a known task with no run."""
     canonical = _default_ledger()
     if not isinstance(record, dict) or ledger.resolve() != canonical.resolve():
         return None
@@ -349,7 +349,7 @@ def _append_owner_problem(ledger: Path, record: Any) -> str | None:
 
 
 def _deferral_problem(ledger: Path, status: str, ticket: str | None) -> str | None:
-    """gh-178: in review (the cwd's run has a draft-PR record), a deferral on the canonical ledger meets P8.
+    """In review (the cwd's run has a draft-PR record), a deferral on the canonical ledger meets P8.
     Its ticket matches the adapter pattern, and an adjudicated deferral register has a row that names it."""
     canonical = _default_ledger()
     if status != "deferred" or ledger.resolve() != canonical.resolve():
@@ -369,7 +369,7 @@ _BARE_R1 = re.compile(r"^MF-(\d+)$")
 
 
 def _expand_r1_id(ledger: Path, record: Any) -> Any:
-    """A bare `MF-n` id on the canonical ledger becomes the row id of the cwd's run (PR #191 review B-2).
+    """A bare `MF-n` id on the canonical ledger becomes the row id of the cwd's run.
 
     The peer writes `MF-n`; the task prefix and the run tag come from `run_for`, never from a file the peer reads."""
     bare = _BARE_R1.match(str(record.get("id", ""))) if isinstance(record, dict) else None

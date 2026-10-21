@@ -107,7 +107,7 @@ def describe(row: dict[str, Any], root: Path, docs: dict[str, str]) -> dict[str,
         "kind": "peer" if is_peer else "script",
         "command": command,
         "gate_script": row.get("gate_script"),
-        # cd-82 D5: what the agent runs, with absolute script paths (the old fields stay).
+        # What the agent runs, with absolute script paths (the old fields stay).
         "run": display_command(command, root),
         "check": display_command("python3 " + row["gate_script"], root) if row.get("gate_script") else None,
         "trigger": row.get("trigger"),
@@ -125,7 +125,7 @@ def run_gate(
     if readonly:
         env[GATES_READONLY_ENV] = "1"  # in this gate's environment only, never exported
     # Own process group, so a timeout can end the children of the gate too. The stop
-    # guard runs the walk on every stop, and a leftover child would pile up (cd-12-F6).
+    # guard runs the walk on every stop, and a leftover child would pile up.
     proc = subprocess.Popen(
         cmd,
         cwd=workspace,
@@ -229,7 +229,7 @@ def walk(
 
 
 def print_report(report: dict[str, Any]) -> None:
-    # E1 and R4 judge the run of this workspace only (cd-47 G-D4); say which one.
+    # E1 and R4 judge the run of this workspace only; say which one.
     print(f"workspace: {report['workspace']}")
     for r in report["results"]:
         print(f"{'OK  ' if r['ok'] else 'FAIL'}  {r['block']:<3} {r['slug']}")

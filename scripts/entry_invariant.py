@@ -63,9 +63,9 @@ def check_execution_entry(
         errors.append("registry missing execution phase")
 
     errors.extend(check_required_before_execution(context_dir, worktree=wt, on=_rows_on(root, wt, errors)))
-    errors.extend(plan_changed_after_review(context_dir, session=run_for(context_dir, cwd=wt)))  # gh-176
+    errors.extend(plan_changed_after_review(context_dir, session=run_for(context_dir, cwd=wt)))
 
-    # gh-177: the planning gate of each pack that `packs` of the resolved config turns on.
+    # The planning gate of each pack that `packs` of the resolved config turns on.
     packs, load_errors = phase_packs(root, "planning", wt)
     errors.extend(load_errors + gate_errors(packs, "planning", wt))
 
@@ -86,7 +86,7 @@ def main() -> int:
     if args.phase != "execution":
         print(f"ERROR: unsupported phase {args.phase}", file=sys.stderr)
         return 1
-    # cd-76 D3: P9 acts on the run of its own worktree only, never the root redirect.
+    # P9 acts on the run of its own worktree only, never the root redirect.
     run = run_for(context_dir)
     if run is None:
         return fail("entry-invariant", ["entry-invariant: no Cadence run in this worktree; run P9 from the run's worktree"])

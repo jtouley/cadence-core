@@ -1,10 +1,10 @@
-"""The Claude Code Agent hook chain joins a call to its subagent (gh-66 B-1, MF-2).
+"""The Claude Code Agent hook chain joins a call to its subagent.
 
 The verdict stage check joins three hook events on host ids: the orchestrator's
 PreToolUse Agent call, its PostToolUse, and a tool call inside the subagent.
 These fixtures are recorded from a real host (see each file's `host_version` and
 `method`). Do not edit them by hand to make this test pass. A false identity is
-a hard stop for the cd-66 design.
+a hard stop for the design.
 """
 
 from __future__ import annotations

@@ -1,8 +1,8 @@
-"""One line grammar for `Label: value` lines in Cadence artifacts (cd-47 D8, D3).
+"""One line grammar for `Label: value` lines in Cadence artifacts.
 
 Peers write run ids and reviewed commits in many Markdown forms:
 `Pipeline-Run: id`, `- Pipeline-Run: id`, `**Pipeline run:** \\`id\\``, `> Last reviewed
-commit: sha`. Each reader used its own regex and missed some forms (#41, MF-2).
+commit: sha`. Each reader used its own regex and missed some forms.
 This module is the one parser for all of them.
 """
 

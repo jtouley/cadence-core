@@ -3,7 +3,7 @@
 
 It fails when the plan has three or more phases and two phase commits have the same
 author time to the second: those commits were written in one shell, so they are
-not phased work (#173).
+not phased work.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ SLUG = "implement-gate"
 def run_worktree(context_dir: Path) -> Path:
     """The run's worktree: this worktree's session workspace when it exists, else the cwd.
 
-    Never another worktree's run (cd-47 G-D4).
+    Never another worktree's run.
     """
     workspace = (worktree_run_session(context_dir) or {}).get("workspace")
     if isinstance(workspace, str) and Path(workspace).is_dir():
@@ -36,7 +36,7 @@ def run_worktree(context_dir: Path) -> Path:
 
 def run(context_dir: Path, *, check: bool = False) -> int:
     errors = list(require_active_session(context_dir, label="implement-gate"))
-    # cd-76 D3: the marker of this worktree's run only.
+    # The marker of this worktree's run only.
     session = run_for(context_dir)
     run_id = (session or {}).get("pipeline_run_id")
     invariant = entry_invariant_ok_path(context_dir, run_id)

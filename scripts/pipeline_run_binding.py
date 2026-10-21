@@ -84,7 +84,7 @@ def _is_active(data: object) -> bool:
 
 
 def worktree_run_session(context_dir: Path, cwd: Path | None = None) -> dict | None:
-    """The active run of the worktree at ``cwd``; never another worktree's (cd-47 D1, G-D4).
+    """The active run of the worktree at ``cwd``; never another worktree's (G-D4).
 
     - When ``context_dir`` is the cwd repo's canonical .context: that worktree's own
       by-worktree session, or a legacy single-file session whose workspace is this worktree.
@@ -117,7 +117,7 @@ def worktree_run_session(context_dir: Path, cwd: Path | None = None) -> dict | N
 
 
 def run_for(context_dir: Path, *, cwd: Path | None = None, target: Path | str | None = None) -> dict | None:
-    """The active run of one worktree, never the root redirect (cd-76 D1).
+    """The active run of one worktree, never the root redirect.
 
     With ``target``, the worktree is the git top level that holds it; a path that does
     not exist yet resolves through its first existing parent. Else the worktree of
@@ -143,7 +143,7 @@ def current_session(context_dir: Path, cwd: Path | None = None) -> dict:
 
 
 def known_task_ids(context_dir: Path) -> set[str]:
-    """The task id of every run record in ``context_dir``, completed runs too (cd-49 D4)."""
+    """The task id of every run record in ``context_dir``, completed runs too."""
     _context_root, store = _session_store()
     return {str(r["task_id"]) for r in store.run_records(Path(context_dir)) if r.get("task_id")}
 

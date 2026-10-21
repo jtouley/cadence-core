@@ -1,4 +1,4 @@
-"""headless.walk options the stop guard needs: since, readonly, budget (#12)."""
+"""headless.walk options the stop guard needs: since, readonly, budget."""
 
 from __future__ import annotations
 
@@ -115,7 +115,7 @@ def alive(pid: int) -> bool:
 
 
 def test_a_timeout_kills_the_gate_and_its_grandchild(scripts_path, tmp_path, ws):
-    """The stop guard runs the walk on every stop. A leftover child would pile up (cd-12-F6)."""
+    """The stop guard runs the walk on every stop. A leftover child would pile up."""
     from headless import walk
 
     root = make_skill_root(tmp_path, [("A1", "spawn", "python3 scripts/spawn.py", SPAWN_CHILD)])

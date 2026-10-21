@@ -1,4 +1,4 @@
-"""CADENCE_GATES_READONLY: a gate records nothing, and the variable never touches P9 (#12).
+"""CADENCE_GATES_READONLY: a gate records nothing, and the variable never touches P9.
 
 The stop guard walks the registered gates on every stop attempt. A stop must not
 change pipeline state, so the gates need a mode that writes no breadcrumb.
@@ -72,7 +72,7 @@ def test_a_readonly_gate_does_not_even_create_the_gates_directory(run):
 def test_implement_gate_passes_readonly_without_recording(run):
     context = run / ".context"
     (context / "gates").mkdir(exist_ok=True)
-    p9_marker(run).write_text('{"task_id": "cd-7"}\n')  # cd-76: the run's own marker
+    p9_marker(run).write_text('{"task_id": "cd-7"}\n')  # The run's own marker
     (run / "work.py").write_text("X = 1\n", encoding="utf-8")
     subprocess.run(["git", "add", "work.py"], cwd=run, check=True)
     subprocess.run(["git", "commit", "-qm", "feat: work"], cwd=run, check=True)
@@ -99,7 +99,7 @@ def test_a_failed_p9_clears_the_marker_with_or_without_the_variable(run, args, e
     """
     gates = run / ".context" / "gates"
     gates.mkdir(exist_ok=True)
-    marker = p9_marker(run)  # cd-76: the run's own marker
+    marker = p9_marker(run)  # The run's own marker
     marker.write_text('{"task_id": "cd-7"}\n')
     proc = run_script("entry_invariant.py", args, run, **env)
     assert proc.returncode != 0
@@ -120,7 +120,7 @@ def test_every_registered_gate_from_e1_on_is_read_only_under_the_variable(run, r
     """
     gates = run / ".context" / "gates"
     gates.mkdir(exist_ok=True)
-    p9_marker(run).write_text('{"task_id": "cd-7"}\n')  # cd-76: the run's own marker
+    p9_marker(run).write_text('{"task_id": "cd-7"}\n')  # The run's own marker
     (run / "changed.txt").write_text("x\n", encoding="utf-8")
     subprocess.run(["git", "add", "changed.txt"], cwd=run, check=True)
     assert run_script("impl_artifact.py", [], run).returncode == 0

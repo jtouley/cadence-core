@@ -1,4 +1,4 @@
-"""A4 ticket_gate: the adapter pattern fails closed, and the no-tracker mode (adapter none, cd-65)."""
+"""A4 ticket_gate: the adapter pattern fails closed, and the no-tracker mode (adapter none)."""
 
 from __future__ import annotations
 
@@ -196,7 +196,7 @@ def test_ticket_gate_no_matching_pattern_fails(tmp_path, capsys):
     assert "gh-1" in err
 
 
-# --- ticket_gate_no_tracker: A4 no-tracker mode (cd-65): the resolved config names "adapter": "none".
+# --- ticket_gate_no_tracker: A4 no-tracker mode: the resolved config names "adapter": "none".
 
 _DROP = object()  # a none_overrides value that removes the key
 _NONE_CONFIG = {"adapter": "none"}

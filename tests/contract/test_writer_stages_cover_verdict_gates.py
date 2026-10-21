@@ -1,4 +1,4 @@
-"""stages.json names the writer stages of each verdict gate, and each caller passes a real slug (gh-66).
+"""stages.json names the writer stages of each verdict gate, and each caller passes a real slug.
 
 `writer_stages` on a stages.json row is the one list of delegation stages whose peer may
 write that verdict (PD20). Each gate passes a stages.json slug, never a gate key (PD14). A

@@ -1,4 +1,4 @@
-"""cd-63 Phase 4: the stop guard names the next step of the P6 loop (D7, R2-SF-1, R5-C-1, R6-MF-2, P7 F8)."""
+"""The stop guard names the next step of the P6 loop (D7, R2-SF-1, R5-C-1, R6-MF-2, P7 F8)."""
 
 from __future__ import annotations
 
@@ -235,7 +235,7 @@ def test_headless_gate_output_names_plan_update_below_the_limit(lp, tmp_path):
 
 
 def test_a_legacy_modeless_report_does_not_replace_an_earlier_open_block(lp):
-    """PR #88 MF-2: a report that an earlier run of the ticket left (no Mode, no run id) before P6."""
+    """A report that an earlier run of the ticket left (no Mode, no run id) before P6."""
     legacy = lp.ctx / "adversarial" / "adversarial_gh-1_old.md"
     legacy.parent.mkdir(parents=True, exist_ok=True)
     legacy.write_text("RUN_BY_SKILL: de-adversarial-reviewer\nTicket: gh-1\n\n**Verdict:** APPROVE\n", encoding="utf-8")

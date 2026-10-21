@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """R5 closure — refuse unless every must-fix is terminal.
 
-gh-178: a pass writes `gates/closure-<run id>.json` with HEAD. `gh pr comment` and
+A pass writes `gates/closure-<run id>.json` with HEAD. `gh pr comment` and
 `gh pr review` wait for it (hooks/pr_guard.py, shared/skill_gate.py).
 """
 
@@ -27,12 +27,12 @@ def closure_errors(records: list[dict]) -> list[str]:
 
 
 def manually_confirmed(records: list[dict]) -> list[dict]:
-    """gh-175: each row that a person confirmed with `set-status --human`. R5 names them, so a person sees them."""
+    """Each row that a person confirmed with `set-status --human`. R5 names them, so a person sees them."""
     return [{k: row.get(k) for k in ("id", "confirmed_by", "confirmed_at")} for row in records if row.get("human_confirmed")]
 
 
 def closure_problem(context_dir: Path, session: dict | None, head: str) -> str | None:
-    """Why R5 has not passed for the run of ``session`` at ``head``, else None (gh-178)."""
+    """Why R5 has not passed for the run of ``session`` at ``head``, else None."""
     run_id = str((session or {}).get("pipeline_run_id") or "")
     if not run_id:
         return "no Cadence run in this worktree"

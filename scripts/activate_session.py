@@ -168,7 +168,7 @@ def save_run_session(context_dir: Path, workspace: Path, session: dict) -> Path:
 
 
 def resumable_run(workspace: Path, task_id: str, context_dir: Path) -> dict | None:
-    """This worktree's run of ``task_id`` that ``--resume`` keeps (cd-47 D9).
+    """This worktree's run of ``task_id`` that ``--resume`` keeps.
 
     Active or hard-stopped (both keep active_skill). A completed run that opened its draft PR is
     reopened: a commit after R7 goes through the review blocks again. A run that ended without a
@@ -244,7 +244,7 @@ def _has_join_group(path: Path) -> bool:
 
 
 def claude_join_hook_registered(workspace: Path) -> bool:
-    """gh-66 PD22: the host loads the PostToolUse Agent join hook, so verdicts can be joined.
+    """The host loads the PostToolUse Agent join hook, so verdicts can be joined.
 
     Sources: the user settings file, the project settings, the project local settings,
     and the plugin's own hooks/hooks.json when this tree is a plugin install.
@@ -258,7 +258,7 @@ def claude_join_hook_registered(workspace: Path) -> bool:
 
 
 def apply_verdict_join(session: dict, *, host: str, resumed: dict | None, workspace: Path) -> None:
-    """gh-66 PD8, PD22: mark the run `verdict_join`, or warn on stderr.
+    """Mark the run `verdict_join`, or warn on stderr.
 
     A fresh Claude Code run gets it only when the host loads the join hook. `--resume`
     keeps it only when the resumed run has it.
@@ -433,7 +433,7 @@ def _deactivate(context_dir: Path, workspace: Path) -> int:
         print(f"FAIL  {missing}.\nACTION: send the peer `/session-summary {_shown(manifest, context_dir, workspace)}`, "
               "then run --deactivate again", file=sys.stderr)
         return 1
-    # cd-76 D3: remove only this run's P9 marker and E4 breadcrumb; keep its draft-PR record.
+    # Remove only this run's P9 marker and E4 breadcrumb; keep its draft-PR record.
     run_id = str((session or {}).get("pipeline_run_id") or "")
     if run_id:
         clear_entry_invariant_ok(context_dir, run_id)
@@ -475,7 +475,7 @@ def _rejoin_active_run(existing: dict, noted: bool, orchestrator: str | None, co
                        workspace: Path) -> int:
     """The task's run is already active here: print it, and add a new subagent orchestrator.
 
-    cd-76 R3-D6a, R1 D-1: a new subagent that activates a subagent's run again becomes
+    A new subagent that activates a subagent's run again becomes
     one of its orchestrators. A top-level run stays top level: a subagent's activation
     must not take it away from the main agent's stop guard. A top-level note adds nothing.
     """
@@ -503,7 +503,7 @@ def _prepare_run(args: argparse.Namespace, context_dir: Path, fresh_run: bool, r
     matching = {} if fresh_run else find_matching_artifacts(task_id, context_dir, tokens)
     superseded: list[str] = []
     if fresh_run:
-        clear_entry_invariant_ok(context_dir, run_id)  # cd-76 D3: this run's marker only
+        clear_entry_invariant_ok(context_dir, run_id)  # This run's marker only
     if fresh_run and args.supersede:
         superseded = supersede_ticket_artifacts(context_dir, ticket_tokens=tokens, run_id=run_id, task_id=task_id)
     return matching, superseded
@@ -527,7 +527,7 @@ def _add_run_marks(session: dict, args: argparse.Namespace, resumed: dict | None
     kept = (resumed or {}).get("config")
     if kept or config:
         session["config"] = kept or config  # each layer file with its sha256, and the values
-    # cd-64 D4: on a run marked here, only the PreToolUse hook writes lean delegation records.
+    # On a run marked here, only the PreToolUse hook writes lean delegation records.
     if (session["host"] == "claude" if session["fresh_run"] else (resumed or {}).get("lean_record_by_hook") is True):
         session["lean_record_by_hook"] = True
     if resumed:
@@ -632,7 +632,7 @@ def _activate(args: argparse.Namespace, workspace: Path, primary: Path, context_
     snapshot: dict[str, str] = {}
     config_record: dict | None = None
     if not already_active:
-        # cd-58 D1: the config is read once per run, before anything is written or taken.
+        # The config is read once per run, before anything is written or taken.
         resumed = resumable_run(workspace, task_id, context_dir) if args.resume else None
         try:
             resolved = cadence_config.load(SKILL_ROOT, workspace)

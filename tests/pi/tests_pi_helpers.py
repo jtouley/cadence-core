@@ -1,4 +1,4 @@
-"""Repo states for the Pi extension tests (cd-84). One builder for Python and Node tests."""
+"""Repo states for the Pi extension tests. One builder for Python and Node tests."""
 
 from __future__ import annotations
 

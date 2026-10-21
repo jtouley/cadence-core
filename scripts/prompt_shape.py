@@ -66,7 +66,7 @@ SLASH_TO_STAGE = {
     "/session-summary": "session-summary",
 }
 
-# Peer commands with no stages.json row (gh-66 PD4). R4 runs /pr-review-update as a
+# Peer commands with no stages.json row. R4 runs /pr-review-update as a
 # delegated peer, but its stages.json row is the final_consolidate.py gate.
 # handoff._peer_stages appends these rows to the stages.json peer rows, so the lean check,
 # the call row and the handoff packet cover the R4 peer call.
@@ -298,6 +298,6 @@ def write_delegation_record(
         "manifest_entry_id": "",
     }
     if tool_use_id:
-        record["tool_use_id"] = tool_use_id  # gh-66: for the report; gates join on attest/<run>.calls.jsonl
+        record["tool_use_id"] = tool_use_id  # For the report; gates join on attest/<run>.calls.jsonl
     path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     return path

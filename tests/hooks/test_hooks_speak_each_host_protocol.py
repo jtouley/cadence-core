@@ -44,7 +44,7 @@ def test_claude_allow_prints_nothing(tmp_path, run_hook):
     repo = git_repo(tmp_path)
     hook_session(repo, "single", resume_slug="implement")
     (repo / ".context" / "gates").mkdir()
-    (repo / ".context" / "gates" / "entry-invariant-run-1.ok").write_text("ok\n")  # cd-76: the run's own marker
+    (repo / ".context" / "gates" / "entry-invariant-run-1.ok").write_text("ok\n")  # The run's own marker
     assert run_hook("guard_skill_gate.py", repo, _claude_write(repo, "src/app.py"), "claude")[:2] == (0, "")
     assert run_hook("guard_primary_context_artifacts.py", repo, _claude_write(repo, "README.md"), "claude")[:2] == (0, "")
 
@@ -100,7 +100,7 @@ def test_unknown_host_is_rejected(tmp_path):
     assert proc.returncode != 0
 
 
-# --- hooks_fail_closed_on_startup_errors: Hooks fail closed (exit 2) on errors before main() runs, not only inside it (cd-10 M5).
+# --- hooks_fail_closed_on_startup_errors: Hooks fail closed (exit 2) on errors before main() runs, not only inside it.
 #
 # Claude Code treats exit 1 as a non-blocking error, so an import failure or a bad
 # --host used to let the tool call or stop proceed.
@@ -147,7 +147,7 @@ CASES = [
     ("guard_skill_gate.py", {"hook_event_name": "beforeShellExecution", "command": "echo x > src/a.py"}),
     ("guard_primary_context_artifacts.py", {"tool_name": "Write", "tool_input": {"path": ".context/reviews/x.md"}}),
     ("pipeline_stop_guard.py", {"hook_event_name": "stop"}),
-    # cd-47 D2: only a command that runs activation writes the orchestrator note.
+    # Only a command that runs activation writes the orchestrator note.
     ("guard_skill_gate.py", {"hook_event_name": "beforeShellExecution", "command": "grep -n x scripts/activate_session.py"}),
     ("guard_skill_gate.py", {"tool_name": "Bash", "agent_id": "A", "tool_input": {"command": "grep -n x scripts/activate_session.py"}}),
     ("guard_secret_read.py", {"tool_name": "Read", "tool_input": {"path": ".env"}}),

@@ -1,4 +1,4 @@
-"""Who may write a verdict: never the orchestrator (cd-47 D2), and a report only by an attested Write or Edit (#78)."""
+"""Who may write a verdict: never the orchestrator, and a report only by an attested Write or Edit."""
 
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ import session_store  # noqa: E402
 from artifact_requirements import peer_written_filter, plan_review_cycles, require_artifact  # noqa: E402
 
 
-# --- nested_orchestrator_cannot_write_verdicts: A subagent that runs activation is the orchestrator: it may not write verdicts (cd-47 D2, #47).
+# --- nested_orchestrator_cannot_write_verdicts: A subagent that runs activation is the orchestrator: it may not write verdicts.
 #
-# Claude Code sets `agent_id` only inside a subagent. Before cd-47 the hook denied a
+# Claude Code sets `agent_id` only inside a subagent. Before per-worktree runs the hook denied a
 # verdict write with no `agent_id` (the top-level agent) and attested every other
 # write. When a subagent ran /cadence, it was the orchestrator and had an `agent_id`,
 # so it could write its own reviews and the gates accepted them.
@@ -378,7 +378,7 @@ def test_the_verdict_files_repo_decides_not_the_cwd(tmp_path):
     assert [(r["agent_id"], r["run"]) for r in _rows(context_y)] == [("B", RUN_1)]
 
 
-# --- R2 on PR #52: hook survivors (M9-M12) ------------------------------------------------------
+# --- hook survivors (M9-M12) ------------------------------------------------------
 
 
 def test_a_deny_is_the_only_decision_the_hook_prints(tmp_path):
@@ -436,7 +436,7 @@ def test_a_bad_payload_during_a_run_is_denied_with_exit_zero(tmp_path):
     assert json.loads(proc.stdout)["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 
-# --- #56: a subagent's Bash cwd resets to the parent's project ---------------------------------
+# --- a subagent's Bash cwd resets to the parent's project ---------------------------------
 # The note goes to the repo the command activates (`--workspace`, else the last `cd`), not to the
 # payload cwd. Each case: payload cwd = repo A (the parent's project), activation of repo B.
 
@@ -476,7 +476,7 @@ def test_a_cd_after_the_activation_does_not_move_the_note(tmp_path):
     assert len(_notes(parent)) == 1 and _notes(other) == []
 
 
-# --- R1 on PR #57: forms the target resolver must not break ---------------------------------------
+# --- forms the target resolver must not break ---------------------------------------
 
 
 @pytest.mark.parametrize("form", ["var_cd", "var_workspace", "subshell_closed", "quoted_cd", "cd_dash"])
@@ -500,7 +500,7 @@ def test_an_unreadable_or_closed_cd_falls_back_to_the_bash_cwd(tmp_path, form):
     pytest.param("(cd {target} && {activate})", id="a_cd_inside_the_activations_subshell_counts"),
     pytest.param("cd -P {target} && {activate}", id="a_cd_with_a_flag_is_followed"),
     pytest.param("cd {target}\n{activate}", id="a_cd_on_the_line_before_is_followed"),
-    # R1 re-review on PR #57 (Optional).
+    # A review case.
     pytest.param('cd "$UNSET_DIR" && {activate} --workspace {target}',
                  id="an_absolute_workspace_wins_over_an_unreadable_cd"),
 ])
@@ -523,7 +523,7 @@ def test_cursor_payloads_use_the_same_target(tmp_path):
 
 
 def test_the_owner_note_is_not_written_outside_git(tmp_path):
-    """R1 re-review on PR #57 (Nit): a Cursor activation that cds into a plain folder creates no .context/."""
+    """A Cursor activation that cds into a plain folder creates no .context/."""
     parent = branch_repo(tmp_path / "parent")
     plain = tmp_path / "plain"
     plain.mkdir()
@@ -533,9 +533,9 @@ def test_the_owner_note_is_not_written_outside_git(tmp_path):
     assert not (plain / ".context").exists()
 
 
-# --- shell_writes_to_verdict_reports_are_denied: A verdict report takes only an attested Write or Edit, from any agent (#78).
+# --- shell_writes_to_verdict_reports_are_denied: A verdict report takes only an attested Write or Edit, from any agent.
 #
-# On cd-64 and cd-76 a vibe-test peer started with `cat > .context/vibetest/<slug>_<date>.md`
+# On two runs a vibe-test peer started with `cat > .context/vibetest/<slug>_<date>.md`
 # and replaced a 21 kB attested report with a stub. The hook denied the orchestrator's
 # shell writes into `.context`, but a peer's went through.
 

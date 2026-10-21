@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Find peer shadows: host entries with a peer's slash name that are not the bundled peer (cd-53).
+"""Find peer shadows: host entries with a peer's slash name that are not the bundled peer.
 
 A host runs a user-level command or skill with a peer's name in place of the
 Cadence peer. For each peer of `references/bundled-peers.json` (`peers` and
@@ -126,7 +126,7 @@ def shadow_lines(shadows: Sequence[Shadow]) -> List[str]:
 
 
 def fix_lines(root: Path) -> List[str]:
-    """The fix text for each install kind (spec cd-53 Design 3)."""
+    """The fix text for each install kind."""
     return [
         "Remove or rename each listed user entry.",
         f"On an install.sh install, then run {Path(root).resolve() / 'install.sh'}.",

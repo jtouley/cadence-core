@@ -1,4 +1,4 @@
-"""A verdict counts only from the peer of its stage (gh-66).
+"""A verdict counts only from the peer of its stage.
 
 Four runs had a /plan-update peer write the P3 review of its own update, and P3 passed.
 On a `verdict_join` run, each verdict gate joins the file's newest attest row to the call
@@ -176,7 +176,7 @@ BENCH = json.dumps({"RUN_BY_SKILL": "test-benchmark", "ticket": "gh-1", "verdict
                                               "failure_paths", "mutation_resilience")},
                     "adversarial_inputs": [{"input": "x", "expected": "y", "observed": "y"}],
                     "dry_measurement": {"helpers_reimplemented": [], "helpers_reused": [], "thin_files": []}})
-# R1 reads the reviewed commit (PR #168 R1 N-1): `_bodied` puts the HEAD of the ctx repo in it.
+# R1 reads the reviewed commit: `_bodied` puts the HEAD of the ctx repo in it.
 PR_BODY = "RUN_BY_COMMAND: pr-review-local\nLast reviewed commit: {head}\n" + "".join(f"\n## {h}\nnone\n" for h in REVIEW_RIGOR_SECTIONS)
 GATES = {
     "A5": (lambda c: gate_common.run_artifact_gate("validate-gate", c, check=True, worktree=c.parent),
@@ -339,7 +339,7 @@ def _running(ctx: Path, agent: str, *, stopped: bool) -> None:
 
 
 def test_a_peer_that_runs_its_gate_before_it_returns_is_told_to_wait_not_to_call_again(ctx, capsys):
-    """PR #145 R1 MF-2: a foreground peer has no join row until PostToolUse, after it returns."""
+    """A foreground peer has no join row until PostToolUse, after it returns."""
     plan_review_file(ctx, stage="plan-review", join=False)
     _running(ctx, "a", stopped=False)
     code, err = p3(ctx, capsys)

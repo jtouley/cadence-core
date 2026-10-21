@@ -1,4 +1,4 @@
-"""cd-64 D6, C-2, C-3, C-4: the guidance names the Claude Code lean record, its recovery, and its limits."""
+"""The guidance names the Claude Code lean record, its recovery, and its limits."""
 
 from __future__ import annotations
 

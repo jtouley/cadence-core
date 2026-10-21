@@ -91,7 +91,7 @@ def test_install_fails_loudly_when_a_hook_target_is_missing(tmp_path):
 
 
 def test_install_writes_nothing_when_claude_targets_would_be_missing(tmp_path):
-    # Regression (cd-10 M6): a custom settings path whose ~/.claude does not exist
+    # Regression: a custom settings path whose ~/.claude does not exist
     # got hooks pointing at ~/.claude/skills/cadence, which was never linked.
     home = tmp_path / "home"
     (home / ".cursor").mkdir(parents=True)
@@ -201,7 +201,7 @@ def test_cursor_reinstall_drops_a_stale_cadence_entry_and_keeps_user_hooks(tmp_p
 
 
 def test_claude_settings_get_one_session_start_hook_after_reinstall(tmp_path):
-    # PR #38 review: the SessionStart hook that exports CADENCE_HOME, written once.
+    # The SessionStart hook that exports CADENCE_HOME, written once.
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     assert _install(home).returncode == 0
@@ -213,7 +213,7 @@ def test_claude_settings_get_one_session_start_hook_after_reinstall(tmp_path):
 
 
 def test_reinstall_keeps_a_user_hook_under_a_dir_that_ends_in_cadence(tmp_path):
-    # PR #38 review: the merge dropped any */cadence/hooks/*.py, including my-cadence/hooks/.
+    # The merge dropped any */cadence/hooks/*.py, including my-cadence/hooks/.
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     (home / ".cursor").mkdir(parents=True)
@@ -230,7 +230,7 @@ def test_reinstall_keeps_a_user_hook_under_a_dir_that_ends_in_cadence(tmp_path):
 
 
 def test_remove_claude_drops_the_link_and_cadence_hooks_and_keeps_the_rest(tmp_path):
-    # PR #38 review: a user who moves to the plugin needs a way off the install.sh path.
+    # A user who moves to the plugin needs a way off the install.sh path.
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     (home / ".cursor").mkdir(parents=True)
@@ -259,7 +259,6 @@ def _remove_claude(home):
 
 
 def test_remove_claude_keeps_an_event_value_that_is_not_a_list(tmp_path):
-    # PR #38 update review N4.
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     (home / ".claude" / "settings.json").write_text(json.dumps({"hooks": {"Custom": {"x": 1}}}))
@@ -268,7 +267,6 @@ def test_remove_claude_keeps_an_event_value_that_is_not_a_list(tmp_path):
 
 
 def test_remove_claude_with_nothing_to_remove_writes_nothing(tmp_path):
-    # PR #38 update review N5.
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     original = json.dumps({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "echo mine"}]}]}})
@@ -279,7 +277,7 @@ def test_remove_claude_with_nothing_to_remove_writes_nothing(tmp_path):
 
 
 def test_remove_claude_keeps_a_group_whose_hooks_is_not_a_list(tmp_path):
-    # #40: the group loop read a dict's keys or a string's letters as hook entries.
+    # The group loop read a dict's keys or a string's letters as hook entries.
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     ours = {"type": "command", "command": "python3 /x/cadence/hooks/guard_skill_gate.py --host claude"}
@@ -295,7 +293,7 @@ def test_remove_claude_keeps_a_group_whose_hooks_is_not_a_list(tmp_path):
 
 
 def test_two_installs_give_one_post_tool_use_join_group(tmp_path):
-    """gh-66 AC9, S-3: the PostToolUse Agent|Task join hook is merged once, and a reinstall keeps one group."""
+    """The PostToolUse Agent|Task join hook is merged once, and a reinstall keeps one group."""
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
     for _ in range(2):
@@ -307,7 +305,7 @@ def test_two_installs_give_one_post_tool_use_join_group(tmp_path):
     assert all("--host claude" in h["command"] for h in joins[0]["hooks"])
 
 
-# --- install_warns_on_peer_shadows: install.sh warns about each peer shadow, keeps the user's entries, and exits 0 (cd-53).
+# --- install_warns_on_peer_shadows: install.sh warns about each peer shadow, keeps the user's entries, and exits 0.
 
 NEW_SESSION = "Start a new host session before you run --resume."
 
@@ -358,7 +356,7 @@ def test_clean_install_prints_no_peer_shadow(tmp_path):
     assert _shadow_lines(proc.stdout) == []
 
 
-# --- install_pi_extension: install.sh links the Pi extension and, when Pi does not list one, the skill (cd-84).
+# --- install_pi_extension: install.sh links the Pi extension and, when Pi does not list one, the skill.
 
 EXT = Path(".pi/agent/extensions/cadence-gates.ts")
 SKILL = Path(".pi/agent/skills/cadence")
@@ -487,7 +485,7 @@ def test_the_last_line_says_the_extension_runs_the_gates(tmp_path):
 
 
 def test_tools_fills_the_uv_cache_with_each_pinned_tool_and_installs_nothing(tmp_path):
-    """PR #168 R1 N-8: `uv tool install` replaced the user's own ruff and mypy. A cache warm does not."""
+    """`uv tool install` replaced the user's own ruff and mypy. A cache warm does not."""
     code_paths()
     from tool_measures import TOOLS, warm_command
 

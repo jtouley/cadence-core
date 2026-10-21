@@ -37,7 +37,7 @@ def _impl_diff_errors(context_dir: Path, session: dict | None) -> list[str]:
         payload = json.loads(artifact.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return ["draft-pr: impl artifact is unreadable"]
-    # cd-76 r4 D5: the impl record must be this run's.
+    # The impl record must be this run's.
     run_id = str(session.get("pipeline_run_id") or "")
     recorded = str(payload.get("pipeline_run_id") or "") if isinstance(payload, dict) else ""
     if recorded != run_id:
@@ -66,7 +66,7 @@ def _diff_errors(context_dir: Path, session: dict) -> list[str]:
 
 
 def _worktree_run(context_dir: Path) -> tuple[dict, str] | None:
-    """The session and run id of this worktree (cd-76 D4: never the root redirect), or None."""
+    """The session and run id of this worktree (never the root redirect), or None."""
     session = run_for(context_dir)
     run_id = str((session or {}).get("pipeline_run_id") or "")
     return (session, run_id) if session is not None and run_id else None

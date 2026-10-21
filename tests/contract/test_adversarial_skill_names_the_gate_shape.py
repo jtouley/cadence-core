@@ -1,4 +1,4 @@
-"""cd-63 Phase 5: the peer text names the report shape that the P6 gate reads."""
+"""The peer text names the report shape that the P6 gate reads."""
 
 from __future__ import annotations
 

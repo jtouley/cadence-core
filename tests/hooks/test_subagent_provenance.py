@@ -15,7 +15,7 @@ import artifact_requirements  # noqa: E402
 from prompt_shape import delegation_record_path, write_delegation_record  # noqa: E402
 
 
-# --- subagent_provenance_lean_marker: cd-64 D5: `begin` refuses on a marked Claude Code run; `complete` keeps the hook record.
+# --- subagent_provenance_lean_marker: `begin` refuses on a marked Claude Code run; `complete` keeps the hook record.
 
 MARKED = {"lean_record_by_hook": True, "host": "claude"}
 
@@ -93,7 +93,7 @@ def test_complete_keeps_the_hook_record(plain_repo, monkeypatch):
 
 def test_complete_with_no_hook_record_fails_on_a_marked_run(plain_repo):
     make_session(plain_repo / ".context", **MARKED)
-    fails_with(complete(plain_repo), (  # cd-64 C-3: the recovery text names the hook
+    fails_with(complete(plain_repo), (  # The recovery text names the hook
         "FAIL  no hook record for plan-review: launch the peer with the lean slash command "
         "(the PreToolUse hook writes it; if no record appears, the plugin hooks did not run)"
     ))
@@ -134,7 +134,7 @@ def test_begin_and_check_read_the_worktree_run(tmp_path):
 # --- subagent_provenance_begin_stage_matches_command: `subagent_provenance.py begin` refuses a --stage that its command does not map to.
 #
 # A record filed under the wrong stage name never satisfies the gate. The error
-# must come at `begin`, not later at the gate (cd-32 A5: `--stage validate` with
+# must come at `begin`, not later at the gate (`--stage validate` with
 # `/vibe-test`).
 
 def _begin(repo: Path, stage: str, command: str) -> subprocess.CompletedProcess[str]:

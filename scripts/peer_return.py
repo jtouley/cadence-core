@@ -1,4 +1,4 @@
-"""Lean peer returns: what a delegated peer may hand back to the orchestrator (gh-96).
+"""Lean peer returns: what a delegated peer may hand back to the orchestrator.
 
 A peer's final message becomes part of the orchestrator's context for the rest of
 the run. The gates judge from the artifact on disk, so the orchestrator needs only
@@ -124,7 +124,7 @@ def final_message(payload: dict[str, Any]) -> str | None:
         message = host_transcript.message(row, "assistant")
         if message is not None:
             # The newest assistant row decides. When it is a tool call (a hand-back), there is no final
-            # text, and an earlier narration line is not the reply: the result is unknown (PR #97 N16).
+            # text, and an earlier narration line is not the reply: the result is unknown.
             return host_transcript.text(message.get("content")).strip() or None
     return None
 

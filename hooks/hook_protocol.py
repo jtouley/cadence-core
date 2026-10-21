@@ -78,7 +78,7 @@ def _dir_value(value: object) -> Path | None:
 
 
 def hook_workspace(payload: dict[str, Any] | None) -> Path:
-    """The project of this hook call, from what the host tells the hook (cd-82).
+    """The project of this hook call, from what the host tells the hook.
 
     A user-level Cursor hook starts outside the project, so the process cwd is a last
     resort. Order: payload `cwd` (Claude Code; Cursor on shell events), env
@@ -103,7 +103,7 @@ def hook_candidates(payload: dict[str, Any] | None) -> list[Path]:
 
     Payload `cwd`, `CURSOR_PROJECT_DIR`, each `workspace_roots` entry, `CLAUDE_PROJECT_DIR`.
     A Cursor shell event can send a `cwd` outside the project, so a payload `cwd` must
-    not hide the project dirs (PR #87 R1). A guard denies when one candidate denies, so
+    not hide the project dirs. A guard denies when one candidate denies, so
     more candidates only make it stricter. The process cwd stays a candidate, so a call
     that a guard denies today stays denied.
     """

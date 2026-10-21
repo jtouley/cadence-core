@@ -1,6 +1,6 @@
 """A run ends at R7, or at a recorded hard stop. `--deactivate` is not an escape hatch.
 
-cd-32 / 2d541e75: the agent deactivated at A1 or after R1, and every stop hold ended.
+On one run the agent deactivated at A1 or after R1, and every stop hold ended.
 `--hard-stop <class> --reason <text>` is the one sanctioned writer for the hard stop
 that SKILL.md names (destructive risk, missing credentials, security, retries spent),
 plus the two no-PR ends (an A5 gap, work not needed).
@@ -70,7 +70,7 @@ def test_stop_guard_allows_a_stop_after_a_hard_stop(tmp_path, run_hook):
     repo = _active_repo(tmp_path)
     gates = repo / ".context" / "gates"
     gates.mkdir(parents=True, exist_ok=True)
-    p9_marker(repo).write_text(json.dumps({"task_id": "gh-3"}), encoding="utf-8")  # cd-76: the run's own marker
+    p9_marker(repo).write_text(json.dumps({"task_id": "gh-3"}), encoding="utf-8")  # The run's own marker
     _run(repo, "--hard-stop", "credentials", "--reason", "gh auth expired")
     code, out, _ = run_hook("pipeline_stop_guard.py", repo, {"cwd": str(repo)})
     assert code == 0 and "followup_message" not in out

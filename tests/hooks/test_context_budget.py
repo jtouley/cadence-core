@@ -1,4 +1,4 @@
-"""Orchestrator context budget (gh-96).
+"""Orchestrator context budget.
 
 Before each orchestrator Agent or Task call during an active run, the handoff hook
 reads the size of the orchestrator's last request from the host transcript and
@@ -179,10 +179,10 @@ def test_the_context_size_is_no_hard_stop():
     assert "context" not in activate_session.HARD_STOP_CLASSES
 
 
-# --- PR #97 review: MF-1, MF-2, N4 -------------------------------------------------------------
+# --- MF-1, MF-2, N4 -------------------------------------------------------------
 
 def _host_row(tokens: int, *, sidechain: bool, agent: str | None = None) -> dict:
-    """An assistant row in the shape Claude Code writes (keys copied from a real transcript, PR #97 MF-4).
+    """An assistant row in the shape Claude Code writes (keys copied from a real transcript).
 
     In a subagent's own file every row has isSidechain true and an agentId.
     """

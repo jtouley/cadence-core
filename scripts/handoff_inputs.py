@@ -209,7 +209,7 @@ def packet_for(block: str, run: Run, extra: list[str] | tuple[str, ...] = ()) ->
         try:
             packet = handoff.load_packet(run.ctx, run_key, block)
         except (handoff.HandoffError, ValueError):
-            packet = None  # a corrupt or old-key packet is written again (PR #186 R1 N-2)
+            packet = None  # a corrupt or old-key packet is written again
         if packet is None or not _covers(packet, found.command, inputs, run):
             handoff.write_packet(workspace=run.workspace, context_dir=run.ctx, run_key=run_key, block=block,
                                  inputs=inputs, ticket=str(run.session.get("task_id") or ""), root=run.root,

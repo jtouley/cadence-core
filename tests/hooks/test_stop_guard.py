@@ -107,7 +107,6 @@ def test_latest_plan_verdict_reads_a_bare_heading(tmp_path):
 
 # --- stop_guard_budget_and_session_layouts: Stop guard: subagents never spend the run's stop budget; corrupt sessions escalate; pointers survive.
 #
-# R1 review of PR #10 (cd-10): M1, M4, F3.
 
 MAIN = {"cursor": {"hook_event_name": "stop"}, "claude": {"hook_event_name": "Stop"}}
 SUB = {"cursor": {"hook_event_name": "subagentStop"}, "claude": {"hook_event_name": "SubagentStop"}}
@@ -219,7 +218,7 @@ def test_guard_error_blocks_with_json_and_releases_on_repeat(tmp_path, run_hook,
 # Before, any stop before P9 passed unless a plan review was blocking (2d541e75,
 # e539e523). The guard walks A1-P8 read-only (never P9: a failed P9 clears its
 # marker). A stop while a delegated peer is still running is not held: the
-# orchestrator waits for the peer (cd-32 D17).
+# orchestrator waits for the peer.
 
 def _peer(repo: Path, *, minutes_ago: int, status: str = "running") -> None:
     run_id = read_session(repo)["pipeline_run_id"]
@@ -244,7 +243,7 @@ def test_a_planning_stop_is_held_at_the_open_block(tmp_path, run_hook):
     pytest.param(3, "complete", "block", id="a_completed_peer_does_not_hold_the_door_open"),
 ])
 def test_a_peer_record_opens_the_door_only_while_it_runs(tmp_path, run_hook, minutes_ago, status, want):
-    # cd-32 D17: the orchestrator waits for a running peer.
+    # The orchestrator waits for a running peer.
     repo = activated_repo(tmp_path / "proj")
     _peer(repo, minutes_ago=minutes_ago, status=status)
     code, out, _ = run_hook("pipeline_stop_guard.py", repo, {"cwd": str(repo)}, "claude")
@@ -261,7 +260,7 @@ def test_the_documented_a3_ops_stop_is_not_held(tmp_path, run_hook, monkeypatch)
     """SKILL.md: ops-only work stops at A3. The planning hold must not fight that stop."""
     repo = activated_repo(tmp_path / "proj")
     enable_all_packs(repo)  # A3 is in the preflight pack
-    # gh-181: A2 passes first. It needs gh auth and a clean tree, so the pack config is committed.
+    # A2 passes first. It needs gh auth and a clean tree, so the pack config is committed.
     git(repo, "add", ".cadence.json")
     git(repo, "commit", "-qm", "packs")
     monkeypatch.setenv("PATH", f"{fake_gh(tmp_path / 'bin').parent}{os.pathsep}{os.environ['PATH']}")
@@ -272,11 +271,11 @@ def test_the_documented_a3_ops_stop_is_not_held(tmp_path, run_hook, monkeypatch)
     assert code == 0 and stop_decision("claude", out) == "allow"
 
 
-# --- stop_guard_p3_rereview: gh-104: the stop guard holds a planning stop in the P3 re-review states.
+# --- stop_guard_p3_rereview: the stop guard holds a planning stop in the P3 re-review states.
 #
 # Characterization tests (plan SF-3): `planning_continuation` names `/plan-review` for a
 # blocking verdict on HEAD before the fix too. The guard text does not follow the open
-# block (plan Known limit G7 and C-2); a text fix is a follow-up after #129 to #134.
+# block (a known limit); a text fix is a follow-up.
 
 RWC = "READY WITH CHANGES"
 
@@ -293,7 +292,7 @@ def test_stop_guard_s2_blocking_review_older_than_plan_holds_with_plan_review(tm
 
 def test_stop_guard_s1b_resume_slug_plan_update_holds_with_plan_review(tmp_path, run_hook):
     # The guard text says /plan-review here, while `next` gives P4 (/plan-update).
-    # Known limit C-2: the text fix is the follow-up issue of the guard text (after #129 to #134).
+    # A known limit: the fix of the guard text is a follow-up.
     repo = git_repo(tmp_path / "r")
     lp = p3_loop(repo, cycles=2)
     hook_session(repo, **lp.session, resume_slug="plan-update")
@@ -304,7 +303,7 @@ def test_stop_guard_s1b_resume_slug_plan_update_holds_with_plan_review(tmp_path,
     assert_decision(result, "claude", "block", reason="/plan-review")
 
 
-# --- stop_guard_host_workspace: The stop guard finds the run from the host, also with only `workspace_roots` (cd-82 D4).
+# --- stop_guard_host_workspace: The stop guard finds the run from the host, also with only `workspace_roots`.
 #
 # The run is activated by the real activate_session.py (by-worktree session, root pointer).
 # The guard keeps its two candidates [here, project]; only `here` uses the resolver.
@@ -355,7 +354,7 @@ def test_cursor_stop_outside_with_no_run_passes(run_hook, tmp_path, outside):
 # store ported from ship-feature) and records the owner chat id from the host env.
 # The stop guard judges, in order: the run this chat owns; this worktree's run when
 # no other chat owns it; a legacy single-file session. Any other stop passes with no
-# message (cd-32: 12 stop-hook injections into chats that never ran /cadence).
+# message (12 stop-hook injections into chats that never ran /cadence).
 
 
 
@@ -369,7 +368,7 @@ def two_worktrees(tmp_path):
 
 
 def _p9(primary: Path, task_id: str) -> None:
-    """cd-76: write the P9 marker of the run of `task_id` (gates/entry-invariant-<run_id>.ok)."""
+    """Write the P9 marker of the run of `task_id` (gates/entry-invariant-<run_id>.ok)."""
     ctx = primary / ".context"
     runs = [json.loads(p.read_text(encoding="utf-8")) for p in (ctx / "sessions" / "by-worktree").glob("*.json")]
     run_id = next(r["pipeline_run_id"] for r in runs if r.get("task_id") == task_id)

@@ -1,4 +1,4 @@
-"""Commands for the agent name absolute scripts under the skill root (cd-82 D5, #83).
+"""Commands for the agent name absolute scripts under the skill root.
 
 The agent runs them in the project, where `scripts/` is absent or is another tree.
 """

@@ -137,7 +137,7 @@ with the Write or Edit tool. The hook records the sha256 of the resulting conten
 in `.context/attest/`. A gate accepts a verdict file only when its current content
 matches a recorded hash. A shell redirect cannot be attested.
 
-## Verdict stage on Claude Code (gh-66)
+## Verdict stage on Claude Code
 
 A hash match proves that a peer wrote the file. It does not prove which stage that peer was for. On Claude Code, two hooks record the stage:
 
@@ -151,7 +151,7 @@ Activation can mark a run `verdict_join`. On that run, a verdict gate finds the 
 - A gate message names the cause: the writer stage, `no join row`, `no call row for the join`, or `the peer call was denied`. Call the peer again from the orchestrator. Do not edit the verdict file.
 - Activation sets `verdict_join` only when the host loads the `PostToolUse` Agent hook: the user settings file, the project settings, or the plugin's own `hooks/hooks.json`. Else the run keeps the old check, and activation writes this warning: `WARNING: the PostToolUse Agent hook is not registered. The verdict stage check is off for this run. ACTION: install.sh install: run install.sh. Plugin or --plugin-dir session: the check is off for this session; do not run install.sh.`
 - Known limit: A session that does not load user settings must not run `activate_session.py` on a tree whose join hook is only in user settings. The check is on, but the hook writes no join row, so each verdict fails with `no join row`.
-- `.context/attest/<run>.models.jsonl` (cd-58) still exists. To merge it into `calls.jsonl` is #127.
+- `.context/attest/<run>.models.jsonl` still exists. Merging it into `calls.jsonl` is open work.
 
 ## Peer models (Claude Code)
 
@@ -162,7 +162,7 @@ A config layer can set `peer_models`: a model for each delegated peer stage. Act
 3. Use a subagent type that is not `fork`. A fork ignores `model:` and runs on the model of this session. The hook denies a fork call for a stage in the map.
 4. The hook denies a call with no model or with a different model. The deny message names the configured model. Call the peer again with that model.
 5. The stage gate passes only when the hook recorded an allowed call with the configured model. A `begin` record is not model evidence.
-   On a `verdict_join` run, the allowed call must also have a join row. The writer of the verdict must join to a call with the configured model (#59).
+   On a `verdict_join` run, the allowed call must also have a join row. The writer of the verdict must join to a call with the configured model.
 6. To see each call, its requested model and its served model, run `peer_models.py report` (`python3 "$CADENCE_HOME/scripts/peer_models.py" report`).
 
 Other hosts cannot pass a model to a peer. On those hosts, activation stops when the config has `peer_models`.

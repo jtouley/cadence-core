@@ -19,7 +19,7 @@ from artifact_requirements import (check_plan_create_artifacts, plan_review_cycl
 from prompt_shape import write_delegation_record  # noqa: E402
 
 
-# --- resume_keeps_run_id: `--resume` keeps the run it resumes (cd-47 D9, MF-3, G-D8).
+# --- resume_keeps_run_id: `--resume` keeps the run it resumes (G-D8).
 #
 # On run efcd8404, `--resume` minted a new pipeline_run_id. The plan, the reviews and
 # the lean delegation records of the run then named an old id, and A5 failed. Now
@@ -64,7 +64,7 @@ def test_resume_keeps_the_run_and_adds_the_new_orchestrator(tmp_path, monkeypatc
     review.parent.mkdir(parents=True, exist_ok=True)
     review.write_text("RUN_BY_COMMAND: plan-review\n", encoding="utf-8")
     peer_attest.record(context, run, "reviews/plan_x_cd-7.md", "P", peer_attest.sha256(review.read_bytes()))
-    # cd-64: a Claude Code run is marked lean_record_by_hook, so the record is the hook's.
+    # A Claude Code run is marked lean_record_by_hook, so the record is the hook's.
     write_delegation_record(context, run_id=run, stage="plan-review", command="/plan-review x", source="PreToolUse")
 
     _activate(repo, "--task-id", "cd-7", "--resume", agent="B")
@@ -136,7 +136,7 @@ def test_fresh_starts_a_new_run_and_a_new_list(tmp_path):
     assert _p1(repo)
 
 
-# --- supersede_moves_benchmarks: --supersede moves the ticket files in .context/benchmarks/ (gh-107).
+# --- supersede_moves_benchmarks: --supersede moves the ticket files in .context/benchmarks/.
 
 RUN_ID = "11111111-2222-3333-4444-555555555555"
 BRANCH = "claude/gh-107-supersede-benchmarks"
@@ -227,7 +227,7 @@ def test_supersede_keeps_neighbor_ticket_benchmarks(tmp_path):
 
 def test_existing_dirs_keep_substring_rule(tmp_path):
     """Characterization test. The four current directories keep the
-    substring rule. F1 (jtouley/cadence#135) changes this assertion."""
+    substring rule. F1 changes this assertion."""
     # Arrange
     context = tmp_path / ".context"
     reviews = context / "reviews"

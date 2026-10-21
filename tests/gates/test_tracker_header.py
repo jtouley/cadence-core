@@ -140,7 +140,7 @@ def test_marked_report_header_errors_flags_every_report(tmp_path):
 
 
 def test_run_artifact_gate_validate_rejects_linear_header(tmp_path, monkeypatch, capsys):
-    """cd-93 SF-5: a legacy run whose own report has a Linear header; only the header check fails it."""
+    """A legacy run whose own report has a Linear header; only the header check fails it."""
     from prompt_shape import write_delegation_record
 
     monkeypatch.delenv("CLAUDECODE", raising=False)
@@ -214,7 +214,7 @@ def test_a_report_written_after_activation_counts_as_this_runs(tmp_path):
     assert marked_report_header_errors(tmp_path, tmp_path, run) == []
 
 
-# --- cd-93: the header check judges only the reports of its own run --------------------------------
+# --- the header check judges only the reports of its own run --------------------------------
 
 
 def _skill(tmp_path):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sample impl-phase pack gate (gh-177): flag a planted file name in the change.
+"""Sample impl-phase pack gate: flag a planted file name in the change.
 
 stdin is the request of run_pack_gate: {"phase", "worktree", "files"}. stdout is {"findings": [...]}.
 """

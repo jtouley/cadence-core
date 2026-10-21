@@ -279,7 +279,7 @@ def adjudicate_deferral_register(text: str) -> AdjudicationResult:
 
 
 def register_row_problem(context_dir: Path, session: dict | None, ticket: str) -> str | None:
-    """gh-178: why ``ticket`` cannot defer a finding in review, else None. As P8 requires, the ticket matches the
+    """Why ``ticket`` cannot defer a finding in review, else None. As P8 requires, the ticket matches the
     adapter pattern, and a deferral register of the run that passes adjudication has a row that names it."""
     from artifact_requirements import _in_scope, ticket_scope
 

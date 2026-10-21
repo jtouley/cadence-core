@@ -42,7 +42,7 @@ def load_configured_adapters(skill_root: Path, workspace: Path | None = None) ->
 
 
 def no_tracker_declared(skill_root: Path, workspace: Path | None = None) -> bool:
-    """True only when the resolved config names the adapter "none" (cd-65 D3). A config error gives False."""
+    """True only when the resolved config names the adapter "none". A config error gives False."""
     import cadence_config
 
     try:
@@ -133,7 +133,7 @@ def marked_report_header_errors(
     session: dict | None,
     accept: Callable[[Path], bool] | None = None,
 ) -> list[str]:
-    """Every marked vibe-test report of this run must satisfy the configured adapter (cd-93).
+    """Every marked vibe-test report of this run must satisfy the configured adapter.
 
     The caller gives the run (``run_for`` of its worktree), never the root pointer. This
     function checks a report when the report is of this run, or when ``accept`` (the A5
@@ -169,7 +169,7 @@ def marked_report_header_errors(
 
 
 def _of_this_run(path: Path, text: str, session: dict) -> bool:
-    """The run-scope rule (cd-93 D2).
+    """The run-scope rule.
 
     A report that names run ids is of this run only when this run's id is one of them.
     A report that names no run id is of this run when its time is at or after the activation.

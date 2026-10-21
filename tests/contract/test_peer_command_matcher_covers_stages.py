@@ -1,4 +1,4 @@
-"""cd-64: stages.json, prompt_shape and peer_models agree on every peer command."""
+"""Stages.json, prompt_shape and peer_models agree on every peer command."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def test_c_the_drop_categories_equal_the_handoff_set():
     assert prompt_shape._DROP_CATEGORIES == handoff._DROP_CATEGORIES
 
 
-# The results of task_prompt_block_reason and stage_for_prompt before cd-64 (e5c3a92).
+# The results of task_prompt_block_reason and stage_for_prompt before the lean check (e5c3a92).
 BEFORE = [
     ("/plan-review foo", None, "plan-review"),
     ("/plan-review foo\nReturn to the main agent ONLY", "Task prompt must be a single line; found newline", None),

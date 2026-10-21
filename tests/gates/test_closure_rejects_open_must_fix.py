@@ -42,7 +42,7 @@ def test_closure_accepts_terminal_must_fix(tmp_path, status):
     assert closure_errors(load_findings(path)) == []
 
 
-# --- cd-49: one task-prefix rule and one ledger-row builder ------------------------------------------
+# --- one task-prefix rule and one ledger-row builder ------------------------------------------
 
 from conftest import ledger_row, write_ledger  # noqa: E402
 from findings_io import FindingsValidationError, rows_of_task, split_by_task  # noqa: E402
@@ -96,7 +96,7 @@ def test_known_task_ids_keeps_a_completed_run(two_worktree_runs):
     assert {"cd-901", "cd-902"} <= known_task_ids(env.ctx)
 
 
-# --- cd-49: R5 judges only the must-fix rows of its run's task ----------------------------------------
+# --- R5 judges only the must-fix rows of its run's task ----------------------------------------
 
 
 def _r5(monkeypatch, capsys, cwd, *extra):

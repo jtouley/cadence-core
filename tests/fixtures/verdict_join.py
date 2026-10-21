@@ -1,4 +1,4 @@
-"""cd-66: the one writer of call rows, join rows and attest rows in tests (cd-66-F20).
+"""The one writer of call rows, join rows and attest rows in tests.
 
 A verdict counts only when its writer joins to a peer call of the gate's stage:
 call row (PreToolUse) -> join row (PostToolUse) -> attest row (the peer's write).

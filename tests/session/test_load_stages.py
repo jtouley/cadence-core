@@ -21,7 +21,7 @@ from load_stages import stages_by_phase  # noqa: E402
 from load_stages import UnknownStageSlugError, get_stage  # noqa: E402
 
 
-# --- load_stages_is_sole_order_source: Phase 8 #2: stages.json is the sole order SSOT for scripts.
+# --- load_stages_is_sole_order_source: stages.json is the sole order SSOT for scripts.
 
 def test_load_stages_is_sole_order_source():
     # Act

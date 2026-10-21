@@ -70,7 +70,7 @@ def test_a_marker_of_another_run_does_not_freeze_the_plan(tmp_path):
     pytest.param('{"pipeline_run_id": "run-1", "task_id": "gh-1"}\n', "deny", id="this-run"),
 ])
 def test_the_legacy_marker_freezes_the_plan_only_when_it_names_this_run(tmp_path, run_hook, host, legacy, want):
-    """PR #168 R1 N-4: a stale legacy file (git-ignored, it survives an upgrade) must not block P1 of a new run."""
+    """A stale legacy file (git-ignored, it survives an upgrade) must not block P1 of a new run."""
     repo = probe_repo(tmp_path / "proj", "planning")
     write_files(repo, {".context/gates/entry-invariant.ok": legacy})
     payload = {"tool_name": "Write", "cwd": str(repo), "tool_input": {"file_path": PROBE_PLAN, "content": "# Plan\n"}}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Promote fixed → verified only after the finding's check command passes at HEAD.
 
-gh-175: the check is a real test or script, `fixed_in` is HEAD or an ancestor of HEAD, and a
+The check is a real test or script, `fixed_in` is HEAD or an ancestor of HEAD, and a
 `manual` check needs the stamp of `findings_io.py set-status --human --by <name>`.
 """
 
@@ -23,7 +23,7 @@ from findings_io import HUMAN_FIELDS, check_problem, commit_on_branch, load_find
 
 
 def verify_finding(record: dict, *, dry_run: bool = False) -> dict:
-    """The row promoted to verified, with the HEAD of the cwd that it was checked at. A dry run skips the check (#121)."""
+    """The row promoted to verified, with the HEAD of the cwd that it was checked at. A dry run skips the check."""
     if record.get("status") != "fixed":
         raise ValueError(f"can only verify status=fixed (got {record.get('status')})")
     check = record.get("check") or "manual"
@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
     rows = load_findings(path)
     selected = 0
     new_rows = []
-    errors = []  # PR #188 N-3: one row that cannot be verified does not stop the others
+    errors = []  # One row that cannot be verified does not stop the others
     for row in rows:
         if row.get("status") != "fixed" or (args.id and row["id"] != args.id):
             new_rows.append(row)

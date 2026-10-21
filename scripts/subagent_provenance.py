@@ -72,7 +72,7 @@ def ctx_root() -> Path:
 
 
 def load_session() -> dict:
-    """The run the gates read from this working directory (cd-64 D5): the worktree's own run,
+    """The run the gates read from this working directory: the worktree's own run,
     else the run the root redirect names."""
     from pipeline_run_binding import current_session
 
@@ -207,7 +207,7 @@ def cmd_begin(stage: str, command: str, subagent_id: str | None) -> int:
     # The record above is overwritten by each begin. The history keeps one line per
     # begin, so a gate can count cycles (the plan-review limit reads it).
     with (path.parent / "history.jsonl").open("a", encoding="utf-8") as history:
-        # cd-63 D5: the command tells a plan-gate P6 round from a spec-pressure one.
+        # The command tells a plan-gate P6 round from a spec-pressure one.
         history.write(json.dumps({"stage": stage, "started_at": now, "command": command}) + "\n")
     print(f"OK  subagent run started: stage={stage} run_id={run_id}")
     return 0
@@ -301,7 +301,7 @@ def cmd_complete(
         except json.JSONDecodeError:
             entry_id = ""
 
-    # cd-64 D5: keep every field the earlier writer set (source, command, started_at, ...).
+    # Keep every field the earlier writer set (source, command, started_at, ...).
     record = {
         "stage": stage,
         "command": "",

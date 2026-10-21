@@ -91,7 +91,7 @@ def test_the_cli_reads_the_change_with_the_base_that_r3_uses(tmp_path, monkeypat
     assert test_shape.main(["--change"]) == 1 and "base ref nope does not resolve" in capsys.readouterr().err
 
 
-# --- the layout of the target repo (gh-180) ---------------------------------------------
+# --- the layout of the target repo ---------------------------------------------
 
 SRC = {"pyproject.toml": '[project]\nname = "My-Pkg"\n', "src/my_pkg/__init__.py": "", "src/my_pkg/mod.py": "X = 1\n",
        "tests/unit/conftest.py": CONFTEST, "tests/unit/test_mod.py": "from my_pkg import mod\n" + THREE,

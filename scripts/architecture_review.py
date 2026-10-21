@@ -188,7 +188,7 @@ def run_architecture_review(
     """Findings of the P5 or E3 review. In record mode they go to the ledger.
 
     A record-mode pass with no must-fix finding closes this stage's own earlier
-    must-fix rows (cd-47 D4 "Supersede"). A non-blocking row that the ledger
+    must-fix rows ("Supersede"). A non-blocking row that the ledger
     already holds open is not appended again.
     """
     if phase not in PHASE_TO_STAGE:
@@ -199,7 +199,7 @@ def run_architecture_review(
     layer_map = cfg.get("layer_map") or {}
     ledger = findings_path or (context_dir / "findings.jsonl")
 
-    # The id prefix and the own-row rule are findings_io's (cd-49): one copy of each.
+    # The id prefix and the own-row rule are findings_io's: one copy of each.
     id_prefix = task_id_prefix(task_id)
     findings: list[dict[str, Any]] = []
     # P5 and E3 append to one ledger. Continue after this task's highest id, so that
@@ -247,7 +247,7 @@ def run_architecture_review(
         findings.append(row)
 
     # Rules 1–2 require layer_map; skip with logged notice when empty.
-    # --check records nothing: the stop guard runs this gate on every stop (cd-12-F1).
+    # --check records nothing: the stop guard runs this gate on every stop.
     if not layer_map:
         if record:
             _write_notice(context_dir, stage)
@@ -357,7 +357,7 @@ def _supersede(ledger: Path, own: re.Pattern[str], stage: str, passed: str) -> N
 
 
 def pack_findings(context: Path, worktree: Path, phase: str = "impl") -> list[dict[str, Any]]:
-    """gh-177: the gates of the enabled packs that list `phase`, on the files of the change (R3 reads it the same way).
+    """The gates of the enabled packs that list `phase`, on the files of the change (R3 reads it the same way).
 
     Each error is a must-fix finding. The ledger does not get it: it fails the gate and blocks the breadcrumb.
     """
@@ -376,7 +376,7 @@ def pack_findings(context: Path, worktree: Path, phase: str = "impl") -> list[di
 
 
 def update_breadcrumb(context: Path, worktree: Path, findings: list[dict[str, Any]]) -> None:
-    """E3's evidence for the PR guard (cd-47 D4): one file per run, only without a must-fix finding.
+    """E3's evidence for the PR guard: one file per run, only without a must-fix finding.
 
     A run with a must-fix finding deletes the breadcrumb of its own run only.
     With no session for this worktree, or with gates read-only, nothing changes.
@@ -406,7 +406,7 @@ def main() -> int:
         help="Gate mode: record no findings; exit 1 when a must-fix finding would be raised",
     )
     args = parser.parse_args()
-    # The canonical .context, as activation uses (cd-47 D4): in a linked worktree the
+    # The canonical .context, as activation uses: in a linked worktree the
     # run's plan and ledger are in the primary checkout. No mkdir here: --check creates nothing.
     context = args.context or context_path(args.worktree)
     # stages.json runs this without --task-id; findings must name the session's ticket.

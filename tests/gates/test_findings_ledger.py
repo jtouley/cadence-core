@@ -29,7 +29,7 @@ def ledger(tmp_path, scripts_path):
 
 @pytest.fixture
 def fix_repo(tmp_path, monkeypatch):
-    """A git repo with one commit as the cwd: `fixed_in` names a commit on its branch (gh-175)."""
+    """A git repo with one commit as the cwd: `fixed_in` names a commit on its branch."""
     from conftest import commit_file, git_repo
 
     path = git_repo(tmp_path / "repo")
@@ -92,7 +92,7 @@ def _canonical_rows(context):
 
 
 def test_append_rejects_an_id_of_another_task(scripts_path, tmp_path, monkeypatch):
-    """cd-49 D9: in a run's worktree, the canonical ledger takes only ids of the run's task."""
+    """In a run's worktree, the canonical ledger takes only ids of the run's task."""
     from conftest import ledger_row, linked_worktrees, save_worktree_session
 
     primary, trees = linked_worktrees(tmp_path, ("w0",))
@@ -106,7 +106,7 @@ def test_append_rejects_an_id_of_another_task(scripts_path, tmp_path, monkeypatc
 
 
 def test_append_from_a_runless_cwd_rejects_an_unknown_prefix(scripts_path, two_worktree_runs, monkeypatch):
-    """cd-49 C-2: with no run for the cwd, the id must be of a known task."""
+    """With no run for the cwd, the id must be of a known task."""
     from conftest import ledger_row
     from context_root import context_dir
 
@@ -206,7 +206,7 @@ def test_different_rows_with_one_id_are_still_refused(tmp_path):
         set_status(ledger, "CADENCE-F1", "deferred", ticket="#49")
 
 
-# --- ledger_verify_promotes_fixed_to_verified: Phase 4: only ledger_verify may set status=verified after check passes (#121: a dry run writes nothing).
+# --- ledger_verify_promotes_fixed_to_verified: Phase 4: only ledger_verify may set status=verified after check passes (a dry run writes nothing).
 
 
 def _fixed_row(path: Path, check: str) -> dict:
@@ -271,7 +271,7 @@ def test_a_check_that_is_not_valid_shell_stays_fixed(tmp_path, fix_repo):
     assert load_findings(path)[0]["status"] == "fixed"
 
 
-# --- gh-175: a finding closes only on a real check, a fix names its commit, and a person confirms the manual path.
+# --- a finding closes only on a real check, a fix names its commit, and a person confirms the manual path.
 
 NO_OP_CHECKS = ["true", ":", "echo ok", "exit 0", "", "   ", "uv run --", "/bin/true", "FOO=1 true",
                 "pytest -q || true", "pytest -q; echo done"]
@@ -393,7 +393,7 @@ def test_closure_names_each_manually_confirmed_row(ledger, fix_repo, monkeypatch
     assert [r["id"] for r in summary["manually_confirmed"]] == ["gh-1-F01"]
 
 
-# --- gh-178: during review, a deferral names a ticket of the adapter pattern and a row of the deferral register.
+# --- during review, a deferral names a ticket of the adapter pattern and a row of the deferral register.
 
 REGISTER = """# Deferral register: cd-49
 
@@ -431,13 +431,13 @@ def test_a_review_deferral_needs_the_adapter_pattern_and_a_register_row(scripts_
     assert _cli(*defer, "#42") == 0
     assert _canonical_rows(context) == ["cd-49-F1"]
     assert load_findings(context / "findings.jsonl")[0]["ticket"] == "#42"
-    # PR #188 N-5: with no --ticket, the check reads the ticket the row already holds
+    # With no --ticket, the check reads the ticket the row already holds
     assert _cli("set-status", "--id", "cd-49-F1", "--status", "deferred", "--note", "again") == 0
     assert load_findings(context / "findings.jsonl")[0]["note"] == "again"
 
 
 def test_a_bare_mf_id_becomes_the_row_id_of_the_worktrees_run(scripts_path, tmp_path, monkeypatch, capsys):
-    """PR #191 review B-2: the peer writes `MF-1`; findings_io builds `<task>-<run tag>-MF-1` from the real run."""
+    """The peer writes `MF-1`; findings_io builds `<task>-<run tag>-MF-1` from the real run."""
     from conftest import ledger_row, linked_worktrees, save_worktree_session
 
     primary, trees = linked_worktrees(tmp_path, ("w0",))
@@ -448,14 +448,14 @@ def test_a_bare_mf_id_becomes_the_row_id_of_the_worktrees_run(scripts_path, tmp_
     assert _cli("append", "--json", json.dumps({**ledger_row("MF-1"), "stage": "pr-review-local"})) == 1
     assert "already exists" in capsys.readouterr().err
     assert _cli("append", "--json", json.dumps({**ledger_row("MF-3"), "stage": "test-benchmark"})) == 1
-    assert "is for the R1 stages" in capsys.readouterr().err  # PR #191 round 2 C-6
+    assert "is for the R1 stages" in capsys.readouterr().err
     monkeypatch.chdir(primary)  # the primary checkout has no run: the id cannot be built
     assert _cli("append", "--json", json.dumps(ledger_row("MF-2"))) == 1
     assert "cannot be built" in capsys.readouterr().err
 
 
 def test_ledger_verify_reports_each_row_it_cannot_verify_and_verifies_the_rest(ledger, fix_repo, capsys):
-    """PR #188 N-3: one legacy fixed row with no fixed_in does not stop the others."""
+    """One legacy fixed row with no fixed_in does not stop the others."""
     from conftest import head_sha
 
     legacy = {**ROW, "id": "gh-1-F02", "status": "fixed"}

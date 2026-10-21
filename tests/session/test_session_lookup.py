@@ -13,7 +13,7 @@ import session_store  # noqa: E402
 from pipeline_run_binding import load_session, run_for  # noqa: E402
 
 
-# --- run_for_resolves_worktree_run: cd-76 D1: run_for gives the run of one worktree and never follows the root redirect.
+# --- run_for_resolves_worktree_run: run_for gives the run of one worktree and never follows the root redirect.
 
 def run_id(session):
     return session["pipeline_run_id"] if session else None

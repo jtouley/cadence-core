@@ -26,7 +26,7 @@ from impl_artifact import GitError
 
 # The version pin is the rule-set pin: the rules of ruff and mypy are part of the pinned binary.
 TOOLS = {"ruff": "0.17.0", "mypy": "2.4.0"}
-# docs/tool-gates.md says why each ignored rule is out (PR #168 R1 N-5: B008, B904, S108).
+# docs/tool-gates.md says why each ignored rule is out (B008, B904, S108).
 RUFF_RULES = ["--select", "E9,F63,F7,F82,F811,B,PLE,E722,PGH004,S",
               "--ignore", "S101,S603,S607,S404,S105,S106,B008,B904,S108"]
 MYPY_RULES = ["--check-untyped-defs", "--ignore-missing-imports"]
@@ -41,7 +41,7 @@ _HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
 def warm_command(tool: str) -> str:
     """The command that fills the uv cache with the pinned tool once, with the network. It puts
-    nothing on PATH, so a user's own ruff or mypy stays (PR #168 R1 N-8)."""
+    nothing on PATH, so a user's own ruff or mypy stays."""
     return f"uv tool run {tool}=={TOOLS[tool]} --version"
 
 

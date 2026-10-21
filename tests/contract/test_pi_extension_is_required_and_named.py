@@ -1,4 +1,4 @@
-"""CI runs the Pi extension test with node required; the docs name the extension (cd-84)."""
+"""CI runs the Pi extension test with node required; the docs name the extension."""
 
 from __future__ import annotations
 

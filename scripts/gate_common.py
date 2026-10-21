@@ -34,7 +34,7 @@ from artifact_requirements import (  # noqa: E402
 from peer_models import require_peer_model  # noqa: E402
 from pipeline_run_binding import other_workspace_hint, run_for  # noqa: E402
 
-# Planning gates count only this run's artifacts (cd-47 D8).
+# Planning gates count only this run's artifacts.
 _RUN_SCOPED = frozenset({"validate-gate", "plan-review-gate", "adversarial-review-gate"})
 
 
@@ -81,7 +81,7 @@ ARTIFACT_GATES: dict[str, dict] = {
 
 
 def current_branch(cwd: Path | None = None) -> str | None:
-    """The branch of the worktree at ``cwd`` (cd-76 R3-D4a); None reads the process cwd."""
+    """The branch of the worktree at ``cwd``; None reads the process cwd."""
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
@@ -105,7 +105,7 @@ def ledger_gate_args(description: str) -> tuple[argparse.Namespace, Path]:
     """`--ledger` and `--check` of the ledger gates (R4, R5), and the ledger path.
 
     stages.json and pr-review-update.md run them without --ledger. --ledger changes the
-    file, never the scope: the run of the cwd worktree decides which rows count (cd-49).
+    file, never the scope: the run of the cwd worktree decides which rows count.
     """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--ledger", default=None,
@@ -170,7 +170,7 @@ def write_gate_breadcrumb(
 
 
 def _p3_reopen(context_dir: Path) -> list[str]:
-    """gh-104 D2: after /plan-update, a blocking review older than the plan opens P3 again."""
+    """After /plan-update, a blocking review older than the plan opens P3 again."""
     step = plan_review_step(context_dir)
     return [step[1]] if step is not None and step[0] == "P3" else []
 
@@ -197,8 +197,8 @@ def _r1_review(context_dir: Path) -> tuple[Path | None, list[str]]:
 
 
 def _r1_problems(context_dir: Path) -> list[str]:
-    """The review R1 judges cites HEAD (PR #168 R1 N-1: R4 is in a pack that is off by default),
-    and each of its must-fix items has a ledger row (gh-174)."""
+    """The review R1 judges cites HEAD (R4 is in a pack that is off by default),
+    and each of its must-fix items has a ledger row."""
     review, problems = _r1_review(context_dir)
     if review is None:
         return problems
@@ -226,7 +226,7 @@ _NO_MERGE = re.compile(r"no[ -]merge\b")
 
 
 def _r1_ledger_problems(context_dir: Path, review: Path) -> list[str]:
-    """gh-174: each `MF-n` of the review has a must-fix row `<task prefix>-MF-n` in any status, as R2 needs a
+    """Each `MF-n` of the review has a must-fix row `<task prefix>-MF-n` in any status, as R2 needs a
     row for each must-fix (test_benchmark_gate). R4 and R5 read only the ledger. A NO MERGE verdict with no
     such row fails too."""
     from findings_io import FindingsValidationError, ledger_must_fix_ids, r1_row_id
@@ -256,7 +256,7 @@ def _r1_ledger_problems(context_dir: Path, review: Path) -> list[str]:
     return problems
 
 
-# The gates that read a verdict after the artifact check (cd-63 D4, gh-104 D2), and R1 reads the reviewed commit.
+# The gates that read a verdict after the artifact check, and R1 reads the reviewed commit.
 def _a5_gaps(context_dir: Path) -> list[str]:
     """A NOT READY vibe-test report labels each blocking gap `G-n`, so the plan can answer it."""
     from artifact_requirements import BLOCKING_GAPS_HEADER, newest_vibetest, spec_gap_ids
@@ -282,7 +282,7 @@ def run_artifact_gate(slug: str, context_dir: Path, *, check: bool = False, work
     validate = require_sections(spec["sections"]) if "sections" in spec else None
     errors: list[str] = []
     if slug == "validate-gate":
-        # cd-93 D1/D5/D7: A5 judges the run of its own worktree, never the root pointer.
+        # A5 judges the run of its own worktree, never the root pointer.
         wt = worktree or Path.cwd()
         session = run_for(context_dir, cwd=wt)
         if session is None:
@@ -312,7 +312,7 @@ def run_artifact_gate(slug: str, context_dir: Path, *, check: bool = False, work
         from tracker_header import marked_report_header_errors
 
         root = Path(__file__).resolve().parent.parent
-        # cd-93 D8: every report A5 accepts also has its header judged.
+        # Every report A5 accepts also has its header judged.
         errors.extend(marked_report_header_errors(context_dir, root, session, accept=accept))
     errors.extend(
         require_lean_delegation(context_dir, spec.get("delegation_stage", spec["label"]))
@@ -331,7 +331,7 @@ def run_plan_create_gate(
 ) -> int:
     worktree = worktree or Path.cwd()
     errors = check_plan_create_artifacts(context_dir, worktree, accept=run_scope_accept(context_dir, worktree))
-    errors += require_peer_model(context_dir, "plan-create")  # cd-58 D4
+    errors += require_peer_model(context_dir, "plan-create")
     if errors:
         return fail("plan-create-gate", errors)
     if not check:

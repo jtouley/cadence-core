@@ -1,4 +1,4 @@
-"""references/delegation.md states the verdict join of gh-66 for the orchestrator.
+"""references/delegation.md states the verdict join for the orchestrator.
 
 The orchestrator reads this doc, not the code. It must know which logs prove a verdict,
 that /pr-review-update is a lean peer command, how SendMessage keeps a stage, what the
@@ -14,7 +14,7 @@ DOC = (ROOT / "references" / "delegation.md").read_text(encoding="utf-8")
 
 
 def test_the_doc_names_the_call_and_join_logs_and_the_r4_peer():
-    for needle in ("calls.jsonl", "joins.jsonl", "/pr-review-update", "writer_stages", "verdict_join", "#127"):
+    for needle in ("calls.jsonl", "joins.jsonl", "/pr-review-update", "writer_stages", "verdict_join", "is open work"):
         assert needle in DOC, needle
 
 

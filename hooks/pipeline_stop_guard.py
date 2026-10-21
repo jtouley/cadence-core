@@ -17,7 +17,7 @@ With the marker, it walks the registered gates from the first execution row, rea
 and the first failing gate is the open block. `resume_slug` is still a lower bound:
 a stop that the old guard blocked stays blocked.
 
-Lean peer returns (gh-96): on Claude Code, a delegated peer's SubagentStop is held
+Lean peer returns: on Claude Code, a delegated peer's SubagentStop is held
 once when its final message is not one lean line (scripts/peer_return.py). The final
 message goes into the orchestrator's context, and the gates read the artifact, not
 the message. A second wrong return goes through with a notice. Each check writes a
@@ -139,7 +139,7 @@ def run_started(context_dir: Path, session: dict) -> bool:
     activate_session.py clears the marker at each activation, and the hooks protect it
     from agent writes. A marker that names another task is not evidence for this run.
     """
-    # cd-76 D3: the judged run's own marker (gates/entry-invariant-<run_id>.ok).
+    # The judged run's own marker (gates/entry-invariant-<run_id>.ok).
     return entry_invariant_matches(context_dir, session)
 
 
@@ -160,7 +160,7 @@ def find_open_block(
     if first is None:
         return None, False
     if budget <= 0:
-        return first, True  # cd-76 R3-D5e: the shared deadline did not reach this run
+        return first, True  # The shared deadline did not reach this run
     try:
         report = walk(
             SKILL_ROOT,
@@ -199,7 +199,7 @@ def with_next_phase(row: dict, context_dir: Path, workspace: Path, session: dict
         work = open_work(state)
     except Exception:  # noqa: BLE001 - the hold stands; only the detail is lost
         return row
-    if nxt is not None:  # gh-173: the next phase, not the phase list
+    if nxt is not None:  # The next phase, not the phase list
         n, label = nxt
         if not worker and session.get("host") == "claude":
             return {**row, "continue": f"Continue E1: send the `/spec-driven` peer the plan again. "
@@ -218,7 +218,7 @@ def planning_open_block(workspace: Path, budget: float = WALK_SECONDS) -> tuple[
     """Before P9: the first failing gate from A1 through P8, else P9 itself."""
     rows = load_stages(SKILL_ROOT, workspace)
     if budget <= 0:
-        return (rows[0] if rows else None), True  # cd-76 R3-D5e, N-4: no time left is unknown
+        return (rows[0] if rows else None), True  # No time left is unknown
     try:
         report = walk(
             SKILL_ROOT,
@@ -243,7 +243,7 @@ PEER_WINDOW_SECONDS = 3600
 def peer_running(context_dir: Path, session: dict) -> str | None:
     """A delegated peer of this run that began within the hour and has not completed.
 
-    The orchestrator waits for it; holding that stop only pushes a duplicate peer (cd-32 D17).
+    The orchestrator waits for it; holding that stop only pushes a duplicate peer.
     """
     from datetime import datetime, timezone
 
@@ -276,7 +276,7 @@ def latest_plan_verdict(context_dir: Path, session: dict | None = None) -> str |
 
 
 def _cmd(row: dict) -> str:
-    """The row's command with an absolute script path (cd-82 D5)."""
+    """The row's command with an absolute script path."""
     return display_command(str(row.get("command") or ""), SKILL_ROOT)
 
 
@@ -486,15 +486,15 @@ def judge_runs(payload: dict, *, agent: str | None = None) -> tuple[str, list[Ru
     verdict is "judge", "corrupt" or "skip". `agent` is the agent_id of a SubagentStop.
     - A SubagentStop with an agent_id judges only the run that lists it as an orchestrator
       (tie-break: the run whose worktree holds the stop's cwd, else the first). A peer's
-      stop is not judged (cd-76 r3 D4).
+      stop is not judged.
     - A main-agent Stop (and any stop with no agent_id, which is every Cursor stop) judges
       each active top-level run (no orchestrator_agent_ids) that this chat owns. With none,
       it falls through to this worktree's run, then the legacy single-file session; both
-      skip a run that a subagent activated (cd-76 R2-D5a).
+      skip a run that a subagent activated.
     Anything else is another chat's or another worktree's run: skip, no message.
     """
     project = _project_dir()
-    # cd-82 D4: a Cursor stop can carry only workspace_roots; `project` stays as the second candidate.
+    # A Cursor stop can carry only workspace_roots; `project` stays as the second candidate.
     here = hook_workspace(payload)
     chat = chat_id(payload)
     cwds = list(dict.fromkeys([here, project]))
@@ -614,7 +614,7 @@ def _started_runs(payload: dict, agent: str) -> list[tuple[Path, str]]:
 
 
 def _record_peer_stop(payload: dict, agent: str) -> None:
-    """Record a subagent's stop in each run that has its start (cd-76 r2 D5); independent of judging."""
+    """Record a subagent's stop in each run that has its start; independent of judging."""
     try:
         import peer_attest
 
@@ -649,7 +649,7 @@ def _record_return(runs: list[tuple[Path, str]], agent: str, decision: str, reas
 
 
 def peer_return_check(host: str, payload: dict, agent: str, repeat: bool) -> tuple[str, str] | None:
-    """("hold", reason) or ("notice", text) for a delegated peer's final message, else None (gh-96).
+    """("hold", reason) or ("notice", text) for a delegated peer's final message, else None.
 
     Only a Claude Code peer of an active run is checked: a subagent with a recorded start,
     not an orchestrator, whose first prompt is a peer call. A message the hook cannot
@@ -717,11 +717,11 @@ def _plan_loop_limit(context_dir: Path, session: dict | None, open_block: dict |
 
 def _p6_route(context_dir: Path, session: dict, open_block: dict | None,
               plan_verdict: str | None) -> tuple[dict | None, str | None]:
-    """cd-63 D7: before execution, a blocking P6 verdict names the next step of the P6 loop."""
+    """Before execution, a blocking P6 verdict names the next step of the P6 loop."""
     if open_block is not None and open_block.get("phase") in EXECUTION_REVIEW_PHASES:
         return open_block, plan_verdict
     route = adversarial_route(context_dir, session)
-    # A shadowed or stale report names P6 only when P6 is the open block (PR #88 MF-2).
+    # A shadowed or stale report names P6 only when P6 is the open block.
     early = route is not None and route["block"] == "P6" and open_block is not None \
         and open_block.get("slug") != "adversarial-review"
     if route is not None and not early:
@@ -735,12 +735,12 @@ def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corr
     live = bool(session and not corrupt and session.get("active_skill") == "cadence" and not session.get("hard_stop"))
     open_block, unknown = _open_block(session, context_dir, workspace, budget) if live else (None, False)
     # The refusal budget ends a loop at one block. When the run moves to another block the
-    # agent made progress, so the count starts again (cd-12-F3). Without a recorded block
+    # agent made progress, so the count starts again. Without a recorded block
     # (older sessions) the count applies as before.
     here = str((open_block or {}).get("slug") or (session or {}).get("resume_slug") or "")
     if session and session.get("stop_refusal_slug") not in (None, here):
         session = {**session, "stop_refusals": 0}
-    # cd-76 R2-D5c: every evidence read uses the judged run.
+    # Every evidence read uses the judged run.
     plan_verdict = latest_plan_verdict(context_dir, session) if session and not corrupt else None
     open_block, plan_verdict = _plan_loop_limit(context_dir, session, open_block, plan_verdict)
     p3_holds = plan_verdict in BLOCKING_PLAN_VERDICTS or (open_block or {}).get("slug") == "plan-update"
@@ -776,7 +776,7 @@ def e1_peer_hold(payload: dict, agent: str, repeat: bool) -> str | None:
 
 
 def _peer_stop(host: str, payload: dict, agent: str | None, repeat: bool) -> tuple[bool, str | None]:
-    """(held, notice) for a subagent stop (gh-96). A held peer keeps running, so its stop is not recorded.
+    """(held, notice) for a subagent stop. A held peer keeps running, so its stop is not recorded.
 
     A check that cannot run does not hold the peer, as for a message it cannot read.
     """
@@ -843,7 +843,7 @@ def _judge_all(runs: list, corrupt: bool, context_dir: Path,
                data_path: Path | None) -> tuple[str, str, str, dict | None, Path, Path | None]:
     """(decision, message, slug, judged session, its context, its data path) of the first run that holds.
 
-    cd-76 R3-D5e: one deadline for every judged run, in pipeline_run_id order; the first run
+    One deadline for every judged run, in pipeline_run_id order; the first run
     that holds decides. A run the deadline does not reach is unknown, and unknown holds.
     """
     import time

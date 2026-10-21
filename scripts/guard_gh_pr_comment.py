@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """R6 — guard-gh-pr-comment gate.
 
-gh-178: the comment body holds a `## Fixes` table (finding, commit) and a `## Deferrals`
+The comment body holds a `## Fixes` table (finding, commit) and a `## Deferrals`
 table (finding, ticket). The gate checks each row against the ledger and fails closed.
 without --check, the script writes the body from the ledger itself, then checks it.
 """
@@ -119,7 +119,7 @@ def _post_command(context_dir: Path, cwd: Path, body: Path) -> str:
 
 
 def run(context_dir: Path, *, check: bool = False, cwd: Path | None = None, body: Path | None = None) -> int:
-    """Judge the must-fix rows of the run of ``cwd`` (cd-49); with no run, every row."""
+    """Judge the must-fix rows of the run of ``cwd``; with no run, every row."""
     cwd = cwd or Path.cwd()
     try:
         scope = ledger_scope(_all_findings(context_dir), context_dir, cwd=cwd)

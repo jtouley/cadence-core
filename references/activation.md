@@ -57,8 +57,8 @@ The agent that runs activation is the orchestrator of the run. It does not write
 **Limits:**
 
 - One note pool serves each `.context`. Two activations in 120 s can take the note of the other. Each run then has the wrong orchestrator id.
-- The note goes to the repo that the command activates (#56). That is the `--workspace` directory. Without it, the hook follows the `cd` commands before activation, else it uses the hook cwd. A subagent of Claude Code starts each Bash call in the project of its parent, so use `cd <repo> && python3 .../activate_session.py` or `--workspace <repo>`. The hook cannot read a variable that the same command sets, or `cd -`. Then it uses the hook cwd. The Cursor owner note uses the same target.
-- When the top-level agent activates and a subagent orchestrates, the hook does not know the subagent. That subagent can still write verdicts (G-C7, #50).
+- The note goes to the repo that the command activates. That is the `--workspace` directory. Without it, the hook follows the `cd` commands before activation, else it uses the hook cwd. A subagent of Claude Code starts each Bash call in the project of its parent, so use `cd <repo> && python3 .../activate_session.py` or `--workspace <repo>`. The hook cannot read a variable that the same command sets, or `cd -`. Then it uses the hook cwd. The Cursor owner note uses the same target.
+- When the top-level agent activates and a subagent orchestrates, the hook does not know the subagent. That subagent can still write verdicts (G-C7).
 
 **Missing note:** when activation finds no fresh note, `orchestrator_source` is `missing`. On Claude Code, activation prints `WARNING: orchestrator unknown: activate through the Bash tool`. The attestation gates then fail closed with the same text. A command that you type with `!` does not go through the hook. To recover, run `--resume` again through the Bash tool.
 

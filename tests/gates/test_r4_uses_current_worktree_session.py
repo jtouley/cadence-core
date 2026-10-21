@@ -1,6 +1,6 @@
-"""E1, R4 and the peer filter judge the current worktree's own run (cd-47 D1, G-D4).
+"""E1, R4 and the peer filter judge the current worktree's own run (G-D4).
 
-The root redirect points at the last activation in any worktree. Before cd-47, a
+The root redirect points at the last activation in any worktree. Before per-worktree runs, a
 gate run in worktree W1 read that redirect and judged another worktree's run:
 its HEAD, its plan, its base, its run id. Now E1 and R4 use only the session of
 the worktree they run in, and the planning gates prefer it.
@@ -145,7 +145,7 @@ def test_headless_prints_the_workspace_it_used(tmp_path):
             assert proc.stdout.splitlines()[0] == f"workspace: {trees['w1'].resolve()}"
 
 
-# --- R2 on PR #52: binding and attest survivors (M17-M20) -----------------------------------------
+# --- binding and attest survivors (M17-M20) -----------------------------------------
 
 
 def test_a_legacy_session_of_another_worktree_is_not_this_worktrees_run(tmp_path):
@@ -224,7 +224,7 @@ def _r4_ledger(env) -> Path:
 
 
 def test_r4_open_must_fix_of_another_run_does_not_block(two_worktree_runs):
-    """cd-49: R4 of run A skips the rows of run B and lists the unowned ones."""
+    """R4 of run A skips the rows of run B and lists the unowned ones."""
     env = two_worktree_runs
     ledger = _r4_ledger(env)
     result = consolidate(ledger, context_dir=env.ctx, cwd=env.a)

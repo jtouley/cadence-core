@@ -1,7 +1,6 @@
 """During a run, the agent cannot hand-edit the files that carry the pipeline's trust.
 
-Covers both session layouts and both hosts. R1 review of PR #10 (cd-10): M2, M3, M7,
-F1, F2, N1.
+Covers both session layouts and both hosts.
 """
 
 from __future__ import annotations
@@ -52,8 +51,8 @@ def _session_files(repo: Path) -> list[str]:
 
 PROTECTED = [
     ".context/gates/entry-invariant.ok",
-    ".context/gates/entry-invariant-281fe311-3aaf-4403-9725-ca2cc72f9816.ok",  # cd-76: per-run marker
-    ".context/gates/draft-pr-281fe311-3aaf-4403-9725-ca2cc72f9816.json",  # cd-76: per-run E4 breadcrumb
+    ".context/gates/entry-invariant-281fe311-3aaf-4403-9725-ca2cc72f9816.ok",  # Per-run marker
+    ".context/gates/draft-pr-281fe311-3aaf-4403-9725-ca2cc72f9816.json",  # Per-run E4 breadcrumb
     ".context/findings.jsonl",
     ".context/findings/gh-1.jsonl",
     ".context/findings/gh-12.jsonl",
@@ -95,9 +94,9 @@ def test_every_real_session_file_is_protected(plan_create_repo, decide):
     "cd .context/gates && cp /tmp/ok entry-invariant.ok 2>/dev/null",
     "echo '{}' > .context/handoff/run-1/P3.json",
     "cd .context/handoff/run-1 && cp /tmp/forged P3.json 2>/dev/null",
-    "touch .context/gates/entry-invariant-281fe311-3aaf-4403-9725-ca2cc72f9816.ok",  # cd-76
-    "cd $CTX/gates; touch entry-invariant-281fe311-3aaf-4403-9725-ca2cc72f9816.ok",  # cd-76: unresolved cd
-    "cd .context/gates && cp /tmp/ok draft-pr-281fe311-3aaf-4403-9725-ca2cc72f9816.json 2>/dev/null",  # cd-76
+    "touch .context/gates/entry-invariant-281fe311-3aaf-4403-9725-ca2cc72f9816.ok",
+    "cd $CTX/gates; touch entry-invariant-281fe311-3aaf-4403-9725-ca2cc72f9816.ok",  # Unresolved cd
+    "cd .context/gates && cp /tmp/ok draft-pr-281fe311-3aaf-4403-9725-ca2cc72f9816.json 2>/dev/null",
 ])
 def test_shell_writes_to_pipeline_state_are_denied(plan_create_repo, decide, command, host):
     assert decide(plan_create_repo, _shell(command, host), host) == "deny"
@@ -147,7 +146,7 @@ def test_shell_edits_to_gated_sources_follow_the_plan_gate(plan_create_repo, dec
     assert decide(plan_create_repo, _shell(command, "cursor")) == expected
     gates = plan_create_repo / ".context" / "gates"
     gates.mkdir(exist_ok=True)
-    (gates / "entry-invariant-run-1.ok").write_text("ok\n")  # cd-76: the run's own marker
+    (gates / "entry-invariant-run-1.ok").write_text("ok\n")  # The run's own marker
     assert decide(plan_create_repo, _shell(command, "cursor")) == "allow"
 
 

@@ -1,4 +1,4 @@
-"""R3 cognitive complexity, every language with an analyzer (gh-100).
+"""R3 cognitive complexity, every language with an analyzer.
 
 The analyzer tables give a hand-scored example per rule (SonarSource cognitive
 complexity). The gate tests use a real repo: `main` holds the base, a feature
@@ -556,7 +556,7 @@ def test_a_given_base_that_does_not_resolve_fails_closed(change, monkeypatch, ca
     assert "base ref origin/nope does not resolve" in capsys.readouterr().err
 
 
-# --- PR #101 R1 ------------------------------------------------------------------------------------
+# --- review cases ------------------------------------------------------------------------------------
 
 LOST = [
     pytest.param("x.ts", "function f() { if (x) { ", id="ts an unclosed brace"),

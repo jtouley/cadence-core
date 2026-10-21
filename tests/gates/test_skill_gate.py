@@ -70,7 +70,7 @@ def test_skill_gate_pi_cli_state_and_check(tmp_path):
 
 
 # --- skill_gate_gated_prefixes_from_config: Gated prefixes come from the defaults layer
-# (cadence.defaults.json), plus the layers of a repo such as `.cadence.json` (cd-47 D5, #39).
+# (cadence.defaults.json), plus the layers of a repo such as `.cadence.json`.
 #
 # Cadence's own code is in scripts/, hooks/ and shared/, which the default prefixes
 # (src/, lib/, app/, packages/) do not hold back before P9. `.cadence.json` at the repo
@@ -79,7 +79,7 @@ def test_skill_gate_pi_cli_state_and_check(tmp_path):
 
 def test_skill_gate_gated_prefixes_from_config(tmp_path, monkeypatch):
     # skill_root() puts $CADENCE_HOME/scripts on sys.path. Restore it, or the stub
-    # activate_session.py below shadows the real one in later tests (R2 on PR #52, I1).
+    # activate_session.py below shadows the real one in later tests.
     monkeypatch.setattr(sys, "path", list(sys.path))
     install_config(tmp_path, packs=[], adapter="github-issues", gated_prefixes=["services/", "apps/"])
     (tmp_path / "adapters").mkdir()
@@ -161,7 +161,7 @@ def test_this_repo_gates_its_own_code():
 
 
 def test_each_skill_scripts_dir_is_gated():
-    """A prefix matches from the repo root only (#48), so each skill's scripts/ needs its own extra."""
+    """A prefix matches from the repo root only, so each skill's scripts/ needs its own extra."""
     for d in sorted((ROOT / "skills").glob("*/scripts")):
         path = f"skills/{d.parent.name}/scripts/x.py"
         assert skill_gate.is_gated_path(path, workspace=ROOT), f"add skills/{d.parent.name}/scripts/ to the gated_prefixes append of .cadence.json"
@@ -181,7 +181,7 @@ def test_the_hook_holds_a_project_prefix_write_before_p9(tmp_path, run_hook):
     assert_decision(run_hook("guard_skill_gate.py", repo, payload, "claude"), "claude", "allow")
 
 
-# --- gh-178: the Pi and Cursor check before `gh pr comment` and `gh pr review` waits for R5 of the run at HEAD.
+# --- the Pi and Cursor check before `gh pr comment` and `gh pr review` waits for R5 of the run at HEAD.
 
 @pytest.mark.parametrize("action", ["gh_pr_comment", "gh_pr_review"])
 def test_a_pr_comment_waits_for_closure_of_the_run_at_head(tmp_path, action):

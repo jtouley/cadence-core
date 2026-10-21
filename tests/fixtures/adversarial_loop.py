@@ -1,4 +1,4 @@
-"""cd-63: one builder for the P3/P6 review-loop tests (session, plan, attested reports, history)."""
+"""One builder for the P3/P6 review-loop tests (session, plan, attested reports, history)."""
 
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ class Loop:
         return path
 
     def attest(self, path: Path, agent: str, run: str | None = None, *, stage: str | None = None) -> None:
-        """Attest `path` as written by `agent`. With `stage` (gh-66), first join the agent to a call of that stage."""
+        """Attest `path` as written by `agent`. With `stage`, first join the agent to a call of that stage."""
         if stage is not None:
             from verdict_join import peer_call, peer_join
 

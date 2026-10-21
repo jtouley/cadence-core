@@ -75,7 +75,7 @@ def test_entry_invariant_ok_write_and_clear(tmp_path):
         task_id="t1",
         written_at="2026-01-01T00:00:00Z",
     )
-    assert path == entry_invariant_ok_path(tmp_path, "run-1")  # cd-76: the marker names the run
+    assert path == entry_invariant_ok_path(tmp_path, "run-1")  # The marker names the run
     assert path.is_file()
     clear_entry_invariant_ok(tmp_path, "run-1")
     assert not path.is_file()

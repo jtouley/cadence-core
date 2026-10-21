@@ -64,7 +64,7 @@ def _untracked(worktree: Path) -> list[str]:
 
 
 def changed_files(worktree: Path, fork: str) -> list[str]:
-    """Files added or changed since `fork`, committed or not, plus untracked files (gh-100).
+    """Files added or changed since `fork`, committed or not, plus untracked files.
 
     Raises GitError when git fails: a gate must not read an error as an empty change.
     """
@@ -88,7 +88,7 @@ def _git_diff_stat(worktree: Path, base: str | None) -> str:
 
 
 def run(context_dir: Path, *, check: bool = False) -> int:
-    session = run_for(context_dir)  # cd-76 D4: this worktree's run, never the root redirect
+    session = run_for(context_dir)  # This worktree's run, never the root redirect
     if session is None:
         return fail(SLUG, ["impl-artifact: missing cadence-session.json"])
     task_id = session.get("task_id")

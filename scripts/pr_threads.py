@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The GitHub review threads of a PR as JSON, for /pr-review-update (#184).
+"""The GitHub review threads of a PR as JSON, for /pr-review-update.
 
     python3 pr_threads.py <PR> [--repo OWNER/NAME]
 

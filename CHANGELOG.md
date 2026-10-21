@@ -42,6 +42,3 @@ The first public release of Cadence core.
   and project packs.
 - The toy run (`examples/toy-run/`): the real gates and hooks on a toy repository, with no model and
   no network.
-
-Cadence core grew out of an earlier, private repository. An issue number such as `#53`, `gh-53` or
-`cd-53` in a comment names an issue of that repository, not of this one.

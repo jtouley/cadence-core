@@ -1,6 +1,6 @@
-"""preflight.run: git fail paths, the ok path, and peer shadows (cd-53), via a monkeypatched subprocess.
+"""preflight.run: git fail paths, the ok path, and peer shadows, via a monkeypatched subprocess.
 
-The three checks of stages.json (gh-181) run in a sandbox repo: `gh api user`, the branch, a clean tree.
+The three checks of stages.json run in a sandbox repo: `gh api user`, the branch, a clean tree.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ def _fake_git(repo: Path, primary: Optional[Path] = None):
             if primary is not None:
                 lines += f"worktree {repo}\n"
             return SimpleNamespace(returncode=0, stdout=lines, stderr="")
-        # gh-181: gh is logged in, HEAD is on a feature branch, there is no origin/HEAD, the tree is clean.
+        # Gh is logged in, HEAD is on a feature branch, there is no origin/HEAD, the tree is clean.
         if list(args) in (["gh", "api", "user", "--silent"], ["git", "status", "--porcelain", "-z", "--untracked-files=all"]):
             return SimpleNamespace(returncode=0, stdout="", stderr="")
         if list(args) == ["git", "symbolic-ref", "--short", "-q", "HEAD"]:
@@ -297,7 +297,7 @@ def test_bad_registry_rows_fail_a2_without_a_traceback(a2, monkeypatch, tmp_path
     assert "Traceback" not in err
 
 
-# --- gh-181: the environment, the branch and a clean state, in a sandbox repo ---------------------------
+# --- the environment, the branch and a clean state, in a sandbox repo ---------------------------
 
 
 @pytest.fixture

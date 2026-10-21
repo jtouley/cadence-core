@@ -45,7 +45,7 @@ Rubber-stamping without a peer run is forbidden.
 
 Skill-gate runs **before** shadow-context on write tools (`Write`, `StrReplace`, `EditNotebook`, `ApplyPatch`, and on Claude Code `Write`, `Edit`, `MultiEdit`, `NotebookEdit`). Cursor entries are `failClosed: true`. On both hosts, any hook error exits 2, which blocks.
 
-The stop guard finds the open block from evidence. It reads the P9 marker. Then it walks the registered gates from E1 in read-only mode (`CADENCE_GATES_READONLY=1`). The first failing gate is the open block. An orchestrator's subagent stops are pushed back once and never spend the run's three-refusal stop budget. A peer's stop is recorded and allowed (cd-76). Shell commands are gated best-effort.
+The stop guard finds the open block from evidence. It reads the P9 marker. Then it walks the registered gates from E1 in read-only mode (`CADENCE_GATES_READONLY=1`). The first failing gate is the open block. An orchestrator's subagent stops are pushed back once and never spend the run's three-refusal stop budget. A peer's stop is recorded and allowed. Shell commands are gated best-effort.
 
 ## Per-run files
 

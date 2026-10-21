@@ -1,4 +1,4 @@
-"""core:standalone-package names its one exception: a gate may lstat a host peer entry (cd-53)."""
+"""core:standalone-package names its one exception: a gate may lstat a host peer entry."""
 
 from __future__ import annotations
 

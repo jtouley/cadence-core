@@ -2,7 +2,7 @@
 """R4 final consolidate — Close pass then Delta pass (fix-loop budget: `review_fix_rounds`).
 
 A fix round is one `## Update` section of the PR review. At the budget, a loop that is still
-open holds with the loop rule: a MERGE-READY verdict with no open must-fix ends it (#182).
+open holds with the loop rule: a MERGE-READY verdict with no open must-fix ends it.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ BUDGET_HOLD = (
 
 
 def fix_rounds(text: str) -> int:
-    """The fix rounds of a PR review: its `## Update` sections, one for each /pr-review-update (#182)."""
+    """The fix rounds of a PR review: its `## Update` sections, one for each /pr-review-update."""
     return len(_UPDATE.findall(text))
 
 
@@ -45,7 +45,7 @@ def fix_round_budget(root: Path, workspace: Path | None = None) -> int:
 
 def consolidate(ledger: Path, *, context_dir: Path | None = None, cwd: Path | None = None,
                 rounds: int = 0, budget: int = 2) -> dict:
-    """Judge the rows of the run of ``cwd`` when ``context_dir`` is given (cd-49); else every row."""
+    """Judge the rows of the run of ``cwd`` when ``context_dir`` is given; else every row."""
     rows = load_findings(ledger)
     scope = ledger_scope(rows, context_dir, cwd=cwd) if context_dir is not None else None
     judged = scope["rows"] if scope else rows
@@ -129,7 +129,7 @@ def review_rounds(context_dir: Path, worktree: Path) -> int:
 
 
 def _peer_reviews(context_dir: Path, worktree: Path, reviews: list[Path], accept) -> tuple[list[Path], list[str]]:
-    """(reviews a peer wrote, gh-66 stage lines when none counts): name the writer stage or the
+    """(reviews a peer wrote, stage lines when none counts): name the writer stage or the
     missing join row, not the attest text."""
     import artifact_requirements
 
@@ -140,7 +140,7 @@ def _peer_reviews(context_dir: Path, worktree: Path, reviews: list[Path], accept
 
 
 def run_pr_review(context_dir: Path, worktree: Path) -> Path | None:
-    """The review path of the run's PR when the run's draft-PR record names one (cd-76 D8), else None."""
+    """The review path of the run's PR when the run's draft-PR record names one, else None."""
     import artifact_requirements
     from gate_common import current_branch
     from pipeline_run_binding import run_for
@@ -179,7 +179,7 @@ def _own_review_problems(
 def head_coverage(review: Path, head: str) -> str | None:
     """None when the review's `Last reviewed commit` is `head`, else what it has instead.
 
-    One compare for R4 and the R1 head check (PR #168 R1 N-18).
+    One compare for R4 and the R1 head check.
     """
     sha = last_reviewed_sha(review.read_text(encoding="utf-8", errors="replace"))
     if sha and head.startswith(sha):
@@ -188,7 +188,7 @@ def head_coverage(review: Path, head: str) -> str | None:
 
 
 def last_reviewed_sha(text: str) -> str | None:
-    """The last `Last reviewed commit: <sha>` value in any Markdown form (labeled_lines, cd-47 D3)."""
+    """The last `Last reviewed commit: <sha>` value in any Markdown form (labeled_lines)."""
     values = labeled_values(text, ("last reviewed commit",), r"[0-9a-f]{7,40}")
     return values[-1] if values else None
 

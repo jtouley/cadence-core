@@ -1,4 +1,4 @@
-"""A peer stage gate with a configured model passes only on hook evidence of that model (cd-58 D4).
+"""A peer stage gate with a configured model passes only on hook evidence of that model.
 
 The evidence is an `allow` row in .context/attest/<run>.models.jsonl, written by the
 handoff hook. A `begin` record of subagent_provenance.py is the orchestrator's own
@@ -47,7 +47,7 @@ def row(ctx: Path, stage="plan-review", model="opus", decision="allow", run="run
     peer_models.record_call(ctx, run, {"stage": stage, "block": "P3", "model": model, "subagent_type": "general-purpose",
                                        "decision": decision, "tool_use_id": tool_use_id, "agent_id": None,
                                        "session_id": "chat-1", "at": 1.0})
-    if join_agent is not None:  # gh-66: the same call as a call row and a join row
+    if join_agent is not None:  # The same call as a call row and a join row
         delegation = {v: k for k, v in peer_models.SLUG_FOR_STAGE.items() if v and k != v}.get(stage, stage)
         peer_call(ctx, run, stage=delegation, tool_use_id=tool_use_id, decision=decision, model=model, model_slug=stage)
         peer_join(ctx, run, tool_use_id=tool_use_id, agent_id=join_agent)
@@ -221,7 +221,7 @@ def test_snapshot_gate_uses_the_session_not_the_live_config(ctx, make_root, mode
         assert model_lines and "opus" in model_lines[0]
 
 
-# --- gh-66 (#59): on a verdict_join run, the model check reads joined call rows ---------------
+# --- on a verdict_join run, the model check reads joined call rows ---------------
 
 REVIEW = "RUN_BY_COMMAND: plan-review\nTicket: gh-1\n\nVerdict: READY TO EXECUTE\n"
 
@@ -254,7 +254,7 @@ def test_p3_needs_the_review_from_an_allowed_call_on_the_configured_model(ctx, c
 @pytest.mark.parametrize("evidence", ["none", "call-only", "call-and-join"])
 def test_p1_needs_a_joined_plan_create_call(ctx, evidence):
     verdict_join_session(ctx, workspace=str(ctx.parent), peer_models={"plan-create": "opus"})
-    if evidence == "call-only":  # #59: an allowed call row, and no peer ever started for it
+    if evidence == "call-only":  # An allowed call row, and no peer ever started for it
         row(ctx, stage="plan-create", tool_use_id="t1")
         peer_call(ctx, "run-1", stage="plan-create", tool_use_id="t1", model="opus", model_slug="plan-create")
     elif evidence == "call-and-join":
@@ -278,7 +278,7 @@ def test_r4_takes_an_allowed_pr_review_update_call_under_peer_models(tmp_path, m
 
 
 def test_the_writer_own_call_must_use_the_configured_model(ctx, capsys):
-    """#59: an allowed opus call that started another agent does not cover a writer started on sonnet."""
+    """An allowed opus call that started another agent does not cover a writer started on sonnet."""
     joined_session(ctx, OPUS)
     row(ctx, model="opus", tool_use_id="t_other")
     peer_wrote(ctx, "run-1", "reviews/plan_x.md", agent_id="w", stage="plan-review", model="sonnet", body=REVIEW)

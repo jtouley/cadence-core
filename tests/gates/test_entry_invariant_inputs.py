@@ -114,7 +114,7 @@ def test_other_tickets_register_does_not_count(tmp_path):
     assert _deferral_errors(tmp_path, "cd-8_deferral-register.md", ZERO.replace("cd-7", "cd-8"))
 
 
-# --- entry_invariant_claude_hook_records: cd-64 AC7, AC11, AC15: P9 passes on a marked Claude Code run whose peers the hook recorded, with no begin.
+# --- entry_invariant_claude_hook_records: P9 passes on a marked Claude Code run whose peers the hook recorded, with no begin.
 
 # The P9 delegated stages, from the gate itself (not a copy).
 def _stage(spec: dict) -> str:
@@ -163,7 +163,7 @@ def test_p9_passes_on_hook_records_and_rejects_a_begin_record(tmp_path, monkeypa
     session_file.write_text(json.dumps(session), encoding="utf-8")
     run = session["pipeline_run_id"]
     shutil.rmtree(context / "subagent-runs" / run)
-    # cd-63: on Claude Code, P6 counts only attested peer writes. The stub writes its report
+    # On Claude Code, P6 counts only attested peer writes. The stub writes its report
     # directly, so attest it as the subagent write hook does for a real peer.
     import hashlib
 
@@ -196,7 +196,7 @@ def test_p9_passes_on_hook_records_and_rejects_a_begin_record(tmp_path, monkeypa
     assert any("only the hook writes the lean delegation record (source none)" in e for e in errors)
 
 
-# --- fixture_pipeline_stub_peers_reach_entry_invariant: Phase 8 #1: stub peers drive Alignment→Execution gates on toy_repo to P9.
+# --- fixture_pipeline_stub_peers_reach_entry_invariant: Stub peers drive Alignment→Execution gates on toy_repo to P9.
 
 def test_fixture_pipeline_stub_peers_reach_entry_invariant(tmp_path, monkeypatch):
     # Arrange: copy toy_repo under gated prefix src/
@@ -220,7 +220,7 @@ def test_fixture_pipeline_stub_peers_reach_entry_invariant(tmp_path, monkeypatch
     assert errors == [], f"entry invariant failed: {errors}"
     session = json.loads((context / "cadence-session.json").read_text(encoding="utf-8"))
     assert session["active_skill"] == "cadence"
-    marker = context / "gates" / f"entry-invariant-{session['pipeline_run_id']}.ok"  # cd-76: per run
+    marker = context / "gates" / f"entry-invariant-{session['pipeline_run_id']}.ok"  # Per run
     # P9 main() writes marker; library check_execution_entry does not — invoke main path
     from entry_invariant import main as entry_main  # noqa: E402
 

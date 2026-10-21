@@ -1,4 +1,4 @@
-"""cd-76 Phase 4: the stop guard selects the runs a stop belongs to, and reads each judged run's own evidence.
+"""The stop guard selects the runs a stop belongs to, and reads each judged run's own evidence.
 
 Layout (two_worktree_runs): the hook cwd is the primary checkout, which has no run; runs A and B
 live in linked worktrees and share one .context. A main-agent Stop judges each top-level run of

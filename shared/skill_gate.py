@@ -41,7 +41,7 @@ def skill_root() -> Path:
     return root
 
 WRITE_ACTIONS = {"write", "strreplace", "editnotebook", "write_impl", "write_test", "shell"}
-# gh-178: these wait for R5 (closure) of the workspace's run at HEAD, as hooks/pr_guard.py does.
+# These wait for R5 (closure) of the workspace's run at HEAD, as hooks/pr_guard.py does.
 PR_TALK_ACTIONS = {"gh_pr_comment", "gh_pr_review"}
 
 
@@ -75,7 +75,7 @@ def load_config(workspace: Optional[Path] = None) -> dict:
 def gated_prefixes(workspace: Optional[Path] = None) -> tuple[str, ...]:
     """`gated_prefixes` of the resolved config for `workspace`; the core defaults when `workspace` is None.
 
-    A prefix matches from the repo root (#48). So the project and local layers count only when
+    A prefix matches from the repo root. So the project and local layers count only when
     `workspace` is the project root; a subdirectory anchor gets the other layers only.
     Raises ProjectConfigError when a config layer is not valid.
     """
@@ -148,7 +148,7 @@ NOTE_INVALID_CONFIG = ".cadence.json is not valid; all writes are gated"
 
 
 def _prefixes_for_message(anchors: list[Path]) -> tuple[list[str], Optional[str]]:
-    """The prefixes of each anchor in order, no duplicates (#48 D5, D11).
+    """The prefixes of each anchor in order, no duplicates.
 
     A bad `.cadence.json` gives the built-in prefixes and NOTE_INVALID_CONFIG.
     """
@@ -162,7 +162,7 @@ def _prefixes_for_message(anchors: list[Path]) -> tuple[list[str], Optional[str]
 
 
 def _prefix_matches(norm: str, prefix: str) -> bool:
-    """A prefix with a trailing `/` is a directory; any other prefix is a name or a directory (#48 D4)."""
+    """A prefix with a trailing `/` is a directory; any other prefix is a name or a directory."""
     if prefix.endswith("/"):
         return norm.startswith(prefix)
     return norm == prefix or norm.startswith(prefix + "/")
@@ -170,7 +170,7 @@ def _prefix_matches(norm: str, prefix: str) -> bool:
 
 @lru_cache(maxsize=32)
 def _folds_case(directory: str) -> bool:
-    """True when the filesystem under `directory` reads `SRC/` and `src/` as one name (#119).
+    """True when the filesystem under `directory` reads `SRC/` and `src/` as one name.
 
     The macOS default does. The probe compares the directory with its case-swapped
     spelling and creates nothing.
@@ -185,8 +185,8 @@ def _folds_case(directory: str) -> bool:
 
 
 def is_gated_path(target_file: Optional[str], workspace: Optional[Path] = None) -> bool:
-    """Under a gated prefix, from the path start (#48). With `workspace`, its `.cadence.json`
-    extras count; a bad file gates all. On a filesystem that folds case, so does the match (#119)."""
+    """Under a gated prefix, from the path start. With `workspace`, its `.cadence.json`
+    extras count; a bad file gates all. On a filesystem that folds case, so does the match."""
     if not target_file:
         return False
     norm = target_file.replace("\\", "/")
@@ -251,7 +251,7 @@ def workspace_relative(target_file: Optional[str], workspace: Path) -> Optional[
     """`target_file` relative to the workspace (or its primary checkout); None when outside it.
 
     A relative path is read from the workspace, so `src/../../proj/src/a.py` and, from a
-    subdirectory workspace, `../src/a.py` resolve to the file they name (#119).
+    subdirectory workspace, `../src/a.py` resolve to the file they name.
     """
     if not target_file:
         return None
@@ -284,7 +284,7 @@ def gate_anchor(target_file: Optional[str], workspace: Path) -> Path:
 
 
 def gate_anchors(target_file: Optional[str], workspace: Path) -> list[Path]:
-    """The workspace repo root, its primary checkout, the file's repo root and the workspace (#48 D7).
+    """The workspace repo root, its primary checkout, the file's repo root and the workspace.
 
     Each anchor gives a prefix match from its own root, with its own `.cadence.json`. The
     workspace itself is an anchor too, so a workspace at <mono>/services/api gates its src/.
@@ -302,7 +302,7 @@ def gate_anchors(target_file: Optional[str], workspace: Path) -> list[Path]:
 
 
 def gate_pairs(target_file: Optional[str], workspace: Path) -> list[tuple[Path, str]]:
-    """(anchor, path relative to it) for each anchor and each form of the target (#48 D8, D10).
+    """(anchor, path relative to it) for each anchor and each form of the target.
 
     A target form inside this worktree gives no pair for a primary checkout that holds
     the worktree, so the primary prefixes do not apply to the worktree's own files.
@@ -328,7 +328,7 @@ def gate_pairs(target_file: Optional[str], workspace: Path) -> list[tuple[Path, 
 
 def gated_write(target_file: Optional[str], workspace: Path) -> bool:
     """A write the P9 gate holds back: inside the workspace, and a gate pair that is not a test path
-    and matches a prefix of its anchor's repo (#48).
+    and matches a prefix of its anchor's repo.
     """
     if workspace_relative(target_file, workspace) is None:
         return False
@@ -391,11 +391,11 @@ def protected_writer(target_file: Optional[str], workspace: Path) -> Optional[st
     if rel == "handoff" or rel.startswith("handoff/"):
         return "scripts/handoff.py (write)"
     if rel == "attest" or rel.startswith("attest/"):
-        # cd-58 D2: the handoff hook writes the peer model rows (<run>.models.jsonl).
+        # The handoff hook writes the peer model rows (<run>.models.jsonl).
         return ("hooks/guard_skill_gate.py (a delegated peer's write records it) and "
                 "hooks/guard_subagent_handoff.py (peer model rows)")
     if rel == "subagent-runs" or rel.startswith("subagent-runs/"):
-        # cd-64 C-1: on Claude Code the handoff hook writes the record for a lean peer call.
+        # On Claude Code the handoff hook writes the record for a lean peer call.
         return ("hooks/guard_subagent_handoff.py (Claude Code: a lean peer call) and "
                 "scripts/subagent_provenance.py (begin on Pi and headless hosts, complete)")
     name = rel.rsplit("/", 1)[-1]
@@ -776,7 +776,7 @@ class CadenceGate:
         return GateResult(True, f"ALLOWED: {action_l}")
 
     def _before_closure(self, action: str) -> GateResult:
-        """BLOCKED until the R5 breadcrumb of the workspace's run names HEAD (gh-178)."""
+        """BLOCKED until the R5 breadcrumb of the workspace's run names HEAD."""
         import subprocess
 
         closure = script_path("closure.py")  # puts the skill's scripts/ on sys.path
@@ -793,7 +793,7 @@ class CadenceGate:
 
     def _run_of(self, target_file: Optional[str]) -> tuple[Path, Optional[dict]]:
         """The context dir and the run of the target's worktree when it has one, else the gate's run."""
-        # cd-76 rev5 D1: only the marker read changes. Lazy import (R3-D3d).
+        # Only the marker read changes. Lazy import (R3-D3d).
         from pipeline_run_binding import run_for
 
         ctx = canonical_context_dir(self.workspace)
@@ -803,7 +803,7 @@ class CadenceGate:
         """BLOCKED when `target_file` is a plan document and its run has a P9 marker, else None.
 
         The per-run marker counts by entry_invariant_matches. The legacy shared marker counts
-        only when it is JSON that names this run's `pipeline_run_id` and `task_id` (PR #168 R1 N-4).
+        only when it is JSON that names this run's `pipeline_run_id` and `task_id`.
         """
         from artifact_requirements import entry_invariant_matches, entry_invariant_ok_path
 
@@ -846,7 +846,7 @@ class CadenceGate:
 def _names_run(marker: Path, run: Optional[dict]) -> bool:
     """The legacy marker is JSON that names the run's `pipeline_run_id` and `task_id`. Unlike
     entry_invariant_matches, a file that does not parse counts as no: the legacy name is not per
-    run, and a stale or empty file must not freeze the plan of a new run (PR #168 R1 N-4, N-18)."""
+    run, and a stale or empty file must not freeze the plan of a new run."""
     try:
         data = json.loads(marker.read_text(encoding="utf-8"))
     except (OSError, ValueError):

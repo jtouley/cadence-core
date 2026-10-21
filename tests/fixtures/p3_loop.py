@@ -1,4 +1,4 @@
-"""gh-104: one builder for the P3 re-review tests (plan, plan reviews, mtimes, begins).
+"""One builder for the P3 re-review tests (plan, plan reviews, mtimes, begins).
 
 After /plan-update, a blocking plan review that is older than the plan must open P3 again,
 and a blocking review that is newer than the plan must open P4. Each helper returns the path
@@ -93,7 +93,7 @@ def p3_review(lp: Loop, t: float, verdict: str | None, *, n: int = 1, mf: tuple[
     return at(path, t)
 
 
-# --- The scenarios of the plan table (gh-104 S1b, S2, S3, S4, S5). Each returns the Loop. ---
+# --- The scenarios of the plan table. Each returns the Loop. ---
 
 
 def s1b(repo: Path) -> Loop:

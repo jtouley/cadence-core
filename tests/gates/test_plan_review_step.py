@@ -1,4 +1,4 @@
-"""gh-104: the P3 and P4 gates read the newest plan-review verdict and the plan mtime.
+"""The P3 and P4 gates read the newest plan-review verdict and the plan mtime.
 
 After /plan-update, a blocking review that is older than the plan opens P3 (the next
 cycle). A blocking review that is not older than the plan opens P4. At the cycle limit
@@ -225,7 +225,7 @@ def test_limit_p4_gate_fails_and_names_the_next_step(p3_run_repo, verdict, plan_
 
 
 def test_s4c2_limit_reads_open_ids_from_the_must_fix_section_only(p3_run_repo):
-    """gh-1 P1 rerun: the gate asked for MF-15 and MF-16, which the review listed as applied."""
+    """A P1 rerun: the gate asked for MF-15 and MF-16, which the review listed as applied."""
     lp = at_limit(p3_run_repo, RWC, 80, carried=["MF-3"])
     review = lp.ctx / "reviews" / f"plan_{lp.slug}_r5.md"
     body = (
@@ -251,7 +251,7 @@ def test_s4c2_limit_reads_open_ids_from_the_must_fix_section_only(p3_run_repo):
     pytest.param("- MF-1 open. This amends MF-7 from cycle 2.\n", {"MF-1"}, id="cited-id-is-not-an-item"),
     pytest.param("- MF-1 open.\n  see MF-8 for the file.\nAlso fixes MF-9.\n", {"MF-1"}, id="continuation-lines-are-not-items"),
     # The anchor item `- MF-1` makes the fallback (every cited id) not apply, so the row fails on a reader that
-    # misses a shape (PR #168 R1 N-24).
+    # misses a shape.
     pytest.param("- MF-1 open.\n- Item MF-2: a\n1. Item MF-3\n### Item MF-4\n| Item MF-5 | b |\n",
                  {"MF-1", "MF-2", "MF-3", "MF-4", "MF-5"}, id="a-word-after-a-marker-is-still-an-item"),
     pytest.param("- MF-1 open.\n- see MF-8 for the file.\n", {"MF-1", "MF-8"}, id="a-bulleted-citation-is-an-item-closed-side"),
@@ -259,7 +259,7 @@ def test_s4c2_limit_reads_open_ids_from_the_must_fix_section_only(p3_run_repo):
                  id="bare-word-first-line-is-a-citation"),
 ])
 def test_review_must_fix_ids_reads_every_item_shape(section, want):
-    """PR #168 R1 N-21: an item shape the reader missed dropped an open id, and the gate asked for fewer."""
+    """An item shape the reader missed dropped an open id, and the gate asked for fewer."""
     text = "## Cycle 4 items: status\n\n- MF-5 applied.\n\n## Must-fix items\n\n" + section + "\n## Notes\n\n- MF-6 was applied.\n"
     assert ar.review_must_fix_ids(text) == want
 
@@ -295,7 +295,7 @@ def test_s3_p4_gate_passes_after_ready_to_execute(p3_run_repo):
 
 
 def test_p4_gate_review_not_utf8_gives_gate_result_not_traceback(p3_run_repo):
-    # PR #143 review N-1: a review file with a byte that is not UTF-8 stopped the P4 gate with a traceback.
+    # A review file with a byte that is not UTF-8 stopped the P4 gate with a traceback.
     lp = s2(p3_run_repo)
     bad = p3_run_repo / ".context" / "reviews" / "plan_gh-1_x_r2.md"
     bad.write_bytes(b"RUN_BY_COMMAND: plan-review\n\xff\nPipeline-Run: " + lp.run.encode() + b"\n")
@@ -400,7 +400,7 @@ A, B = "a" * 64, "b" * 64  # the sha256 of review one and of review two
                  id="fenced-ledger-is-not-one"),
     pytest.param("## Plan update\n" + ledger({"MF-1": "a"}, A[:12]) + "\n## Notes\n\n| MF-9 | b |\n", A, {"MF-1"},
                  id="the-next-heading-ends-the-table"),
-    # PR #186 R1 MF-2, MF-3: an older review's ledger never answers a newer review, whatever heading follows it.
+    # An older review's ledger never answers a newer review, whatever heading follows it.
     pytest.param("## Plan update\n" + ledger({"MF-1": "a"}, A[:12]) + "\n### Update\n\nNew text.\n", B, None,
                  id="old-ledger-under-a-new-update"),
     pytest.param("## Plan update\n" + ledger({"MF-1": "a"}, A[:12]) + "\n## Plan changes\n\nNew text.\n", B, None,

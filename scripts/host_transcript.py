@@ -1,4 +1,4 @@
-"""Read Claude Code transcripts (JSONL) for the hooks (gh-96).
+"""Read Claude Code transcripts (JSONL) for the hooks.
 
 One reader for the peer-return check and the context budget. A transcript can be
 large, so a reader reads only the head or the tail. A row that a cut splits does

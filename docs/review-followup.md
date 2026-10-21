@@ -45,7 +45,7 @@ can't reproduce it, drop it.
 6. **Land the winners together**, re-run the suite and every matrix on the
    combined tree, and update the contract docs the fix changed. Then re-read
    the combined diff as an adversary. A green matrix only covers the input
-   shapes you thought of. In PR #2 the empty-`Code paths:` rule scored 9/9 but
+   shapes you thought of. In one pull request the empty-`Code paths:` rule scored 9/9 but
    treated a markdown list on the following lines as empty.
 7. **Look back.** Name the failure class, not just the bug.
 
@@ -76,4 +76,4 @@ can't reproduce it, drop it.
 - [ ] The PR title type matches the diff. Split PRs that mix docs with
       runtime changes.
 - [ ] The PR's test plan is fully checked. Walking `quickstart.md` end to end is
-      what found the ticket-gate break in PR #2.
+      what found a ticket-gate break.

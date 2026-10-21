@@ -1,4 +1,4 @@
-"""Run the Node tests of pi/cadence-gates.ts with real repo states (cd-84).
+"""Run the Node tests of pi/cadence-gates.ts with real repo states.
 
 node >= 23.6 runs `.ts` with type stripping. Without a working node the test is skipped,
 except with CADENCE_REQUIRE_NODE=1 (CI), where it fails.

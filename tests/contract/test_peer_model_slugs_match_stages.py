@@ -1,4 +1,4 @@
-"""PEER_MODEL_SLUGS and SLUG_FOR_STAGE agree with stages.json and the lean-delegation callers (cd-58 SF-4).
+"""PEER_MODEL_SLUGS and SLUG_FOR_STAGE agree with stages.json and the lean-delegation callers.
 
 A new peer stage or a new gate that checks a delegation must be added to the
 peer_models lists, or this test fails.

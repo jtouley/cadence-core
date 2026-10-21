@@ -1,4 +1,4 @@
-"""Gated paths: a prefix matches a path relative to the workspace, after it is resolved, and only from the path start (cd-10-F4, #119, #48)."""
+"""Gated paths: a prefix matches a path relative to the workspace, after it is resolved, and only from the path start."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ def _clear_gate_caches():
         cache.cache_clear()
 
 
-# --- gated_prefixes_match_from_the_path_start: A gated prefix matches only from the start of the path, relative to a fixed anchor (#48).
+# --- gated_prefixes_match_from_the_path_start: A gated prefix matches only from the start of the path, relative to a fixed anchor.
 #
 # The anchors are the workspace repo root, its primary checkout, the git toplevel of
 # the file, and the workspace directory. The gate holds a write when any (anchor, path form) pair matches a
@@ -38,7 +38,7 @@ def _clear_gate_caches():
 # `cbench-cache/src/cadence@<sha>/` is not gated by `src/`. The result does not
 # depend on PYTHONHASHSEED.
 #
-# Spec: `.context/proposals/gh-48.md` (D1-D14). The test numbers follow the plan.
+# The test numbers follow the plan of the gated-paths change (D1-D14).
 
 HOOK = "guard_skill_gate.py"
 BEFORE_P9 = "entry invariant"
@@ -432,7 +432,7 @@ def test_relative_gated_paths_still_gated(src_repo, run_hook):
     assert tool_decision("cursor", out) == "deny"
 
 
-# --- gated_paths_resolve_before_the_prefix_match: The gate resolves a path against the repo before it matches a prefix (#119).
+# --- gated_paths_resolve_before_the_prefix_match: The gate resolves a path against the repo before it matches a prefix.
 #
 # Three paths passed ungated on main: `src/../../proj/src/a.py` (every `../` form was
 # read as outside the workspace), `../src/a.py` from a subdirectory workspace, and

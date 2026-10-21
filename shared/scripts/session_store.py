@@ -121,7 +121,7 @@ PENDING_ORCHESTRATOR_SECONDS = 120
 
 
 def write_pending_orchestrator(agent_id: str | None, context: Path) -> Path:
-    """Note the agent that is about to run activation (cd-47 D2). One pool per canonical .context."""
+    """Note the agent that is about to run activation. One pool per canonical .context."""
     import time
 
     now = time.time()

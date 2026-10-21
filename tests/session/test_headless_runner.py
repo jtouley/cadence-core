@@ -1,4 +1,4 @@
-"""scripts/headless.py — walk stages.json gates for headless hosts (#3)."""
+"""scripts/headless.py — walk stages.json gates for headless hosts."""
 
 from __future__ import annotations
 

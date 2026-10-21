@@ -14,7 +14,7 @@ Load `$CADENCE_HOME/references/peer-contract.md`.
 
 Write `.context/vibetest/{slug}_{YYYY-MM-DD}.md` on the first Write. Use the Write tool,
 not a shell command. The hook attests a Write or an Edit. It denies a shell write to a
-report (#78). Do not write over a report that exists. When the file exists, write
+report. Do not write over a report that exists. When the file exists, write
 `{slug}_{YYYY-MM-DD}-rev{N}.md` with the first free `N` from 2. Include:
 
 ```

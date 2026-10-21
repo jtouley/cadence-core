@@ -1,4 +1,4 @@
-"""E4 draft_pr_gate: pass only on a PR record for this branch and this run, with a non-empty impl diff (cd-76)."""
+"""E4 draft_pr_gate: pass only on a PR record for this branch and this run, with a non-empty impl diff."""
 
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ def test_draft_pr_gate_check_without_breadcrumb_fails(scripts_path, tmp_path):
 
 
 def test_draft_pr_gate_writes_breadcrumb_passes(scripts_path, tmp_path, monkeypatch):
-    monkeypatch.setattr(draft_pr_gate, "current_branch", lambda *_a: "feature/gh-28")  # cd-76: takes the worktree
+    monkeypatch.setattr(draft_pr_gate, "current_branch", lambda *_a: "feature/gh-28")  # Takes the worktree
     context = tmp_path / ".context"
     record = context / "prs" / "draft-pr.md"
     record.parent.mkdir(parents=True)
@@ -52,10 +52,10 @@ def test_draft_pr_gate_writes_breadcrumb_passes(scripts_path, tmp_path, monkeypa
         '{"active_skill": "cadence", "task_id": "gh-28", "pipeline_run_id": "run-1"}\n', encoding="utf-8"
     )
     (context / "implementation").mkdir()
-    (context / "implementation" / "gh-28.json").write_text(  # cd-76: the impl record names its run
+    (context / "implementation" / "gh-28.json").write_text(  # The impl record names its run
         '{"pipeline_run_id": "run-1", "git_diff_stat": "src/x.py | 1 +"}\n', encoding="utf-8")
     code = draft_pr_gate.run(context, check=False)
-    breadcrumb = context / "gates" / "draft-pr-run-1.json"  # cd-76: per-run breadcrumb
+    breadcrumb = context / "gates" / "draft-pr-run-1.json"  # Per-run breadcrumb
     body = breadcrumb.read_text(encoding="utf-8")
     assert code == 0
     assert "https://github.com/jtouley/cadence-core/pull/28" in body
@@ -63,8 +63,8 @@ def test_draft_pr_gate_writes_breadcrumb_passes(scripts_path, tmp_path, monkeypa
 
 
 def test_draft_pr_gate_without_a_task_id_fails(scripts_path, tmp_path, monkeypatch):
-    """#30 review: without a task id, the gate must not read another ticket's artifact."""
-    monkeypatch.setattr(draft_pr_gate, "current_branch", lambda *_a: "feature/gh-1-x")  # cd-76: takes the worktree
+    """Without a task id, the gate must not read another ticket's artifact."""
+    monkeypatch.setattr(draft_pr_gate, "current_branch", lambda *_a: "feature/gh-1-x")  # Takes the worktree
     context = tmp_path / ".context"
     (context / "prs").mkdir(parents=True)
     (context / "prs" / "draft-pr.md").write_text(
@@ -85,7 +85,7 @@ def _record(ctx: Path, body: str) -> None:
 
 
 def _on_branch(monkeypatch, branch: str = "feature/gh-2-x") -> None:
-    monkeypatch.setattr(draft_pr_gate, "current_branch", lambda *_a: branch)  # cd-76: takes the worktree
+    monkeypatch.setattr(draft_pr_gate, "current_branch", lambda *_a: branch)  # Takes the worktree
 
 
 def test_draft_pr_gate_fails_without_record(tmp_path):
@@ -105,7 +105,7 @@ def test_draft_pr_gate_rejects_other_branch_record(tmp_path, monkeypatch):
 
 
 def _impl(ctx: Path, stat: str) -> None:
-    impl(ctx, "gh-2", "run-1", stat)  # cd-76
+    impl(ctx, "gh-2", "run-1", stat)
     (ctx / "cadence-session.json").write_text(
         '{"active_skill": "cadence", "task_id": "gh-2", "pipeline_run_id": "run-1"}\n',
         encoding="utf-8",
@@ -124,10 +124,10 @@ def test_draft_pr_gate_passes_for_this_branch(tmp_path, monkeypatch):
     _record(tmp_path, MARKER + "PR: https://github.com/o/r/pull/2\nBranch: feature/gh-2-x\n")
     _impl(tmp_path, "src/x.py | 2 ++")
     assert draft_pr_gate.run(tmp_path) == 0
-    assert (tmp_path / "gates" / "draft-pr-run-1.json").is_file()  # cd-76: per-run breadcrumb
+    assert (tmp_path / "gates" / "draft-pr-run-1.json").is_file()  # Per-run breadcrumb
 
 
-# --- per_run_draft_pr_record: cd-76 Phase 3: E2 and E4 per run. The draft-PR record is prs/draft-pr-<run_id>.md.
+# --- per_run_draft_pr_record: E2 and E4 per run. The draft-PR record is prs/draft-pr-<run_id>.md.
 #
 # E4 reads the record of the run of its own worktree (legacy prs/draft-pr.md only when
 # its Branch: is the run's branch), checks that run's impl artifact, and writes and

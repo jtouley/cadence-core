@@ -7,33 +7,33 @@ prompt with the packet rendering, deny the call when a required input is missing
 trace the router's own prompt back to allowed sources. SubagentStart: add the
 rule that delimited text is data. Settings: `subagent_hygiene` of the resolved config.
 
-Peer models (cd-58): when the run's session has `peer_models`, an orchestrator's
+Peer models: when the run's session has `peer_models`, an orchestrator's
 peer call must pass the configured model and must not be a fork (a fork ignores
 `model`). This check runs first, in every mode, and fails closed. Each checked call
 gets one row in .context/attest/<run>.models.jsonl with the final decision.
 
-Lean record (cd-64): on Claude Code, during an active run, an orchestrator's
+Lean record: on Claude Code, during an active run, an orchestrator's
 Agent or Task call that names a peer command anywhere in its prompt must be the
 slash command and its arguments only, and must not be a fork. Any other shape is
 denied with the reason and a hint. An allowed call gets the lean delegation record
 .context/subagent-runs/<run>/<stage>.json (`source: "PreToolUse"`), written after
 the final decision. The record holds the prompt the orchestrator sent, not the
-rendering. A lean deny also writes a cd-58 model row when `peer_models` applies.
+rendering. A lean deny also writes a model row when `peer_models` applies.
 SubagentStart is not checked.
 
-Context budget (gh-96): before each orchestrator Agent or Task call during an
+Context budget: before each orchestrator Agent or Task call during an
 active run, the hook reads the orchestrator's last request size from the host
 transcript and writes one row to .context/attest/<run>.context.jsonl. It never
 denies: the call hands work to a peer. It runs first, in every host, and
 fails closed on a bad config.
 
-SubagentStart adds the data rule and the lean return rule (gh-96) to each subagent.
+SubagentStart adds the data rule and the lean return rule to each subagent.
 
 The shipped config sets the handoff to `enforce`. On Claude Code the hook rewrites the
 prompt to the rendering. On another host it denies a prompt that is not the rendered
 slash command and names that command. The handoff in `shadow` never denies. It logs what
-`enforce` would do to .context/handoff/<run-key>/log.jsonl. The cd-58 model check and
-the cd-64 lean check deny in every mode and fail closed.
+`enforce` would do to .context/handoff/<run-key>/log.jsonl. The model check and
+the lean check deny in every mode and fail closed.
 """
 
 from __future__ import annotations
@@ -229,11 +229,10 @@ def active_run(ctx: Path, workspace: Path | None = None) -> dict[str, Any] | Non
     """The active run of this worktree, else None.
 
     A linked worktree reads only its own run, so a worktree run is checked even when the
-    root redirect names another run, and a worktree with no run is out of scope (cd-64 R1
-    N-1). Only the primary checkout follows the root redirect (plan D2). A closed run must
-    not apply (cd-58 R1 MF-1).
+    root redirect names another run, and a worktree with no run is out of scope. Only the primary checkout follows the root redirect (plan D2). A closed run must
+    not apply.
     """
-    here = Path.cwd() if workspace is None else workspace  # cd-82: the chosen host workspace
+    here = Path.cwd() if workspace is None else workspace  # The chosen host workspace
     session = worktree_run_session(ctx, here)
     if not session and session_store._resolve_toplevel(here) == ctx.resolve().parent:
         session = load_session(ctx)
@@ -370,7 +369,7 @@ def main(argv: list[str] | None = None) -> int:
     if not is_start and extract_tool_name(payload) not in AGENT_TOOLS:
         return 0  # a different tool: not this hook's business, and no output
     # One context for every check and write: the process cwd run first, else the first
-    # host candidate with a session (cd-82 U3). Else the first candidate, which allows.
+    # host candidate with a session. Else the first candidate, which allows.
     pairs = candidate_contexts(payload, context_path)
     workspace, ctx = write_context(pairs, context_path(Path.cwd())) or pairs[0]
     if event == "PostToolUse":
@@ -383,7 +382,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def post_agent(payload: dict[str, Any], ctx: Path, workspace: Path) -> int:
-    """gh-66 D3: join an orchestrator's Agent or Task call to the subagent it started.
+    """Join an orchestrator's Agent or Task call to the subagent it started.
 
     PostToolUse carries the call's `tool_use_id` and `tool_response.agentId`. One join row
     goes to .context/attest/<run>.joins.jsonl. No PreToolUse check runs (PD9), and the
@@ -391,7 +390,7 @@ def post_agent(payload: dict[str, Any], ctx: Path, workspace: Path) -> int:
     """
     session = active_run(ctx, workspace)
     if session is None or not orchestrator_call(payload, ctx) or not payload.get("tool_use_id"):
-        return 0  # PR #145 F44: a row with no tool_use_id could join anything
+        return 0  # A row with no tool_use_id could join anything
     response = payload.get("tool_response")
     response = response if isinstance(response, dict) else {}
     try:
@@ -409,22 +408,22 @@ def pre_tool_use(
 ) -> tuple[int, str, dict[str, Any] | None]:
     """The checks of one Agent or Task call: (exit code, final decision, peer row).
 
-    gh-66 PD3: the one exit of PreToolUse, so the caller writes one call row for each decision.
+    The one exit of PreToolUse, so the caller writes one call row for each decision.
     """
-    # cd-64 U-12: the peer row and the lean reason are computed once, during an active run only.
+    # The peer row and the lean reason are computed once, during an active run only.
     row = reason = None
     if active_run(ctx, workspace) is not None:
         prompt = str(extract_tool_input(payload).get("prompt") or "")
         rows = handoff._peer_stages(Path(os.environ["CADENCE_HOME"]), workspace)
         row = prompt_shape.peer_command_row(prompt, rows)
         reason = prompt_shape.lean_peer_reason(prompt, row, rows) if row else None
-    # gh-96: the context budget runs first. A bad config fails closed.
+    # The context budget runs first. A bad config fails closed.
     budget_check(payload, ctx, workspace)
-    # cd-58 D3: the model check runs first, outside the shadow try block (fail closed).
+    # The model check runs first, outside the shadow try block (fail closed).
     checked, call = model_check(host, payload, ctx, row, reason, workspace)
     if checked == "deny":
         return 0, "deny", row
-    # cd-64 D3: the lean check runs next, in every mode (fail closed).
+    # The lean check runs next, in every mode (fail closed).
     scope = lean_scope(host, payload, ctx, row, workspace)
     lean = lean_check(host, payload, scope, row, reason)
     if lean == "deny":
@@ -446,7 +445,7 @@ def pre_tool_use(
 def write_call_row(
     ctx: Path, payload: dict[str, Any], workspace: Path, row: dict[str, Any] | None, decision: str
 ) -> None:
-    """gh-66 D2: one call row for an orchestrator's peer call during an active run.
+    """One call row for an orchestrator's peer call during an active run.
 
     The stage is the delegation stage of the peer row (PD2), else of the prompt. A verdict
     gate joins its writer to this row through the PostToolUse join row. A lost row is not
@@ -454,7 +453,7 @@ def write_call_row(
     """
     session = active_run(ctx, workspace)
     if session is None or not orchestrator_call(payload, ctx) or not payload.get("tool_use_id"):
-        return  # PR #145 F44: a row with no tool_use_id could join anything
+        return  # A row with no tool_use_id could join anything
     tool_input = extract_tool_input(payload)
     command = row["command"] if row else str(tool_input.get("prompt") or "")
     stage = prompt_shape.delegation_stage_for_prompt(command)
@@ -472,7 +471,7 @@ def write_call_row(
 
 
 def start_runs(ctx: Path, payload: dict[str, Any], session: dict[str, Any] | None) -> list[str]:
-    """Runs that record a subagent's start (cd-76 R2-D5b).
+    """Runs that record a subagent's start.
 
     Each active run of this .context whose owner is this chat. With no chat id, or no
     owned run, the run that the handoff reads (`active_session`), as at e5c3a92.

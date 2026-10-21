@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R3 — cognitive complexity, duplication and code shape of the change (gh-100).
+"""R3 — cognitive complexity, duplication and code shape of the change.
 
 The gate scores each function in the files that changed since the merge base
 with the run's base branch (committed, uncommitted and untracked). A function
@@ -118,7 +118,7 @@ class Report:
     python_files: int = 0
     highest: dict[str, float] = field(default_factory=dict)  # per measure, the highest value in the change
     tools: list[dict] = field(default_factory=list)  # the `bugs` and `types` records (tool_measures.py)
-    packs: list[str] = field(default_factory=list)  # gh-177: the errors of the review gates of the enabled packs
+    packs: list[str] = field(default_factory=list)  # The errors of the review gates of the enabled packs
 
 
 def _base_source(worktree: Path, fork: str | None, rel: str) -> str | None:
@@ -151,7 +151,7 @@ def _base_scores(rel: str, source: str | None) -> list[cc.FunctionScore] | None:
 
 
 def _worse(scores: list[cc.FunctionScore], base: list[cc.FunctionScore], rel: str, cfg: dict) -> list[Finding]:
-    """Functions over a limit that are new or got worse, pairing same-named functions by rank (PR #101 MF-1)."""
+    """Functions over a limit that are new or got worse, pairing same-named functions by rank."""
     findings = []
     for metric, (attr, section, key, _text) in METRICS.items():
         was = {name: [getattr(f, attr) for f in group] for name, group in _by_name(base, attr).items()}
@@ -293,7 +293,7 @@ def _problems(report: Report, cfg: dict) -> list[str]:
 
 
 def _fix_step(report: Report, check: bool) -> list[str]:
-    """The named fix step of a failed R3 (gh-183), when the record lists offenders that a change of code removes."""
+    """The named fix step of a failed R3, when the record lists offenders that a change of code removes."""
     if not (report.findings or report.duplicated or any(r["verdict"] == "fail" and r["offenders"] for r in report.tools)):
         return []
     write = "run R3 without --check to write the record, then " if check else ""
@@ -357,7 +357,7 @@ def _report(context_dir: Path, given: str | None = None) -> tuple[dict, str, Rep
         report = measure_change(worktree, fork, files, cfg)
     except GitError as exc:
         return str(exc)
-    # gh-177: the review gate of each enabled pack that lists `review` judges every changed file.
+    # The review gate of each enabled pack that lists `review` judges every changed file.
     packs, report.packs = phase_packs(_SCRIPTS.parent, "review", worktree)
     report.packs += gate_errors(packs, "review", worktree, sorted([*files, *excluded]))
     return cfg, base, report, excluded

@@ -1,4 +1,4 @@
-"""A2 and install.sh run under the system python3, which can be 3.9 (cd-53 C1).
+"""A2 and install.sh run under the system python3, which can be 3.9.
 
 The suite runs under a newer Python, so a 3.10+ syntax error would pass every
 other test. Each module of the A2 import chain must parse with the 3.9 grammar.

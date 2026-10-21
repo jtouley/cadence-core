@@ -67,7 +67,7 @@ def _no_tracker_problem(adapter: dict) -> str | None:
 
 
 def _no_tracker(context_dir: Path, session: dict | None, adapter: dict, *, check: bool) -> int:
-    """A4 in no-tracker mode (cd-65 D4, D5): record TICKET_SKIPPED for adapter none."""
+    """A4 in no-tracker mode: record TICKET_SKIPPED for adapter none."""
     problem = _no_tracker_problem(adapter)
     if problem:
         return fail(SLUG, [problem])
@@ -133,7 +133,7 @@ def run(context_dir: Path, *, check: bool = False, skill_root: Path | None = Non
         for extra in _extra_candidates(value, adapters)
     ]
 
-    # The none pattern never satisfies A4 (cd-65 D3). Only the no-tracker mode passes for none.
+    # The none pattern never satisfies A4. Only the no-tracker mode passes for none.
     tried = [adapter for adapter in adapters if adapter.get("name") != "none"]
     try:
         for adapter in tried:

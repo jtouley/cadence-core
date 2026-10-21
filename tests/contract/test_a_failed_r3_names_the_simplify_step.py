@@ -1,4 +1,4 @@
-"""A failed R3 has a named fix step: subagents/simplify-code.md with the R3 record as its one input (gh-183).
+"""A failed R3 has a named fix step: subagents/simplify-code.md with the R3 record as its one input.
 
 tests/gates/test_cognitive_complexity.py asserts that the R3 fail text ends with the step.
 """

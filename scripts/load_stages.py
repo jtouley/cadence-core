@@ -185,7 +185,7 @@ def get_stage(slug: str, skill_root: Path | None = None) -> dict[str, Any]:
 
 
 def writer_stages(slug: str, *, skill_root: Path | None = None) -> frozenset[str]:
-    """The delegation stages whose peer may write the verdict of `slug` (gh-66 PD20).
+    """The delegation stages whose peer may write the verdict of `slug`.
 
     Here `skill_root=None` means CODE_ROOT, the tree of this module, and not SKILL_ROOT
     as in ``get_stage``: the field and the code that reads it ship together. A slug that is

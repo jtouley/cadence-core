@@ -1,4 +1,4 @@
-"""Pi payload fixtures give the expected decision from the real Claude Code hooks (cd-84).
+"""Pi payload fixtures give the expected decision from the real Claude Code hooks.
 
 The fixtures are the contract between the Pi extension (Node) and the hooks (Python).
 `pi/cadence-gates.ts` must build each `payload` from each `pi` input (Node test 2.1).

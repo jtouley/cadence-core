@@ -58,7 +58,7 @@ def test_activate_session_main_fresh_or_resume_writes_session(
         expected_fresh = True
         expected_slug = "activate-session"
     elif kind == "resume_empty":
-        # cd-47 D9: nothing to resume, so --resume starts a fresh run and says so.
+        # Nothing to resume, so --resume starts a fresh run and says so.
         flags.append("--resume")
         expected_fresh = True
         expected_slug = "activate-session"
@@ -129,7 +129,7 @@ def test_activate_session_main_resume_slug_not_in_registry_fails(
     assert not (tmp_path / ".context" / "cadence-session.json").is_file()
 
 
-# --- activate_session_peer_models: A1 reads `peer_models` once, validates it, and snapshots it into the session (cd-58 D1, D5).
+# --- activate_session_peer_models: A1 reads `peer_models` once, validates it, and snapshots it into the session.
 #
 # A1 resolves the config layers (scripts/cadence_config.py) for each fresh or resumed run.
 # Only a fresh run takes `peer_models` from it: a resumed run keeps its own snapshot, and a
@@ -435,10 +435,10 @@ def test_resumed_never_reads_config(monkeypatch):
     assert result == ({"plan-review": "opus"}, [])
 
 
-# --- activate_session_lean_marker: A1 marks a fresh Claude Code run: only the hook writes its lean delegation records (cd-64 D4).
+# --- activate_session_lean_marker: A1 marks a fresh Claude Code run: only the hook writes its lean delegation records.
 #
 # A fresh run on Claude Code gets `lean_record_by_hook: true`. `--resume` copies the marker
-# only when the resumed record has it, so a run started before cd-64 keeps its `begin` records.
+# only when the resumed record has it, so a run started before the lean check keeps its `begin` records.
 
 def test_fresh_claude_run_is_marked(feature_branch_repo, make_root):
     proc = _activate(feature_branch_repo, make_root(), "--fresh")
@@ -501,7 +501,7 @@ def test_resume_with_no_run_is_a_fresh_marked_run(feature_branch_repo, make_root
     assert session_store.load_worktree_session(feature_branch_repo)["lean_record_by_hook"] is True
 
 
-# --- activate_session_verdict_join: A1 turns on the verdict stage check only when the host loads the join hook (gh-66 PD8, PD22).
+# --- activate_session_verdict_join: A1 turns on the verdict stage check only when the host loads the join hook.
 #
 # A fresh Claude Code run gets `verdict_join: true` only when a PostToolUse `Agent` group runs
 # guard_subagent_handoff.py in one of four places: the user settings file, the project

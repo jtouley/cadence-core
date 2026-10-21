@@ -1,4 +1,4 @@
-"""Commands for the agent, with absolute script paths under the skill root (cd-82, #83).
+"""Commands for the agent, with absolute script paths under the skill root.
 
 `stages.json` names gate scripts relative to the skill root (`python3 scripts/x.py`).
 The agent runs a printed command in the project, where `scripts/` is absent or is

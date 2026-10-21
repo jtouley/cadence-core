@@ -232,7 +232,7 @@ def test_real_mypy_counts_the_new_error_and_not_the_old_one(tmp_path, pinned_too
     assert [p.name for p in (tmp_path / "repo").iterdir() if p.name.endswith("_cache")] == []
 
 
-# PR #168 R1 N-5: B008, B904 and S108 are opinion rules, not bugs. S110 (try, except, pass) stays.
+# B008, B904 and S108 are opinion rules, not bugs. S110 (try, except, pass) stays.
 OPINION = ("def Depends(x=None):\n    return x\n\n\ndef handler(db=Depends(None)):\n"
            "    try:\n        open('/tmp/x').read()\n    except OSError:\n        pass\n"
            "    try:\n        return int(db)\n    except ValueError:\n        raise RuntimeError('bad')\n")

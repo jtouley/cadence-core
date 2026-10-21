@@ -1,4 +1,4 @@
-"""gh-104: `headless.py next` gives the P3 re-review after P4, on the real registry.
+"""`headless.py next` gives the P3 re-review after P4, on the real registry.
 
 Before the fix, the P3 gate checked only that a review existed, and the P4 gate passed on
 the old plan-update marker. Thus the walk went past P4 to P5 with a blocking review.

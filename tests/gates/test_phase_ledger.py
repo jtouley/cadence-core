@@ -40,7 +40,7 @@ def _commit(repo: Path, name: str, subject: str, when: str | None = None) -> Non
 
 
 def _phase_commits(repo: Path, *, same_time: bool = False, count: int = 3) -> None:
-    """Commit phases 1..count, each at its own minute unless `same_time` (one shell, #173)."""
+    """Commit phases 1..count, each at its own minute unless `same_time` (one shell)."""
     for n, name in list(((1, "parser"), (2, "wiring"), (3, "docs")))[:count]:
         _commit(repo, f"p{n}.py", f"feat: phase {n} {name}", f"2030-01-01T00:{0 if same_time else n:02d}:00+00:00")
 
@@ -92,7 +92,7 @@ def test_implement_gate_passes_when_every_phase_is_committed(run_repo):
 
 
 def test_implement_gate_fails_when_phase_commits_share_one_timestamp(run_repo):
-    """#173: nine phase commits with one timestamp were written in one shell, not phase by phase."""
+    """Nine phase commits with one timestamp were written in one shell, not phase by phase."""
     _phase_commits(run_repo, same_time=True)
     proc = _implement_gate(run_repo)
     assert proc.returncode == 1
@@ -100,7 +100,7 @@ def test_implement_gate_fails_when_phase_commits_share_one_timestamp(run_repo):
 
 
 def test_a_rebased_phased_branch_passes(run_repo):
-    """#173: a rebase gives every commit one committer time. The author time stays, so the branch passes."""
+    """A rebase gives every commit one committer time. The author time stays, so the branch passes."""
     _phase_commits(run_repo)
     git(run_repo, "rebase", "-q", "--force-rebase", "origin/main", GIT_COMMITTER_DATE="2031-01-01T00:00:00+00:00")
     times = git(run_repo, "log", "origin/main..HEAD", "--format=%ct").split()
@@ -170,7 +170,7 @@ def _stop_message(repo: Path, run_hook) -> str:
 
 
 def test_stop_guard_holds_e1_with_the_next_phase(run_repo, run_hook):
-    """#173: three phases and one commit hold the stop with phase 2."""
+    """Three phases and one commit hold the stop with phase 2."""
     _commit(run_repo, "p1.py", "feat: phase 1 parser")
     message = _stop_message(run_repo, run_hook)
     assert "Continue E1: phase 2 (wiring). Commit it as 'phase 2: <subject>' before the next phase." in message
@@ -235,7 +235,7 @@ def test_plan_create_header_example_matches_the_parser():
     assert parse_phases(example) == [(3, "docs")]
 
 
-# #42 (cd-47 D6): git writes `Reapply "..."` for a revert of a revert. Depth decides.
+# Git writes `Reapply "..."` for a revert of a revert. Depth decides.
 DEPTH = [
     ("feat: phase 2", True),
     ('Revert "feat: phase 2"', False),
@@ -247,9 +247,9 @@ DEPTH = [
     ('Revert "revert: phase 2"', True),
     ("phase 2: wiring", True),
     ("feat(scalar): Phase 2 gates", True),
-    ("docs: a note on phase 2 risks", False),  # PR #188 review G-10: `phase 2` in the middle is not a phase commit
+    ("docs: a note on phase 2 risks", False),  # `phase 2` in the middle is not a phase commit
     ("chore: tidy before phase 2", False),
-    ("[gh-12] phase 2: x", True),  # PR #191 review B-3: a leading tag
+    ("[gh-12] phase 2: x", True),  # A leading tag
     ("fixup! feat: phase 2 wiring", True),
     ("squash! phase 2: wiring", True),
 ]

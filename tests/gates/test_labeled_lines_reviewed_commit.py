@@ -1,4 +1,4 @@
-"""Every Markdown form of the reviewed-commit line (cd-47 D3, #41; P7 review F1).
+"""Every Markdown form of the reviewed-commit line (P7 review F1).
 
 Unit cross product on labeled_lines: the one grammar R4 uses. R4's own tests keep
 a few seam rows on real repos.

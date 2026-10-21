@@ -6,7 +6,7 @@ since the base names it: the subject starts with "phase N", after an optional
 conventional prefix (`feat(x): phase 2 ...`). The E1 gate and the stop
 guard read `assess()`, so the agent is told the next concrete phase, and E1
 does not pass while a phase is open. The stop guard holds an open E1 with
-`next_phase()` (#173). In a plan of three or more phases, two phase commits
+`next_phase()`. In a plan of three or more phases, two phase commits
 with one author time (to the second) were written in one shell: E1 fails. A rebase
 keeps the author time, so a phased branch passes after a rebase.
 
@@ -30,7 +30,7 @@ from artifact_requirements import normalize_text_markers, run_scope_accept  # no
 from pipeline_run_binding import worktree_run_session  # noqa: E402
 
 PHASE_HEADER = re.compile(r"^#{2,4}\s+Phase\s+(\d+)\b[ \t]*[:.\-–—]?[ \t]*(.*?)[ \t]*$", re.M)
-# `phase 2 ...`, `feat(x): phase 2 ...`, `phase 2: ...`. Not `docs: a note on phase 2` (PR #188 review G-10).
+# `phase 2 ...`, `feat(x): phase 2 ...`, `phase 2: ...`. Not `docs: a note on phase 2`.
 PHASE_COMMIT = re.compile(r"^(?:\[[^\]]*\]\s*)?(?:(?:fixup|squash)!\s*)?(?:\w+(?:\([^)]*\))?!?:\s*)?phase[\s_-]*(\d+)\b",
                           re.I)
 ONE_SHELL_MIN_PHASES = 3
@@ -92,7 +92,7 @@ def select_plan(context_dir: Path, worktree: Path, session: dict, *, bold: bool 
 
 def commit_log(worktree: Path, base: str) -> list[tuple[int, str]]:
     """(author time, subject) since the base, newest first. --topo-order: a revert never comes
-    before its commit (#42)."""
+    before its commit."""
     proc = _git(worktree, "log", "--topo-order", f"{base}..HEAD", "--format=%at %s")
     if proc.returncode != 0:
         return []
@@ -143,7 +143,7 @@ def done_phases(subjects: list[str]) -> set[int]:
 
 
 def next_phase(plan: Path, worktree: Path, session: dict | None = None) -> tuple[int, str] | None:
-    """(number, label) of the first plan phase that no commit since the base names, else None (#173).
+    """(number, label) of the first plan phase that no commit since the base names, else None.
 
     None too for a plan with no phase headings or a worktree with no base.
     """
@@ -156,7 +156,7 @@ def next_phase(plan: Path, worktree: Path, session: dict | None = None) -> tuple
 
 
 def one_shell(log: list[tuple[int, str]]) -> tuple[str, str, int] | None:
-    """(older, newer) phase commits (not reverts) with one author time, and that time; else None (#173)."""
+    """(older, newer) phase commits (not reverts) with one author time, and that time; else None."""
     seen: dict[int, str] = {}
     for when, subject in log:
         if phase_of(subject) is None or revert_depth(subject) % 2:

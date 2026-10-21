@@ -1,4 +1,4 @@
-"""cd-76 Phase 2: the P9 marker is per run (gates/entry-invariant-<run_id>.ok).
+"""The P9 marker is per run (gates/entry-invariant-<run_id>.ok).
 
 Two runs in two linked worktrees share one .context. P9, E1, the skill gate's
 gated-edit read, the stop guard's run_started and --deactivate each use the marker

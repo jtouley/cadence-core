@@ -1,4 +1,4 @@
-"""The handoff hook checks and records the model of each configured peer call (cd-58 D2, D3).
+"""The handoff hook checks and records the model of each configured peer call.
 
 With `peer_models` in the session, an orchestrator's peer call must pass the
 configured model and must not be a fork (a fork ignores `model`). The hook writes one
@@ -158,7 +158,7 @@ def test_fork_denied_even_with_the_configured_model(call, repo):
 def test_fork_unconfigured_slug_is_not_denied_by_the_model_check(call, repo):
     configured(repo)
     code, out, _ = call("/vibe-test spec.md", model="opus", subagent_type="fork", mode="shadow")
-    # cd-64 r2 Decision 3: the lean check denies every peer fork; the model check does not.
+    # The lean check denies every peer fork; the model check does not.
     assert decision(out) == "deny" and "peer_models" not in reason(out) and "fork" in reason(out)
     [row] = rows(repo / ".context")
     assert row["decision"] == "deny" and row["stage"] == "validate"
@@ -241,7 +241,7 @@ def test_a_session_peer_models_that_is_not_a_map_fails_closed(call, repo, mode, 
 
 @pytest.mark.parametrize("case", ["inactive_legacy", "completed", "deactivated_pointer", "list_file"])
 def test_a_closed_run_does_not_check_or_record(call, repo, case):
-    """R1 MF-1 on PR #62: after --deactivate the session keeps peer_models; it must not apply."""
+    """After --deactivate the session keeps peer_models; it must not apply."""
     ctx = repo / ".context"
     if case == "inactive_legacy":
         hook_session(repo, "single", peer_models=OPUS, active_skill=None)
@@ -362,7 +362,7 @@ def _payload(prompt="/plan-review plan.md", model="opus", **extra) -> dict:
 
 
 def _model_check(hook_module, payload: dict, ctx: Path):
-    """cd-64 U-12: main() computes the peer row and the lean reason; the check takes them."""
+    """Main() computes the peer row and the lean reason; the check takes them."""
     prompt = payload["tool_input"]["prompt"]
     rows = hook_module.handoff._peer_stages(Path(hook_module.os.environ["CADENCE_HOME"]))
     row = hook_module.prompt_shape.peer_command_row(prompt, rows)

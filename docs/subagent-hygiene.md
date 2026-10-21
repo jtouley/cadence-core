@@ -16,7 +16,7 @@ The settings are the `subagent_hygiene` key of the resolved config ([configurati
 
 | Key | Values | Meaning |
 |---|---|---|
-| `mode` | `off`, `shadow`, `enforce` | The mode applies to the handoff only. `shadow` writes `.context/handoff/<run-key>/log.jsonl` and the handoff never denies. `enforce` denies or rewrites. The cd-58 model check and the cd-64 lean check deny in every mode. |
+| `mode` | `off`, `shadow`, `enforce` | The mode applies to the handoff only. `shadow` writes `.context/handoff/<run-key>/log.jsonl` and the handoff never denies. `enforce` denies or rewrites. The model check and the lean check deny in every mode. |
 | `rewrite_prompt` | `true`, `false` | `true` uses the packet rendering as the peer prompt. `false` uses the provenance trace. |
 | `classifier` | `none` or a command | The hook runs the command with the text on stdin. The command prints `{"probability": 0.0-1.0}`. `none` starts no process and makes no network call. |
 | `classifier_threshold` | number | Default 0.5. |
@@ -37,7 +37,7 @@ The settings are the `subagent_hygiene` key of the resolved config ([configurati
 
 ## Lean returns, the orchestrator scope and the context budget
 
-The checks above control what goes into a peer. These three checks control what goes into the orchestrator (#96).
+The checks above control what goes into a peer. These three checks control what goes into the orchestrator.
 
 **Lean return.** A peer's final message goes into the orchestrator's context.
 The gates read the artifact on disk, so the orchestrator needs only a pointer.
@@ -50,7 +50,7 @@ On Claude Code, `hooks/pipeline_stop_guard.py` checks each `SubagentStop` of a d
 - The hook reads the message from `last_assistant_message`, else from `agent_transcript_path`. When it cannot read the message, it does not hold the peer.
 - Each check writes one row to `.context/attest/<run>.returns.jsonl`: `ok`, `hold`, `violation` or `unknown`.
 - `SubagentStart` adds the return rule to each subagent.
-- `PostToolUse` on `Agent|Task` writes one join row to `.context/attest/<run>.joins.jsonl`: the call's `tool_use_id` and the `agentId` of the subagent it started (gh-66). The verdict gates use it to know the stage of the peer that wrote a file. It runs no other check and prints nothing.
+- `PostToolUse` on `Agent|Task` writes one join row to `.context/attest/<run>.joins.jsonl`: the call's `tool_use_id` and the `agentId` of the subagent it started. The verdict gates use it to know the stage of the peer that wrote a file. It runs no other check and prints nothing.
 
 **Orchestrator scope.** The orchestrator routes: it runs the gates, sends each peer its command,
 and reads the one-line returns. On Claude Code, during an active run, the read guard

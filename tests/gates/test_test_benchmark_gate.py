@@ -93,7 +93,7 @@ def test_test_benchmark_gate_plan_artifact_passes(scripts_path, tmp_path):
     assert breadcrumb.is_file()
 
 
-# #43 (cd-47 D7): the scorecard finding shape of skills/test-benchmark/SKILL.md, through the R2 rule.
+# The scorecard finding shape of skills/test-benchmark/SKILL.md, through the R2 rule.
 
 
 def _scorecard(context, finding: dict):
@@ -218,7 +218,7 @@ def test_code_mode_with_incomplete_entry_fails(tmp_path, capsys):
                           "scores": {"coverage": 5, "assertions": 7, "dry": 7, "layer": 7, "failure_paths": 5,
                                      "mutation": 5}}, 1,
                  id="code_mode_fails_when_the_mean_is_below_seven"),
-    # #30: a must-fix that lives only in the scorecard has no owner in the ledger.
+    # A must-fix that lives only in the scorecard has no owner in the ledger.
     pytest.param("code", {"adversarial_inputs": [ENTRY], "scores": PASSING,
                           "findings": [{"id": "cd-1-F1", "must_fix": True}]}, 1,
                  id="code_mode_must_fix_without_an_open_ledger_row_fails"),
@@ -264,7 +264,7 @@ def test_code_mode_with_an_unreadable_ledger_fails_closed(tmp_path, capsys):
 
 @pytest.mark.parametrize("status", ["fixed", "verified", "deferred"])
 def test_code_mode_must_fix_closed_in_the_ledger_still_passes(tmp_path, status):
-    """#30 review B1: a rescore that still lists a fixed finding must not reopen R2."""
+    """A rescore that still lists a fixed finding must not reopen R2."""
     _session_and_lean_record(tmp_path, mode="code")
     row = ledger_row("cd-1-F1", **{**BENCH, "status": status})
     if status == "deferred":
@@ -283,7 +283,7 @@ def test_code_mode_must_fix_closed_in_the_ledger_still_passes(tmp_path, status):
     {"id": "cd-1-F1", "must_fix": True},
 ])
 def test_code_mode_every_must_fix_shape_needs_a_ledger_row(tmp_path, finding):
-    """#30 review B2: the skill says severity must-fix; the gate read only must_fix."""
+    """The skill says severity must-fix; the gate read only must_fix."""
     _session_and_lean_record(tmp_path, mode="code")
     _bench(tmp_path, "cd-1_code.json", adversarial_inputs=[ENTRY], scores=PASSING, findings=[finding])
     assert run(tmp_path, mode="code", check=True) == 1

@@ -1,4 +1,4 @@
-"""cd-76 Phase 6: R4 checks the review of the run's own PR, named by the run's draft-PR record.
+"""R4 checks the review of the run's own PR, named by the run's draft-PR record.
 
 With a record that names PR n, R4 checks prs/reviews/PR_REVIEW_#<n>.md only: a newer review
 of another PR does not count, a missing one is named, and a dropped (not peer-written) one is

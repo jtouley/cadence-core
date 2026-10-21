@@ -1,4 +1,4 @@
-"""peer_attest: the writer paths, the newest attest row, and the join rows (cd-63, gh-66)."""
+"""peer_attest: the writer paths, the newest attest row, and the join rows."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import peer_attest  # noqa: E402
 import peer_models  # noqa: E402
 
 
-# --- peer_attest_writer_paths: cd-63: peer_attest.writer_paths gives distinct (agent, path) pairs, orchestrators excluded.
+# --- peer_attest_writer_paths: peer_attest.writer_paths gives distinct (agent, path) pairs, orchestrators excluded.
 
 def test_writer_paths(tmp_path):
     for agent, rel, sha in [("a1", "adversarial/x.md", "s1"), ("a1", "adversarial/x.md", "s2"),
@@ -25,7 +25,7 @@ def test_writer_paths(tmp_path):
 
 
 def test_the_any_run_reader_skips_call_and_join_logs(tmp_path):
-    """gh-66 PD12 (cd-66-F24 b): a call or join row that looks like an attest row never attests a file."""
+    """A call or join row that looks like an attest row never attests a file."""
     from verdict_join import peer_call, peer_join
 
     review = tmp_path / "reviews" / "plan_x.md"
@@ -37,7 +37,7 @@ def test_the_any_run_reader_skips_call_and_join_logs(tmp_path):
     assert peer_attest.attested_any(tmp_path, review) is False
 
 
-# --- gh-66: the writer's stage (call row -> join row -> attest row) ---------------------------
+# --- the writer's stage (call row -> join row -> attest row) ---------------------------
 
 import pytest  # noqa: E402
 from verdict_join import peer_call, peer_join, peer_wrote, tamper, verdict_join_session  # noqa: E402
@@ -167,7 +167,7 @@ def test_only_an_allow_decision_gives_a_stage(tmp_path, decision):
 
 
 def test_the_writer_own_call_model_must_match_the_configured_model(tmp_path):
-    """#59: the model of the call that started the writer, not of any allowed call."""
+    """The model of the call that started the writer, not of any allowed call."""
     review = peer_wrote(tmp_path, "run-1", REVIEW, agent_id="a", stage="plan-review", model="sonnet")
     ok, reason = peer_attest.stage_attested(tmp_path, "run-1", review, P3, models={"plan-review": "opus"})
     assert (ok, reason) == (False, f"{REVIEW}: the plan-review peer call used model sonnet; peer_models sets opus")
@@ -176,7 +176,7 @@ def test_the_writer_own_call_model_must_match_the_configured_model(tmp_path):
 
 @pytest.mark.parametrize("bad_id", [None, ""])
 def test_rows_with_no_tool_use_id_never_join(tmp_path, bad_id):
-    """PR #145 R2 F44: a malformed host payload must not join a call to an agent."""
+    """A malformed host payload must not join a call to an agent."""
     review = peer_wrote(tmp_path, "run-1", REVIEW, agent_id="a", stage="plan-review", tool_use_id=bad_id or "",
                         join=False, call=False)
     peer_call(tmp_path, "run-1", stage="plan-review", tool_use_id=bad_id)
@@ -185,7 +185,7 @@ def test_rows_with_no_tool_use_id_never_join(tmp_path, bad_id):
     assert peer_attest.stage_attested(tmp_path, "run-1", review, P3)[0] is False
 
 
-# --- attest_newest_row_and_join_agent: R1 on PR #145: the newest attest row on a timestamp tie, and a join row with no agent (gh-66).
+# --- attest_newest_row_and_join_agent: the newest attest row on a timestamp tie, and a join row with no agent.
 #
 # `_newest` took the row with the greatest `at`. On a tie, `max` keeps the first row, so a
 # restored older version of a file was accepted. The old `attested` took the last row in

@@ -70,7 +70,7 @@ def _r6_ledgers(env, own_status: str = "open"):
 
 
 def test_r6_judges_only_the_runs_task(scripts_path, two_worktree_runs, capsys):
-    """cd-49: R6 of run A reads both ledger layouts and judges only the rows of task cd-901."""
+    """R6 of run A reads both ledger layouts and judges only the rows of task cd-901."""
     env = two_worktree_runs
     _r6_ledgers(env)
     assert run(env.ctx, cwd=env.a) == 1
@@ -118,7 +118,7 @@ def test_guard_gh_pr_comment_corrupt_ledger_fails_closed(tmp_path):
     assert run(tmp_path, check=True) == 1
 
 
-# --- gh-178: the comment maps each fix to its commit and each deferral to its ticket, as the ledger has them.
+# --- the comment maps each fix to its commit and each deferral to its ticket, as the ledger has them.
 
 SHA = "a" * 40
 FIXED = {**OPEN, "id": "gh-1-F03", "status": "verified", "fixed_in": SHA}

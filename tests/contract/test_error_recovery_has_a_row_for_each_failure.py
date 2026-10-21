@@ -1,4 +1,4 @@
-"""references/error-recovery.md has one row for each failure a gate or a hook reports (#182).
+"""references/error-recovery.md has one row for each failure a gate or a hook reports.
 
 The docs point at it. They do not keep a second, shorter recovery table.
 """

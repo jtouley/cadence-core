@@ -38,15 +38,15 @@ _PR_URL = re.compile(r"https://github\.com/[\w.-]+/[\w.-]+/pull/(\d+)")
 
 
 def draft_pr_record_path(context_dir: Path, run_id: str) -> Path:
-    """The E4 record of one run, `prs/draft-pr-<run_id>.md` (cd-76 D2)."""
+    """The E4 record of one run, `prs/draft-pr-<run_id>.md`."""
     return Path(context_dir) / "prs" / f"draft-pr-{run_id}.md"
 
 
 def draft_pr_record(context_dir: Path, session: dict | None, branch: str | None) -> Path | None:
-    """The draft-PR record of a run: one rule for E4 and R4 (cd-76 R2-D8a).
+    """The draft-PR record of a run: one rule for E4 and R4.
 
     The run's own `prs/draft-pr-<run_id>.md` when it exists. Else the legacy
-    `prs/draft-pr.md` only when its `Branch:` is `branch` (a run started before cd-76).
+    `prs/draft-pr.md` only when its `Branch:` is `branch` (a run started before per-run draft-PR records).
     A detached HEAD (`branch` None or "HEAD") never matches a legacy record.
     """
     run_id = str((session or {}).get("pipeline_run_id") or "")
@@ -88,15 +88,15 @@ REVIEW_RIGOR_SECTIONS = (
     "Design choices",
     "Scope",
     "Lookback",
-    "Reuse and extension",  # gh-99
+    "Reuse and extension",
 )
 
 
 def entry_invariant_ok_path(context_dir: Path, run_id: str | None = None) -> Path:
-    """The P9 marker of one run, `gates/entry-invariant-<run_id>.ok` (cd-76 D2).
+    """The P9 marker of one run, `gates/entry-invariant-<run_id>.ok`.
 
     With no run id, the legacy shared name. Only the plan freeze reads the legacy name, and
-    only when it names the run (shared/skill_gate.py, PR #168 R1 N-4).
+    only when it names the run (shared/skill_gate.py).
     """
     if run_id:
         return Path(context_dir) / "gates" / f"entry-invariant-{run_id}.ok"
@@ -112,11 +112,11 @@ def clear_entry_invariant_ok(context_dir: Path, run_id: str | None = None) -> No
 def entry_invariant_matches(context_dir: Path, session: dict | None, marker: Path | None = None) -> bool:
     """True when the run of ``session`` passed P9: its own marker (or ``marker``) exists and names it.
 
-    One rule for E1, the skill gate and the stop guard (cd-76 R2-D3a). A marker that
+    One rule for E1, the skill gate and the stop guard. A marker that
     names another `pipeline_run_id`, or another task, is not evidence. A marker that
     does not parse, or that names neither, counts as true: the e5c3a92 result. For the
     stop guard that holds the stop (fail closed); for E1 and the skill gate it allows the
-    edit, as before cd-76. The hooks protect the marker from agent writes.
+    edit, as before per-run markers. The hooks protect the marker from agent writes.
     No session or no run id: false.
     """
     run_id = str((session or {}).get("pipeline_run_id") or "")
@@ -192,7 +192,7 @@ def file_matches_markers(path: Path, markers: tuple[str, ...]) -> bool:
     if path.suffix == ".json":
         return _json_matches_markers(path, markers)
     try:
-        # cd-76 R2: invalid UTF-8 must not crash a gate; the markers are ASCII.
+        # Invalid UTF-8 must not crash a gate; the markers are ASCII.
         text = normalize_text_markers(path.read_text(encoding="utf-8", errors="replace"))
     except OSError:
         return False
@@ -208,7 +208,7 @@ def require_active_session(
     label: str = "activate-session",
     cwd: Path | None = None,
 ) -> list[str]:
-    """The worktree at ``cwd`` has its own active run (cd-47 G-D4: never another worktree's)."""
+    """The worktree at ``cwd`` has its own active run (never another worktree's)."""
     data = worktree_run_session(Path(context_dir), cwd)
     if data is not None:
         return [] if data.get("active_skill") == skill else [f"{label}: active_skill != {skill!r}"]
@@ -227,7 +227,7 @@ def require_lean_delegation(context_dir: Path, stage: str) -> list[str]:
     """Errors unless the session has a lean delegation record for ``stage``.
 
     The Task hook writes the record. Peer gates re-check that stored prompt. With
-    ``peer_models`` (cd-58 D4), the peer-model check is added too, so the gate names
+    ``peer_models``, the peer-model check is added too, so the gate names
     every reason.
     """
     from peer_models import SLUG_FOR_STAGE, require_peer_model
@@ -304,8 +304,8 @@ def require_artifact(
     """Errors unless some candidate matches the globs, scope, markers, and ``validate``.
 
     ``validate`` returns a file's problems ([] = acceptable); the error names the
-    marked file with the fewest. When ``accept`` takes no file, ``rejections`` (gh-66
-    ``stage_rejections``) gives the per-file stage lines, before the attest text.
+    marked file with the fewest. When ``accept`` takes no file, ``rejections``
+    (``stage_rejections``) gives the per-file stage lines, before the attest text.
     """
     context_dir = Path(context_dir)
     candidates = _artifact_candidates(context_dir, relative_globs, worktree_globs, scope)
@@ -388,13 +388,13 @@ def peer_written_filter(
     - Other hosts send no subagent field: None keeps their behavior unchanged.
 
     Rows by an orchestrator (``peer_attest.orchestrator_ids``) never count. When
-    activation found no orchestrator note, the filter accepts nothing (cd-47 G-D7).
+    activation found no orchestrator note, the filter accepts nothing.
     With ``slug`` (a stages.json slug), a ``verdict_join`` run also needs a writer of that
-    stage's ``writer_stages`` (gh-66, ``_stage_check``). The filter never carries a reason.
+    stage's ``writer_stages`` (``_stage_check``). The filter never carries a reason.
     """
     peer_attest = _peer_attest()
     context_dir = Path(context_dir)
-    if session is None:  # cd-63 R4-C-1: a caller that judges a run passes it
+    if session is None:  # A caller that judges a run passes it
         session = worktree_run_session(context_dir, cwd)
     if session is not None:
         if session.get("host") != "claude":
@@ -419,7 +419,7 @@ def _stage_check(
     context_dir: Path, *, cwd: Path | None = None, session: dict | None = None, slug: str | None,
     skill_root: Path | None = None,
 ) -> Callable[[Path], tuple[bool, str]] | None:
-    """gh-66 PD18: the one writer-stage check, `path -> (ok, reason)`; None keeps the old check.
+    """The one writer-stage check, `path -> (ok, reason)`; None keeps the old check.
 
     A run reads `writer_stages` only when it has `verdict_join` (Cursor, Pi and old Claude runs
     never do). The any-run path (no worktree run, CLAUDECODE=1) decides per file, from the run
@@ -458,7 +458,7 @@ def _stage_reason_for(context_dir: Path, path: Path, run: dict, slug: str, skill
     allowed, bad = _writer_stages_or_reason(slug, skill_root)
     if bad:
         return False, bad
-    models = models_for_stages(run.get("peer_models"), allowed)  # gh-66 (#59)
+    models = models_for_stages(run.get("peer_models"), allowed)
     if run_id is None:
         return peer_attest.stage_attested_any(context_dir, path, allowed, exclude, models)
     return peer_attest.stage_attested(context_dir, run_id, path, allowed, exclude, models)
@@ -492,10 +492,10 @@ def _any_run_stage_check(context_dir: Path, slug: str, skill_root: Path | None):
 def review_stage_check(
     context_dir: Path, *, cwd: Path | None, slug: str, claude: bool
 ) -> Callable[[Path], tuple[bool, str]] | None:
-    """`path -> (ok, reason)` for the pr_guard review escape (gh-66 PD5), else None (old check).
+    """`path -> (ok, reason)` for the pr_guard review escape, else None (old check).
 
     It reads the same newest attest row, over every run log, as ``attested_any``, so an
-    attest row in another run's log cannot open the escape (PR #145 R1 MF-1). A run of the
+    attest row in another run's log cannot open the escape. A run of the
     worktree decides with its own `verdict_join`; with no run, the run of that row decides.
     """
     context_dir = Path(context_dir)
@@ -535,7 +535,7 @@ def stage_rejections(
     context_dir: Path, paths: list[Path], *, cwd: Path | None = None, session: dict | None = None, slug: str | None,
     skill_root: Path | None = None,
 ) -> list[str]:
-    """gh-66 PD19: `<slug>: <reason>` for each path that the stage check rejects with a reason.
+    """`<slug>: <reason>` for each path that the stage check rejects with a reason.
 
     Stateless: two calls give the same lines. A file that fails only the attest check gives
     no line, so the gate keeps its attest text for that case.
@@ -598,7 +598,7 @@ _MUST_FIX_ID = re.compile(r"\bMF-\d+\b")
 
 @dataclass(frozen=True)
 class ReviewLoop:
-    """One bounded review loop (P3 plan review, P6 adversarial review), cd-63 D1.
+    """One bounded review loop (P3 plan review, P6 adversarial review).
 
     The scope rule, the cycle count and the newest-verdict choice are one copy for both.
     """
@@ -614,7 +614,7 @@ class ReviewLoop:
     per_path: bool = False  # P6: count (agent_id, path) pairs; P3: distinct agents
     keep_unread: bool = False  # P6: a counted report with no readable verdict is still chosen
     round_of: Callable[[Path, str | None], int | None] | None = None  # P6: sort by round, then mtime
-    slug: str | None = None  # gh-66: the stages.json slug whose writer_stages count on a verdict_join run
+    slug: str | None = None  # The stages.json slug whose writer_stages count on a verdict_join run
 
 
 def _shared_scripts() -> None:
@@ -645,7 +645,7 @@ def _counted(loop: ReviewLoop, path: Path, accept, slug: str | None) -> bool:
 
 
 def _loop_stages(loop: ReviewLoop, session: dict) -> frozenset[str] | None:
-    """gh-66 PD6: on a verdict_join run, a cycle counts only a writer of the loop's stage."""
+    """On a verdict_join run, a cycle counts only a writer of the loop's stage."""
     if loop.slug is None or session.get("verdict_join") is not True:
         return None
     from load_stages import writer_stages
@@ -657,11 +657,11 @@ def loop_cycles(context_dir: Path, loop: ReviewLoop, session: dict | None = None
     """Review cycles of this run for one loop.
 
     Claude Code: peers whose write the hook attested (P3: distinct agents; P6: distinct
-    (agent, path) pairs of counted reports, cd-63 R4-B-1). Other hosts: the begins in the
+    (agent, path) pairs of counted reports). Other hosts: the begins in the
     history that subagent_provenance writes (weaker: the orchestrator runs begin itself).
     """
     context_dir = Path(context_dir)
-    if session is None:  # cd-76 R2-D5c: a dict reads only that run
+    if session is None:  # A dict reads only that run
         session = current_session(context_dir)
     run_id = str(session.get("pipeline_run_id") or "")
     if session.get("host") == "claude" and run_id:
@@ -738,7 +738,7 @@ def carried_section(context_dir: Path, header: str, session: dict | None = None,
     """The body under a carried-findings heading of the run's plan, up to the next `## `.
 
     Lines inside a fenced code block are skipped, so an example heading does not count.
-    ``exact``: the heading line must equal ``header`` (P6, cd-63 R4-C-3); else it starts with it (P3).
+    ``exact``: the heading line must equal ``header`` (P6); else it starts with it (P3).
     """
     found = carried_body(context_dir, header, session, exact=exact)
     return found or ""
@@ -773,7 +773,7 @@ def _section_lines(lines: list[str], header: str, *, exact: bool) -> list[str] |
 
 
 def _p3_accept(context_dir: Path, session: dict | None):
-    """In run scope; on a verdict_join run also written by a plan-review peer (gh-66 PD15, PD16)."""
+    """In run scope; on a verdict_join run also written by a plan-review peer."""
     resolved = session if session is not None else current_session(Path(context_dir))
     scoped = run_scope_accept(context_dir, session=resolved)
     if resolved.get("verdict_join") is not True:
@@ -796,7 +796,7 @@ _PLAN_GATE_MODE = re.compile(r"^\s*Mode:\s*plan-gate\s*$", re.M)
 
 
 def require_plan_gate_mode(path: Path) -> list[str]:
-    """``validate``: a P6 report counts only with the line `Mode: plan-gate` (cd-63 R2-MF-1)."""
+    """``validate``: a P6 report counts only with the line `Mode: plan-gate`."""
     try:
         text = normalize_text_markers(Path(path).read_text(encoding="utf-8", errors="replace"))
     except OSError as e:
@@ -804,7 +804,7 @@ def require_plan_gate_mode(path: Path) -> list[str]:
     return [] if _PLAN_GATE_MODE.search(text) else ['missing line "Mode: plan-gate"']
 
 
-# cd-63 D3: the strict adversarial verdict read. The line form takes only `#`, `>`, `*`, `-`
+# The strict adversarial verdict read. The line form takes only `#`, `>`, `*`, `-`
 # and spaces before the key, so a bullet that quotes a prior verdict after other text does not
 # match. The longest value comes first. The JSON key is lower case. The last match wins.
 _ADV_LINE = re.compile(
@@ -853,7 +853,7 @@ def _defined_ids(lines: list[str], prefix: str) -> set[str]:
 
 
 def adversarial_ids(text: str) -> tuple[set[str], set[str]]:
-    """(B-n ids, C-n ids) that an item line defines in its own section (cd-63 R4-C-3).
+    """(B-n ids, C-n ids) that an item line defines in its own section.
 
     `### B-n.` or `- B-n.` under `## Blocking issues`; `### C-n.` or `- C-n.` under
     `## Conditions`. A mention in body text, or a line in the wrong section, is not an id.
@@ -869,7 +869,7 @@ def blocking_body(text: str) -> str:
 
 
 def carried_heading(path: Path) -> str:
-    """`## Carried adversarial findings (<file> @ <sha12>)` of the raw bytes (cd-63 D2, R2-SF-3)."""
+    """`## Carried adversarial findings (<file> @ <sha12>)` of the raw bytes."""
     import hashlib
 
     digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
@@ -884,7 +884,7 @@ def _spec_pressure(path: Path) -> bool:
 def adversarial_round(path: Path, slug: str | None) -> int | None:
     """Round of a plan-gate report: `adversarial_<slug>.md` is 1, `adversarial_<slug>_r<n>.md` is n.
 
-    Another name (for example `_spec-pressure`) has no round and does not count (cd-63 R6-N5-1).
+    Another name (for example `_spec-pressure`) has no round and does not count.
     With no known slug, the name decides alone.
     """
     name = Path(path).name
@@ -900,7 +900,7 @@ def adversarial_round(path: Path, slug: str | None) -> int | None:
 
 
 def _p6_accept(context_dir: Path, session: dict | None):
-    """Attested by a peer, in run scope, with `Mode: plan-gate` (cd-63 R3-B-1, R4-C-1, R4-N2)."""
+    """Attested by a peer, in run scope, with `Mode: plan-gate` (R4-N2)."""
     return _all_of(
         peer_written_filter(context_dir, session=session, slug="adversarial-review"),
         run_scope_accept(context_dir, session=session),
@@ -959,7 +959,7 @@ def adversarial_state(context_dir: Path, session: dict | None = None) -> dict:
         run_id = session.get("pipeline_run_id") or "?"
         state["missing"] = stage_rejections(context_dir, reports, session=session, slug="adversarial-review") or [
             f"adversarial-review: no plan-gate report of run {run_id}. Run /de-adversarial-reviewer plan-gate."]
-    # PR #88 MF-1: a counted report whose name does not use the plan stem has no round, so it
+    # A counted report whose name does not use the plan stem has no round, so it
     # can never decide. Name it when it is newer than the report that decides, or when none does.
     slug = _plan_slug(context_dir, session)
     newest = chosen[0].stat().st_mtime if chosen else float("-inf")
@@ -991,7 +991,7 @@ def adversarial_state(context_dir: Path, session: dict | None = None) -> dict:
 
 
 def adversarial_open(state: dict) -> bool:
-    """At the limit: an id is open when it is not under the carried heading (cd-63 R6-MF-2)."""
+    """At the limit: an id is open when it is not under the carried heading."""
     if state.get("verdict") != "REQUEST CHANGES":
         return False
     if state["section"] is None:
@@ -1004,7 +1004,7 @@ def adversarial_open(state: dict) -> bool:
 
 
 def check_adversarial_verdict(context_dir: Path, session: dict | None = None, *, stage: str = "p6") -> list[str]:
-    """The P6 verdict of this run must not hold (cd-63 D4). ``stage``: "p6" (the gate) or "p9"."""
+    """The P6 verdict of this run must not hold. ``stage``: "p6" (the gate) or "p9"."""
     context_dir = Path(context_dir)
     if session is None:
         session = current_session(context_dir)
@@ -1034,7 +1034,7 @@ def _no_report_problems(state: dict, session: dict) -> list[str]:
         return [SHADOW_MESSAGE.format(name=state["modeless"].name)]
     if state["reason"]:
         return [f"adversarial-review: {state['reason']}"]
-    return state["missing"]  # gh-66: the stage lines, else the no-report text
+    return state["missing"]  # The stage lines, else the no-report text
 
 
 def _condition_problems(state: dict) -> list[str]:
@@ -1078,7 +1078,7 @@ def _request_changes_problems(context_dir: Path, session: dict, state: dict) -> 
 
 
 def adversarial_route(context_dir: Path, session: dict | None = None) -> dict | None:
-    """The stop guard's P6 row, or None when P6 does not hold (cd-63 R5-C-1, R6-MF-2, P7 F8).
+    """The stop guard's P6 row, or None when P6 does not hold (P7 F8).
 
     First match wins: (1) at the limit with an open id, carry; (2) the report is newer than the
     plan, update the plan; below the limit only, (3) or (4) re-review the updated plan, by P3 or,
@@ -1118,7 +1118,7 @@ def adversarial_route(context_dir: Path, session: dict | None = None) -> dict | 
 
 
 def adversarial_note(context_dir: Path, session: dict | None = None) -> str | None:
-    """The P6 gate's note for APPROVE WITH CONDITIONS with open conditions (cd-63 R2-MF-3)."""
+    """The P6 gate's note for APPROVE WITH CONDITIONS with open conditions."""
     state = adversarial_state(context_dir, session)
     if state.get("verdict") != "APPROVE WITH CONDITIONS" or not state["open_conditions"]:
         return None
@@ -1132,7 +1132,7 @@ def plan_review_cycles(context_dir: Path, session: dict | None = None) -> int:
 
 
 def plan_review_step(context_dir: Path, session: dict | None = None) -> tuple[str, str] | None:
-    """The open step of the P3/P4 loop after a blocking plan review, or None (gh-104 D5).
+    """The open step of the P3/P4 loop after a blocking plan review, or None.
 
     First match wins: no run or no blocking newest review, None; at the limit, the carry
     or the hard stop at P4; no plan, None; an unreadable file, P3 (fail closed); a plan
@@ -1159,7 +1159,7 @@ def plan_review_step(context_dir: Path, session: dict | None = None) -> tuple[st
 
 def _mtime_step(context_dir: Path, session: dict, plan: Path, review: Path, verdict: str,
                 cycles: int) -> tuple[str, str]:
-    """Below the limit: P3 when the plan is newer than the blocking review, else P4 (gh-104 D5, D7).
+    """Below the limit: P3 when the plan is newer than the blocking review, else P4.
 
     A newer plan whose `## Revision ledger (review <sha>)` for that review lacks a row for an open MF-n is P4."""
     limit = plan_review_cycle_limit()
@@ -1193,7 +1193,7 @@ def review_must_fix_ids(text: str) -> set[str]:
     """The MF-n ids a review holds open: the items under its `Must-fix` heading, up to the next heading
     of the same or a higher level. An item is a line that starts with its id; an id cited in another
     item's text, or named outside the section, is not open. With no such heading: every id in the file."""
-    lines = _outside_fences(text.splitlines())  # a `#` or an id inside a code fence is neither (PR #168 N-21)
+    lines = _outside_fences(text.splitlines())  # a `#` or an id inside a code fence is neither
     labels: set[str] = set()
     cited: set[str] = set()
     found = False
@@ -1223,7 +1223,7 @@ _LEDGER_ROW = re.compile(r"^\s*\|\s*[*_`]*(MF-\d+)\b")
 def revision_ledger_ids(text: str, review_sha: str) -> set[str] | None:
     """The MF-n row ids of the plan's `## Revision ledger (review <sha>)` table for the review whose sha256 is
     `review_sha`. The heading holds the first 12 or more hex characters of that sha, which the peer
-    reads from its packet's Input line. One source for both sides, no count (PR #186 R1 MF-2, MF-3).
+    reads from its packet's Input line. One source for both sides, no count.
 
     None when no ledger names that review: an older review's ledger does not answer a newer one, whatever
     heading follows it. The table ends at the next heading of the same or a higher level. Fenced lines do not
@@ -1278,7 +1278,7 @@ def _outside_fences(lines: list[str]) -> list[str]:
 
 
 def _carried_section(context_dir: Path, session: dict | None = None) -> str:
-    """The plan's carried review findings, for the given run (cd-76 D7); None reads today's run."""
+    """The plan's carried review findings, for the given run; None reads today's run."""
     return carried_section(context_dir, CARRIED_HEADER, session=session)
 
 
@@ -1331,7 +1331,7 @@ def check_plan_review_verdict(context_dir: Path, session: dict | None = None) ->
 
 
 def _no_plan_review_peer(context_dir: Path, session: dict | None) -> list[str]:
-    """gh-66 PD17: on a verdict_join run, a review in run scope from no plan-review peer blocks P9."""
+    """On a verdict_join run, a review in run scope from no plan-review peer blocks P9."""
     resolved = session if session is not None else current_session(context_dir)
     if resolved.get("verdict_join") is not True:
         return []
@@ -1362,7 +1362,7 @@ def ticket_scope(
 
     Same naming convention as activate_session.find_matching_artifacts, but a
     token must not run into more alphanumerics, so cd-1 never matches cd-12.
-    The worktree's own run comes first (cd-47 D1).
+    The worktree's own run comes first.
     """
     data = session if session is not None else current_session(Path(context_dir), cwd)
     raw = {str(t) for t in data.get("ticket_tokens") or []}
@@ -1394,7 +1394,7 @@ def _in_scope(path: Path, scope: list[re.Pattern[str]]) -> bool:
 def run_scope_accept(
     context_dir: Path, cwd: Path | None = None, session: dict | None = None
 ) -> Callable[[Path], bool]:
-    """A planning artifact counts for this run (cd-47 D8).
+    """A planning artifact counts for this run.
 
     It names this run's id; or it names no run id and is in ticket scope. A file that
     names only other runs does not count, so a plan left by another run cannot clear P1.
@@ -1430,7 +1430,7 @@ _REVIEWED_PLAN = re.compile(r"^\s*Last reviewed plan sha256:\s*([0-9a-fA-F]{12,6
 
 
 def plan_changed_after_review(context_dir: Path, session: dict | None = None) -> list[str]:
-    """gh-176: the plan must not change after the READY TO EXECUTE review that decides P3.
+    """The plan must not change after the READY TO EXECUTE review that decides P3.
 
     The review's `Last reviewed plan sha256:` line names the plan the peer read. With no such line,
     a plan mtime newer than the review mtime fails. A tie passes. A blocking review is not this check."""
@@ -1585,11 +1585,11 @@ def check_required_before_execution(
         artifact_spec = {k: v for k, v in spec.items() if k != "delegation_stage"}
         errors.extend(require_artifact(context_dir, **artifact_spec, scope=scope))
         if spec["label"] == "plan-review":
-            # cd-76 D7: P9 reads the plan of the run of its own worktree.
+            # P9 reads the plan of the run of its own worktree.
             errors.extend(check_plan_review_verdict(context_dir, session=run_for(context_dir, cwd=wt)))
             errors.extend(check_spec_gaps(context_dir, wt, run_for(context_dir, cwd=wt)))
         if spec["label"] == "adversarial-review":
-            # cd-63 D4: P9 reads the P6 verdict, with the conditions check.
+            # P9 reads the P6 verdict, with the conditions check.
             errors.extend(check_adversarial_verdict(context_dir, session=run_for(context_dir, cwd=wt), stage="p9"))
         if spec["label"] != "deferral-register":
             errors.extend(

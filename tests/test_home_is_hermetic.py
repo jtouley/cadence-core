@@ -1,4 +1,4 @@
-"""Each test runs with a temporary HOME, so host files of the developer cannot change a result (cd-53)."""
+"""Each test runs with a temporary HOME, so host files of the developer cannot change a result."""
 
 from __future__ import annotations
 

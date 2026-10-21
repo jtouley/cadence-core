@@ -120,7 +120,7 @@ def _write_review(repo: Path, body: str, name: str = "PR_REVIEW_#1.md") -> Path:
     "## LAST REVIEWED COMMIT: {head}",
 ])
 def test_r4_reads_the_markdown_forms_that_review_peers_write(tmp_path, line):
-    # PR #38 R4: a peer wrote `**Last reviewed commit**: `sha`` for HEAD. The
+    # A peer wrote `**Last reviewed commit**: `sha`` for HEAD. The
     # pattern skipped it and read an older plain line, so R4 failed on a reviewed head.
     repo, old, head = _two_commits(tmp_path)
     _write_review(repo, f"Last reviewed commit: {old[:7]}\n" + line.format(head=head[:7]))
@@ -128,7 +128,7 @@ def test_r4_reads_the_markdown_forms_that_review_peers_write(tmp_path, line):
 
 
 def test_r4_does_not_read_a_line_with_trailing_text(tmp_path):
-    """cd-47 D3: the grammar anchors at the end of the line (an intended change)."""
+    """The grammar anchors at the end of the line (an intended change)."""
     repo, _old, head = _two_commits(tmp_path)
     _write_review(repo, f"Last reviewed commit: {head[:7]} (after fixes)")
     proc = _r4(repo)
@@ -150,7 +150,7 @@ def test_r4_names_the_newest_review_and_the_sha_it_read(tmp_path):
     assert newest.is_file()
 
 
-# --- gh-66: R4 takes a PR review only from a pr-review-local or pr-review-update peer --------
+# --- R4 takes a PR review only from a pr-review-local or pr-review-update peer --------
 
 code_paths()
 

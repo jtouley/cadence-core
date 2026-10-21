@@ -1,6 +1,6 @@
-"""A delegated peer runs only its own stage (gh-66).
+"""A delegated peer runs only its own stage.
 
-Four runs (cd-82, cd-84, ac7c7e9f, bob-killer-snowflake 33f6c325) had a `/plan-update`
+Four runs (ac7c7e9f, bob-killer-snowflake 33f6c325) had a `/plan-update`
 peer that ran `/plan-review` in its own context and wrote the verdict for its own update.
 The trigger was the command text: "After you write the update, run `/plan-review`".
 The orchestrator owns the loop. A peer doc may name another stage only as a step of the

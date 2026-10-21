@@ -178,7 +178,7 @@ def shown_path(path: Path, bases: tuple[tuple[Path, str], ...]) -> str | None:
     """The packet form of `path`: `<prefix><path under base>` for the first base that holds it, else None.
 
     A base is (the run's .context, ".context/") or (the worktree, ""). One form for the packet
-    writer and the registry inputs (#187).
+    writer and the registry inputs.
     """
     path = Path(path).resolve()
     for base, prefix in bases:

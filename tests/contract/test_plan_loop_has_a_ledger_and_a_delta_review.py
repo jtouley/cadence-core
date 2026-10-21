@@ -49,7 +49,7 @@ def _example_ledger() -> str:
 
 
 def test_the_example_ledger_of_plan_update_is_the_ledger_the_gate_reads():
-    """#187 (PR #186 N-11): the command's example heading, through the gate's own parser."""
+    """The command's example heading, through the gate's own parser."""
     from artifact_requirements import revision_ledger_ids
 
     assert revision_ledger_ids(_example_ledger(), EXAMPLE_SHA) == {"MF-1", "MF-2"}
@@ -62,7 +62,7 @@ def test_the_example_ledger_does_not_answer_another_review():
 
 
 def test_the_plan_loop_text_names_the_ledger_by_the_review_sha():
-    """#187 (PR #186 N-10): the gate reads the ledger that names the review, not the newest ledger."""
+    """The gate reads the ledger that names the review, not the newest ledger."""
     for rel in ("commands/plan-update.md",):
         text = (ROOT / rel).read_text(encoding="utf-8")
         assert "newest ledger" not in text, rel

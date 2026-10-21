@@ -64,7 +64,7 @@ Cadence backtracks on **process** failures (not invariant-expression scores).
 - Core runs with **zero packs** by default (`profile: standard`). `packs` in a config layer turns a pack on.
 - A pack (`pack.json`) adds a gate at P9, E3 or R3, and a version 2 pack can change the order with stage operations ([pack-standard.md](../references/pack-standard.md)). A pack from the user or the project dir loads only when its lock pins it.
 - `adapters/*.json` bind ticket ID regex / tracker (default GitHub Issues). The `adapter` key of the resolved config picks one.
-- `adapters/none.json` is the no-tracker mode (#65). Set `"adapter": "none"` in a config layer. In the project `.cadence.json` it applies to one repository. In `~/.config/cadence/config.json` it applies to each repository that this install runs on. A4 then records `TICKET_SKIPPED (none: ...)`, and each tracker post goes to `.context/issues/<task_id>.md`. Only the config turns on the mode.
+- `adapters/none.json` is the no-tracker mode. Set `"adapter": "none"` in a config layer. In the project `.cadence.json` it applies to one repository. In `~/.config/cadence/config.json` it applies to each repository that this install runs on. A4 then records `TICKET_SKIPPED (none: ...)`, and each tracker post goes to `.context/issues/<task_id>.md`. Only the config turns on the mode.
 - A run records its resolved config: each layer, its path and its sha256 (`python3 scripts/cadence_config.py resolve --json`). A benchmark sets its config in a layer, and the record shows it.
 
 ## Host matrix

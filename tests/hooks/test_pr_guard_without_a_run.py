@@ -1,4 +1,4 @@
-"""`gh pr create` and `gh pr ready` need a Cadence run past E3, or a review of HEAD (cd-47 D4, #39).
+"""`gh pr create` and `gh pr ready` need a Cadence run past E3, or a review of HEAD.
 
 On run efcd8404 the orchestrator opened a PR with no session and no review: no hook
 looked at `gh pr` commands. The guard in hooks/pr_guard.py now denies them in a repo
@@ -30,7 +30,7 @@ sys.path.insert(0, str(ROOT / "shared" / "scripts"))
 import peer_attest  # noqa: E402
 import pr_guard  # noqa: E402
 
-code_paths()  # tests/fixtures on the path: the gh-66 tests import verdict_join
+code_paths()  # tests/fixtures on the path: the verdict-join tests import verdict_join
 
 RUN = str(uuid.UUID(int=0x1111_2222_3333_4444_5555_6666_7777_8888))
 OTHER = str(uuid.UUID(int=0x9999_aaaa_bbbb_cccc_dddd_eeee_ffff_0000))
@@ -249,7 +249,7 @@ def test_guarded_gh_pr_commands_are_matched(command):
     assert pr_guard.PR_COMMAND.search(command)
 
 
-# R1 on PR #52 (R-1): forms that skipped the guard.
+# Forms that once skipped the guard.
 EVASIONS = [
     "git push -u origin HEAD\ngh pr create --fill",
     "{ gh pr create --fill; }",
@@ -290,7 +290,7 @@ def test_an_override_on_one_segment_does_not_cover_another(tmp_path):
 
 @pytest.mark.parametrize("host", HOSTS)
 def test_a_context_dir_without_a_cadence_footprint_is_not_guarded(tmp_path, host):
-    """R1 on PR #52 (R-2): other skills make .context/ too; their PRs are not Cadence's to hold."""
+    """Other skills make .context/ too; their PRs are not Cadence's to hold."""
     repo = _repo(tmp_path / "r")
     (repo / ".cadence.json").unlink()
     assert not _guard(repo, "gh pr create --fill", host)[0]
@@ -314,7 +314,7 @@ def test_no_work_on_other_commands(tmp_path, monkeypatch):
     assert calls == []
 
 
-# --- R2 on PR #52: rules that surviving mutants showed were not pinned (M1-M8) --------------------
+# --- rules that surviving mutants showed were not pinned (M1-M8) --------------------
 
 
 def _decide(repo: Path, command: str = "gh pr create --fill", host: str = "claude") -> str | None:
@@ -427,7 +427,7 @@ def test_the_deny_text_names_the_verb_the_stop_class_and_a_missing_base(tmp_path
     assert "no base branch" in _decide(lone)
 
 
-# --- gh-66 AC19: on a verdict_join run, the review escape needs a review peer ---------------
+# --- on a verdict_join run, the review escape needs a review peer ---------------
 
 
 @pytest.mark.parametrize(("stage", "denied"), [("spec-driven", True), ("pr-review-update", False)])
@@ -452,7 +452,7 @@ def test_on_a_verdict_join_run_the_review_escape_needs_a_review_peer(tmp_path, s
 
 
 def test_a_wrong_stage_review_attested_in_another_run_log_does_not_open_the_escape(tmp_path):
-    """PR #145 R1 MF-1: the stage check reads the same newest attest row as the attest check."""
+    """The stage check reads the same newest attest row as the attest check."""
     from verdict_join import peer_wrote
 
     repo = _repo(tmp_path / "r")
@@ -466,7 +466,7 @@ def test_a_wrong_stage_review_attested_in_another_run_log_does_not_open_the_esca
     assert "written by a spec-driven peer" in out
 
 
-# --- gh-178: `gh pr comment` and `gh pr review` wait for R5 (closure) of the worktree's run at HEAD ----------
+# --- `gh pr comment` and `gh pr review` wait for R5 (closure) of the worktree's run at HEAD ----------
 
 TALK = ["gh pr comment 12 --body-file c.md", "gh pr review 12 --approve", "git push && gh -R o/r pr comment 3 -b x"]
 

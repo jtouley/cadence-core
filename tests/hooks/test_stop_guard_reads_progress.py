@@ -1,4 +1,4 @@
-"""The stop guard finds the open block from evidence, not from resume_slug (#12).
+"""The stop guard finds the open block from evidence, not from resume_slug.
 
 Only activate_session.py writes resume_slug, and it writes it once, so in a real run it
 stays at `activate-session`. The guard used to read it, and allowed every stop.
@@ -98,7 +98,7 @@ def stub_run(tmp_path: Path, gates, *, marker: bool = True, **session) -> tuple[
     return root, repo
 
 
-# --- the failure from issue #12, against the real registry -------------------------------
+# --- the stop that the old guard allowed, against the real registry -------------------------------
 
 
 @pytest.mark.parametrize("host", HOSTS)
@@ -124,7 +124,7 @@ def test_stop_past_p9_with_no_work_is_held_at_e1(tmp_path, run_hook, host):
 
 @pytest.mark.parametrize("host", HOSTS)
 def test_stop_before_p9_is_held_in_planning(tmp_path, run_hook, host):
-    """An active run holds from activation (gh-35 P9). Before, a planning stop passed."""
+    """An active run holds from activation. Before, a planning stop passed."""
     repo = real_run(tmp_path, marker=False)
     code, out, _ = run_hook(GUARD, repo, MAIN[host], host)
     assert code == 0 and stop_decision(host, out) == "block"
@@ -162,7 +162,7 @@ def test_a_marker_for_another_task_is_ignored(tmp_path, run_hook, other):
 
 @pytest.mark.parametrize("task_id", [["cd-7"], 7, {"x": 1}, True])
 def test_a_malformed_marker_task_id_blocks(tmp_path, run_hook, task_id):
-    """A corrupt marker is not another task's marker. It must not let the stop through (cd-12-F2)."""
+    """A corrupt marker is not another task's marker. It must not let the stop through."""
     repo = real_run(tmp_path, marker=False)
     p9_marker(repo).parent.mkdir(parents=True, exist_ok=True)
     p9_marker(repo).write_text(json.dumps({"task_id": task_id}) + "\n")
@@ -193,7 +193,7 @@ def registry():
 def test_every_stop_the_old_guard_blocked_is_still_blocked(tmp_path, run_hook, row):
     """Never weaker than the old rule (block in execution or review), with no marker.
 
-    The new guard also holds planning stops (gh-35 P9), so every active run blocks.
+    The new guard also holds planning stops, so every active run blocks.
     """
     repo = git_repo(tmp_path / "proj")
     hook_session(repo, "single", resume_slug=row["slug"])
@@ -245,7 +245,7 @@ def test_the_first_failing_gate_is_named_and_early_failing_gates_are_not_run(tmp
 
 
 def test_a_registry_the_walk_cannot_read_blocks_as_unknown(tmp_path, run_hook):
-    """The walk raises (a row has no gate_script). A fail-open `except` would allow the stop (cd-12-F9)."""
+    """The walk raises (a row has no gate_script). A fail-open `except` would allow the stop."""
     gates = [
         ("E1", "implement", "execution", PASS),
         ("E2", "impl-artifact", "execution", PASS),
@@ -268,7 +268,7 @@ SLOW_PASS = "import time; time.sleep(3)\n"
 
 def test_gates_that_pass_slowly_end_at_the_walk_budget_as_unknown(tmp_path, run_hook):
     """Four gates take 3 s each, under the 4 s gate limit. Together they pass the 9 s budget.
-    Without a budget the walk would finish and name R7 (cd-12-F10)."""
+    Without a budget the walk would finish and name R7."""
     gates = [
         ("E1", "implement", "execution", SLOW_PASS),
         ("E2", "impl-artifact", "execution", SLOW_PASS),
@@ -303,7 +303,7 @@ def test_a_hung_gate_means_unknown_and_blocks_inside_the_hook_timeout(tmp_path, 
 
 
 def test_a_hung_gate_is_named_not_the_first_execution_row(tmp_path, run_hook):
-    """The row that hung is where the run stands at the earliest. E1 passed (cd-12-F5)."""
+    """The row that hung is where the run stands at the earliest. E1 passed."""
     gates = [
         ("E1", "implement", "execution", PASS),
         ("E2", "impl-artifact", "execution", HANG),
@@ -333,7 +333,7 @@ GATE_ON_FILE = "import pathlib, sys\nsys.exit(0 if pathlib.Path('e2.done').exist
 
 def test_the_refusal_budget_resets_when_the_open_block_moves(tmp_path, run_hook):
     """The budget ends a loop at one block. It must not run out because the agent stopped
-    early three times and then made progress (cd-12-F3)."""
+    early three times and then made progress."""
     gates = [
         ("E1", "implement", "execution", PASS),
         ("E2", "impl-artifact", "execution", GATE_ON_FILE),
@@ -458,7 +458,7 @@ def test_decide_a_corrupt_session_blocks(guard):
     assert guard.decide(None, corrupt=True)[0] == "block"
 
 
-# --- gh-66 R2 MF-1: the walk runs R1 again after R4 appends to the same review ------------
+# --- the walk runs R1 again after R4 appends to the same review ------------
 
 R1_REAL = (
     "import sys\n"
@@ -484,7 +484,7 @@ def test_the_walk_after_r4_does_not_stop_at_r1(tmp_path, run_hook, appender, ope
     write_delegation_record(ctx, run_id="run-1", stage="pr-review-local", command="/pr-review-local 1",
                             source="PreToolUse")
     git(repo, "commit", "-q", "--allow-empty", "-m", "base")
-    body = (f"RUN_BY_COMMAND: pr-review-local\nLast reviewed commit: {head_sha(repo)}\n"  # PR #168 R1 N-1
+    body = (f"RUN_BY_COMMAND: pr-review-local\nLast reviewed commit: {head_sha(repo)}\n"
             + "".join(f"\n## {h}\nnone\n" for h in REVIEW_RIGOR_SECTIONS))
     rel = "prs/reviews/PR_REVIEW_#1.md"
     peer_wrote(ctx, "run-1", rel, agent_id="r1", stage="pr-review-local", body=body)

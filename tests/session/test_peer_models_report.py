@@ -1,4 +1,4 @@
-"""`peer_models.py report` joins each recorded peer call to its subagent (cd-58 D6).
+"""`peer_models.py report` joins each recorded peer call to its subagent.
 
 Claude Code writes <projects>/<project>/<chat>/subagents/agent-<id>.meta.json with the
 call's toolUseId, and agent-<id>.jsonl with the served model. The report shows the
@@ -47,7 +47,7 @@ def row(ctx, tool_use_id, stage="plan-review", model="opus", decision="allow", s
 
 
 def agent(projects: Path, chat: str, agent_id: str, tool_use_id, served: str | None = "claude-opus-5-5") -> None:
-    """The subagent of a call: its PostToolUse join row (gh-66) and its host transcript."""
+    """The subagent of a call: its PostToolUse join row and its host transcript."""
     peer_join(projects.parent / "repo" / ".context", "run-1", tool_use_id=tool_use_id, agent_id=agent_id)
     folder = projects / "proj" / chat / "subagents"
     folder.mkdir(parents=True, exist_ok=True)
@@ -205,7 +205,7 @@ def test_a_deny_row_before_an_allow_row_does_not_hide_it(ctx, projects, capsys):
 
 
 def test_a_meta_file_with_no_join_row_is_unjoined(ctx, projects, capsys):
-    """gh-66: the report joins through join rows, never through the undocumented host meta file."""
+    """The report joins through join rows, never through the undocumented host meta file."""
     row(ctx, "toolu_1")
     folder = projects / "proj" / "chat-a" / "subagents"
     folder.mkdir(parents=True)

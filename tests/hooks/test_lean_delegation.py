@@ -1,4 +1,4 @@
-"""The lean delegation record: the Task and handoff hooks check each peer prompt and write the record; the peer gates require it (cd-64)."""
+"""The lean delegation record: the Task and handoff hooks check each peer prompt and write the record; the peer gates require it."""
 
 from __future__ import annotations
 
@@ -170,7 +170,7 @@ def test_guard_test_benchmark_plan_writes_plan_stage(tmp_path):
     ("/pr-review-update 42 Cross-check claims", "deny"),
 ])
 def test_guard_pr_review_update_is_a_lean_peer_on_cursor(tmp_path, prompt, permission):
-    """gh-66 PD4: SLASH_TO_STAGE names /pr-review-update, so the Cursor hook records and checks it."""
+    """SLASH_TO_STAGE names /pr-review-update, so the Cursor hook records and checks it."""
     make_session(tmp_path, task_id="t1", pipeline_run_id="run-1")
     result = hook.evaluate({"tool_name": "Task", "tool_input": {"prompt": prompt}}, tmp_path)
     assert result["permission"] == permission
@@ -179,7 +179,7 @@ def test_guard_pr_review_update_is_a_lean_peer_on_cursor(tmp_path, prompt, permi
 
 
 def test_the_documented_r2_form_is_lean():
-    """SKILL.md runs R2 as `/test-benchmark --code`; the gate rejected that form on PR #52."""
+    """SKILL.md runs R2 as `/test-benchmark --code`; the gate once rejected that form."""
     from prompt_shape import PromptShapeError, delegation_stage_for_prompt, validate_lean_prompt
 
     for prompt in ("/test-benchmark --code", "/test-benchmark --code 52", "/test-benchmark 52"):
@@ -189,7 +189,7 @@ def test_the_documented_r2_form_is_lean():
         validate_lean_prompt("test-benchmark", "/test-benchmark --code 52 extra")
 
 
-# --- claude_lean_record: cd-64: on Claude Code the handoff hook checks each orchestrator peer call and writes its lean record.
+# --- claude_lean_record: on Claude Code the handoff hook checks each orchestrator peer call and writes its lean record.
 #
 # A peer call names a peer command anywhere in the prompt. It must be the slash command and
 # its arguments only; any other shape, and a fork, is denied. An allowed call gets the record
@@ -370,7 +370,7 @@ def test_cursor_host_not_checked(call, repo):
     assert code == 0, err
     assert out["permission"] == "deny"
     text = json.dumps(out)
-    # The handoff deny gives the rendered slash command; the cd-64 lean check is Claude Code only.
+    # The handoff deny gives the rendered slash command; the lean check is Claude Code only.
     assert f"this prompt: /plan-review {HANDOFF_PLAN}" in text and "lean peer prompt rejected" not in text
     assert records(repo / ".context") == []
 
@@ -566,7 +566,7 @@ def test_lean_reason_computed_once(hook_module, repo, monkeypatch, capsys, promp
     assert counts == {"reason": 1, "row": 1}
 
 
-# --- lean_record_source: cd-64 D4: on a marked Claude Code run, a peer gate accepts only a hook-written lean record.
+# --- lean_record_source: on a marked Claude Code run, a peer gate accepts only a hook-written lean record.
 
 MARKED = {"lean_record_by_hook": True, "host": "claude"}
 

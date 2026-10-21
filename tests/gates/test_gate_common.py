@@ -127,7 +127,7 @@ PEER_GLOBS = {
     "skills/de-adversarial-reviewer/SKILL.md": ARTIFACT_GATES["adversarial-review-gate"]["globs"],
     "skills/test-benchmark/SKILL.md": (*_MODES["plan"]["globs"], *_MODES["code"]["globs"]),
     "commands/pr-review-local.md": ARTIFACT_GATES["pr-review-local-gate"]["globs"],
-    "commands/commit-push-pr.md": ("prs/draft-pr-*.md", "prs/draft-pr.md"),  # cd-76: per-run record, legacy
+    "commands/commit-push-pr.md": ("prs/draft-pr-*.md", "prs/draft-pr.md"),  # Per-run record, legacy
     "references/deferral-framework.md": DEFERRAL_REGISTER["relative_globs"],
 }
 _PATH = re.compile(r"`\.context/([^`\s]+\.(?:md|json))`")
@@ -189,7 +189,7 @@ def test_implement_gate_session_and_ok_file_passes(scripts_path, tmp_path, monke
     context = tmp_path / "ctx" / ".context"
     repo = _repo_one_commit_ahead(tmp_path)
     make_session(context, workspace=str(repo), base="main")
-    ok_path = context / "gates" / "entry-invariant-run-1.ok"  # cd-76: the run's own marker
+    ok_path = context / "gates" / "entry-invariant-run-1.ok"  # The run's own marker
     ok_path.parent.mkdir(parents=True)
     ok_path.write_text("ok\n", encoding="utf-8")
     code = run(context)
@@ -259,7 +259,7 @@ def test_review_missing_one_section_fails(tmp_path):
 
 
 def test_review_without_reuse_and_extension_fails(tmp_path, capsys):
-    """gh-99: R1 records the reuse, the duplication and the extension point of the change."""
+    """R1 records the reuse, the duplication and the extension point of the change."""
     assert "Reuse and extension" in REVIEW_RIGOR_SECTIONS
     _delegated(tmp_path)
     _review(tmp_path, tuple(s for s in REVIEW_RIGOR_SECTIONS if s != "Reuse and extension"))
@@ -267,7 +267,7 @@ def test_review_without_reuse_and_extension_fails(tmp_path, capsys):
     assert "missing sections ['Reuse and extension']" in capsys.readouterr().err
 
 
-# --- PR #168 R1 N-1: R4 is off by default, so R1 checks that the newest review cites HEAD.
+# --- R4 is off by default, so R1 checks that the newest review cites HEAD.
 
 def _reviewed(tmp_path: Path, sha: str | None) -> tuple[Path, Path, str]:
     """(context, worktree, HEAD): a run whose worktree is a git repo, and a full R1 review of `sha`."""
@@ -333,7 +333,7 @@ def test_r1_fails_when_the_runs_own_pr_has_no_review(tmp_path, capsys):
     assert "no peer-written review of this run's PR at prs/reviews/PR_REVIEW_#7.md" in capsys.readouterr().err
 
 
-# --- gh-174: each R1 must-fix item is a ledger row, and a NO MERGE verdict with no row fails R1.
+# --- each R1 must-fix item is a ledger row, and a NO MERGE verdict with no row fails R1.
 
 NO_MERGE = "## Must-fix items\n\n- MF-1: the gate passes a corrupt file.\n- MF-2: the hook skips a symlink.\n\nVerdict: NO MERGE (2 must-fix)\n"
 
@@ -372,7 +372,7 @@ def test_r1_passes_with_a_row_per_must_fix_and_r5_holds_on_the_open_rows(tmp_pat
 
 
 def test_r1_does_not_accept_the_rows_of_an_earlier_run_of_the_task(tmp_path, capsys):
-    """PR #188 review B-2: run 2's MF-1 is not run 1's row, so a stale verified row cannot satisfy R1."""
+    """Run 2's MF-1 is not run 1's row, so a stale verified row cannot satisfy R1."""
     from conftest import ledger_row, write_ledger
 
     context = _no_merge(tmp_path)

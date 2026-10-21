@@ -1,4 +1,4 @@
-"""README and SKILL.md tell the user how to clear a peer shadow and a hard stop set by mistake (cd-53)."""
+"""README and SKILL.md tell the user how to clear a peer shadow and a hard stop set by mistake."""
 
 from __future__ import annotations
 
