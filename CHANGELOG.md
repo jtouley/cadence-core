@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The runtime line budget test is removed. A global line count blocked focused changes and was raised by hand at each feature, so it did not constrain growth. The complexity ratchet and the duplication and code-shape measures still judge each change.
 - A plan finding closes in the plan. P7 fails while the plan scorecard does not pass, as
   R2 does, and names `/plan-update` and then `/test-benchmark plan`. The P4 packet pins the failing
   plan scorecard. The plan benchmark writes no findings ledger row, because the plan freezes at P9

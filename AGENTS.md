@@ -44,8 +44,7 @@ place. Docs point at `stages.json` and `docs/system-design.md`.
 - Keep host paths out of Python. Scripts find the root from their own file path.
 - Keep org rules and personal setup out of core. They go in a pack, a config layer or another
   plugin. `tests/contract/test_origin_headers_and_org_terms_clean.py` checks for org names.
-- Keep a pull request to one change. Do not raise `BUDGET_LINES` in
-  `tests/contract/test_source_size_budget.py` in the same pull request that adds the code.
+- Keep a pull request to one change.
 - Write docs in plain English: short sentences, one meaning for each word, the result first.
 
 ## Keep the repository public and ready for contributions
