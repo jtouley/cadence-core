@@ -1,4 +1,4 @@
-"""duplication.py finds copied blocks of normalized Python lines (ADR-0008)."""
+"""duplication.py finds copied blocks of normalized Python lines."""
 
 from __future__ import annotations
 

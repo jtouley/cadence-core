@@ -2,7 +2,7 @@
 """R4 final consolidate — Close pass then Delta pass (fix-loop budget: `review_fix_rounds`).
 
 A fix round is one `## Update` section of the PR review. At the budget, a loop that is still
-open holds with the ADR-0009 text (#182, ADR-0015).
+open holds with the loop rule: a MERGE-READY verdict with no open must-fix ends it (#182).
 """
 
 from __future__ import annotations
@@ -23,11 +23,11 @@ from labeled_lines import labeled_values  # noqa: E402
 _UPDATE = re.compile(r"^##[ \t]+Update\b", re.M)
 BUDGET_HOLD = (
     "final-consolidate: the review fix loop is at its budget: {rounds} fix rounds (`## Update` sections) of "
-    "{budget} (review_fix_rounds). Do not start another fix round. ADR-0009: a MERGE-READY verdict with no open "
+    "{budget} (review_fix_rounds). Do not start another fix round. a MERGE-READY verdict with no open "
     "must-fix ends the loop, and a nit goes to the tracker, not into a fix commit. Defer each open must-fix: add its "
     "row under `## Review deferrals` in .context/deferrals/<task>_deferral-register.md with the ticket, pass "
     "deferral_adjudication_check.py, then findings_io.py set-status --id <id> --status deferred --ticket <n> "
-    '(ADR-0012). Or stop and tell the user (activate_session.py --hard-stop retries --reason "...")'
+    '. Or stop and tell the user (activate_session.py --hard-stop retries --reason "...")'
 )
 
 
@@ -37,7 +37,7 @@ def fix_rounds(text: str) -> int:
 
 
 def fix_round_budget(root: Path, workspace: Path | None = None) -> int:
-    """`review_fix_rounds` of the resolved config: a layer can only lower it (ADR-0015). A bad value raises."""
+    """`review_fix_rounds` of the resolved config: a layer can only lower it. A bad value raises."""
     import cadence_config
 
     return cadence_config.load(root, workspace).get("review_fix_rounds")

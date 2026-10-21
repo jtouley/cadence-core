@@ -35,7 +35,7 @@ from typing import Callable, Iterable
 
 import cadence_config  # noqa: E402
 
-# The measured sections (ADR-0008). Each limit is a floor: a config layer can make it stricter,
+# The measured sections. Each limit is a floor: a config layer can make it stricter,
 # never looser (x-cadence-stricter in references/cadence.config.schema.json).
 # `bugs` and `types` count tool findings on added lines (tool_measures.py, docs/tool-gates.md).
 MEASURED = ("cognitive_complexity", "duplication", "code_shape", "test_shape", "bugs", "types")
@@ -74,7 +74,7 @@ class FunctionScore:
     name: str
     line: int
     score: int
-    statements: int | None = None  # code shape (ADR-0008), Python only: statements in the body, nested ones too
+    statements: int | None = None  # code shape, Python only: statements in the body, nested ones too
     chain: int | None = None  # the longest if/elif or guard chain, or the most match cases
 
 
@@ -201,7 +201,7 @@ def _block_chain(block: list[ast.stmt]) -> int:
 
 
 def _chain(node: ast.AST) -> int:
-    """The open/closed proxy (ADR-0008): the longest dispatch chain in the function."""
+    """The open/closed proxy: the longest dispatch chain in the function."""
     best = 0
     for child in ast.walk(node):
         if isinstance(child, ast.Match):

@@ -58,7 +58,7 @@ For each finding of `--fix <review>`:
 3. Record it: `python3 $CADENCE_HOME/scripts/findings_io.py set-status --id <id> --status fixed --fixed-in <sha>`.
 
 A finding that you cannot fix in this PR gets `--status deferred --ticket <ticket>` after its
-register row (ADR-0012). Do not set `verified`: `ledger_verify.py` does.
+register row. Do not set `verified`: `ledger_verify.py` does.
 
 ## Rules
 
@@ -88,7 +88,7 @@ When the local R3 run still fails after the options of a phase, do the fix step:
 2. Follow `$CADENCE_HOME/subagents/simplify-code.md` yourself, with the R3 record as its one input. Its `offenders` lists are the task list. A peer cannot start another agent.
 3. Run R3 again.
 
-Do the fix step one time. Then apply the rule of ADR-0009. A pass ends the step. An offender that stays is a must-fix: fix it, then run R3 again.
+Do the fix step one time. Then the loop rule applies: a `MERGE-READY` verdict with no open must-fix ends the loop. A pass ends the step. An offender that stays is a must-fix: fix it, then run R3 again.
 
 ## Reuse
 

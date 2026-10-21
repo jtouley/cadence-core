@@ -1,7 +1,7 @@
 {
   "name": "deferrals",
   "version": "0.1.0",
-  "description": "Stage pack (ADR-0007): Deferral register, the implementation artifact and the final consolidate. Its rows in stages.json are P8, E2, R4.",
+  "description": "Stage pack: Deferral register, the implementation artifact and the final consolidate. Its rows in stages.json are P8, E2, R4.",
   "triggers": [],
   "phases": [],
   "rules": []

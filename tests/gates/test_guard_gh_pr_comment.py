@@ -176,7 +176,7 @@ def test_the_body_file_flag_names_another_file(scripts_path, tmp_path):
     assert run(context, check=True, body=moved) == 0
 
 
-# --- ADR-0018: without --check, R6 writes the body from the ledger. No agent writes it.
+# --- without --check, R6 writes the body from the ledger. No agent writes it.
 
 def test_without_check_r6_writes_the_body_from_the_ledger_and_names_the_post(scripts_path, tmp_path, capsys):
     context = _closed_ledger(tmp_path)

@@ -1,4 +1,4 @@
-"""The orchestrator routes, and the peers do the work (ADR-0017).
+"""The orchestrator routes, and the peers do the work.
 
 On Claude Code, during an active run, the orchestrator runs each gate, sends each peer its
 rendered command, and reads the peer's one-line return. A peer reads the plan, the reviews and
@@ -32,7 +32,7 @@ from skill_gate import (
 # Run artifacts, relative to .context: what the peers write and read. Session, gate and
 # ledger state is not here: the scripts that the orchestrator runs read it.
 RUN_ARTIFACTS = (*peer_attest.PEER_ARTIFACT_GLOBS, "plans/*", "proposals/*", "implementation/*")
-# The markdown of a run that a peer or a block's script writes (ADR-0018): the orchestrator writes none.
+# The markdown of a run that a peer or a block's script writes: the orchestrator writes none.
 WRITTEN_FOR_IT = (*RUN_ARTIFACTS, "deferrals/*", "prs/comments/*", "summaries/*")
 WORKSPACE_PLANS = ".cursor/plans/"
 # A `git diff` or `git show` prints the change. `--stat` and the name forms print only its shape.

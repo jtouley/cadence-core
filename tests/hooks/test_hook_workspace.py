@@ -428,7 +428,7 @@ def test_handoff_guard_finds_the_run_from_either_cwd(run_hook, make_root, projec
     payload_cwd, process_cwd = (project, outside) if payload_in_project else (outside, project)
     result = run_hook(HANDOFF_HOOK, project, _agent(cwd=str(payload_cwd)), "claude", hooks_dir=root / "hooks",
                       cwd=process_cwd, project_env={})
-    assert_decision(result, "claude", "deny", reason="P3 needs plan")  # ADR-0010: the run has no plan
+    assert_decision(result, "claude", "deny", reason="P3 needs plan")  # the run has no plan
 
 
 def test_handoff_guard_with_two_runs_uses_the_process_run(run_hook, make_root, handoff_mod, project, tmp_path):
@@ -468,7 +468,7 @@ def test_handoff_packet_check_uses_the_process_worktree(run_hook, make_root, han
     root = make_root(mode="enforce")
     primary, trees = linked_worktrees(tmp_path)
     w0, w1 = trees["w0"], trees["w1"]
-    write_files(w1, {HANDOFF_PLAN: HANDOFF_PLAN_TEXT})  # ADR-0010: the plan input exists only in w1
+    write_files(w1, {HANDOFF_PLAN: HANDOFF_PLAN_TEXT})  # the plan input exists only in w1
     save_worktree_session(w1, pipeline_run_id="run-1")
     result = run_hook(HANDOFF_HOOK, w1, _agent(cwd=str(w0)), "claude", hooks_dir=root / "hooks",
                       cwd=w1, project_env={})

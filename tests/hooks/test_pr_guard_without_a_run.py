@@ -45,7 +45,7 @@ def _repo(path: Path, ahead: int = 2, context: bool = True) -> Path:
     if context:
         (path / ".context").mkdir()
         (path / ".cadence.json").write_text("{}\n", encoding="utf-8")  # a Cadence footprint (R1 R-2)
-        enable_all_packs(path)  # ADR-0007: E3 is on (test_pr_guard_packs.py: the default config)
+        enable_all_packs(path)  # E3 is on (test_pr_guard_packs.py: the default config)
     return path
 
 

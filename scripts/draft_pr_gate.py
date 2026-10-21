@@ -49,7 +49,7 @@ def _impl_diff_errors(context_dir: Path, session: dict | None) -> list[str]:
 
 
 def _diff_errors(context_dir: Path, session: dict) -> list[str]:
-    """E2's record of the diff, or with the deferrals pack off (no E2) the diff of the run's worktree (ADR-0007)."""
+    """E2's record of the diff, or with the deferrals pack off (no E2) the diff of the run's worktree."""
     from impl_artifact import MergeBaseError, _git_diff_stat
     from implement_gate import run_worktree
     from load_stages import stage_slugs

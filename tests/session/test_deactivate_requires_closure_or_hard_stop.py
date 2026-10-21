@@ -48,7 +48,7 @@ def test_hard_stop_records_class_and_reason_then_deactivate_works(tmp_path):
     assert proc.returncode == 0, proc.stderr
     stop = session_store.load_worktree_session(repo)["hard_stop"]
     assert stop["class"] == "retries" and "converge" in stop["reason"]
-    assert _run(repo, "--deactivate").returncode == 1  # ADR-0018: the summary peer writes first
+    assert _run(repo, "--deactivate").returncode == 1  # the summary peer writes first
     peer_summary(repo)
     assert _run(repo, "--deactivate").returncode == 0
     assert session_store.load_worktree_session(repo)["active_skill"] is None

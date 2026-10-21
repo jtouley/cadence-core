@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-# The golden corpus (ADR-0008) holds sample repos with their own tests/ and conftest.py.
+# The golden corpus holds sample repos with their own tests/ and conftest.py.
 # They are data for the measures, not tests of this repo.
 collect_ignore_glob = ["fixtures/golden/*"]
 
@@ -540,7 +540,7 @@ def hook_session(repo: Path, layout: str = "single", **fields) -> Path:
 
 
 def peer_summary(workspace: Path) -> Path:
-    """The /session-summary peer's write for the worktree's run, attested as the hook does (ADR-0018)."""
+    """The /session-summary peer's write for the worktree's run, attested as the hook does."""
     import re as _re
 
     shared = str(_REPO_ROOT / "shared" / "scripts")
@@ -724,7 +724,7 @@ def make_root(tmp_path):
     return _make
 
 
-# The run's plan in the `repo` fixture: the P3 `plan` input of the handoff resolves to it (ADR-0010).
+# The run's plan in the `repo` fixture: the P3 `plan` input of the handoff resolves to it.
 HANDOFF_PLAN = ".cursor/plans/feature.plan.md"
 HANDOFF_PLAN_TEXT = "# Plan\n\nRUN_BY_COMMAND: plan-create\nTicket: gh-1\n\n### Phase 1: build it\n"
 
@@ -804,13 +804,13 @@ def p9_marker(repo: Path) -> Path:
 
 
 def stage_packs() -> list[str]:
-    """ADR-0007: the opt-in packs that own rows of this tree's stages.json, in first-row order."""
+    """The opt-in packs that own rows of this tree's stages.json, in first-row order."""
     rows = json.loads((_REPO_ROOT / "stages.json").read_text(encoding="utf-8"))["stages"]
     return list(dict.fromkeys(r["pack"] for r in rows if r.get("pack", "core") != "core"))
 
 
 def enable_all_packs(workspace: Path) -> Path:
-    """The full config (ADR-0007): `.cadence.json` in `workspace` enables every stage pack.
+    """The full config: `.cadence.json` in `workspace` enables every stage pack.
 
     Without the file a workspace has the default config: the core rows only.
     """

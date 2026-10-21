@@ -1,7 +1,7 @@
 {
   "id": "demo-task-F1",
   "stage": "pr-review-local",
-  "rule_ref": "ADR-001",
+  "rule_ref": "core:dry-extension",
   "class": "bug",
   "severity": "must-fix",
   "location": "src/foo.py:L10-L12",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R2 test shape: the DRY lists of the changed test files, computed by a script (ADR-0008).
+"""R2 test shape: the DRY lists of the changed test files, computed by a script.
 
 - helpers_reimplemented: a function of a changed test file whose name, or whose body
   normalized as duplication.py does (so a renamed copy counts), is a function of a conftest file.
@@ -7,7 +7,7 @@
 - thin_files: a changed test file with one or two `def test_` functions that imports a module
   of a runtime directory that another test file also imports.
 
-The layout of the target repo (ADR-0014) is `test_shape.layout` of the resolved config, else detected:
+The layout of the target repo is `test_shape.layout` of the resolved config, else detected:
 - test_dirs: the top-level `tests/` and `test/`;
 - conftest: each conftest.py under the test dirs, outside `measure_exclude`;
 - runtime_dirs: the package dirs that pyproject.toml (`[tool.setuptools] packages`, `[project] name`) or

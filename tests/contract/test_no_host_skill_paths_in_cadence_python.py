@@ -1,6 +1,6 @@
 """Cadence scripts and shared Python must not point at a host skill tree.
 
-One exception (ADR-0006, cd-53): scripts/peer_shadows.py builds host command and
+One exception (cd-53): scripts/peer_shadows.py builds host command and
 skill paths with `home / ".cursor" / "commands"` to lstat a peer shadow. It never
 reads the content of a host entry. No other module may build those paths.
 """

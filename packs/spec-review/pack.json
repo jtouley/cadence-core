@@ -1,7 +1,7 @@
 {
   "name": "spec-review",
   "version": "0.1.0",
-  "description": "Stage pack (ADR-0007): Spec pressure test and the adversarial plan review. Its rows in stages.json are A5, P6.",
+  "description": "Stage pack: Spec pressure test and the adversarial plan review. Its rows in stages.json are A5, P6.",
   "triggers": [],
   "phases": [],
   "rules": []

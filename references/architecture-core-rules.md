@@ -37,7 +37,7 @@ Apply this rule to source code, gates and tests. A finding names the item that i
 1. **Reuse.** Use a helper that exists in a shared module. Do not write it again.
    In Cadence, the shared modules are `tests/conftest.py`, `scripts/gate_common.py` and `shared/`.
    The R2 gate measures this rule for tests: `scripts/test_shape.py` lists each copy of a conftest helper.
-   It reads the test layout of the repo from `test_shape.layout`, or it finds the layout (ADR-0014).
+   It reads the test layout of the repo from `test_shape.layout`, or it finds the layout.
 2. **Rule of Three.** Add a shared helper when three callers need the same logic.
    Do not copy the logic into a third caller.
    The R3 gate measures copied code: `scripts/duplication.py` finds copied blocks, also with new names.
@@ -72,8 +72,7 @@ host runs that peer, and core never reads its text.
 
 Findings when a procedure, subagent, or gate opens `~/.cursor/commands`,
 another skill under `~/.cursor/skills/`, or `~/.cursor/rules`. Exception: a gate can `lstat` and `resolve()` a host
-entry that has a peer's name to find a peer shadow (`scripts/peer_shadows.py`,
-ADR-0006). It does not read, load, or run the content of that entry. A missing peer is a **must-fix** (do not skip the
+entry that has a peer's name to find a peer shadow (`scripts/peer_shadows.py`). It does not read, load, or run the content of that entry. A missing peer is a **must-fix** (do not skip the
 stage, do not fall back to a host global). Authoring tools
 (`skill-creator`, `postmortem`) stay off the install surface.
 

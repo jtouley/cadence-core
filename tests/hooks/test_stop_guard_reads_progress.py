@@ -2,7 +2,6 @@
 
 Only activate_session.py writes resume_slug, and it writes it once, so in a real run it
 stays at `activate-session`. The guard used to read it, and allowed every stop.
-Decision: docs/adr/0003-stop-guard-reads-progress-from-evidence.md.
 """
 
 from __future__ import annotations
@@ -105,7 +104,7 @@ def stub_run(tmp_path: Path, gates, *, marker: bool = True, **session) -> tuple[
 @pytest.mark.parametrize("host", HOSTS)
 def test_stop_in_a_real_run_past_p9_is_blocked_though_resume_slug_is_stale(tmp_path, run_hook, host):
     repo = real_run(tmp_path, marker=True)
-    enable_all_packs(repo)  # ADR-0007: E2 is in the deferrals pack (test_stop_guard_packs.py: the default)
+    enable_all_packs(repo)  # E2 is in the deferrals pack (test_stop_guard_packs.py: the default)
     start = time.monotonic()
     code, out, _ = run_hook(GUARD, repo, MAIN[host], host)
     assert code == 0

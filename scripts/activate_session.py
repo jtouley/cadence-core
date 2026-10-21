@@ -346,7 +346,7 @@ def _file_name(task_id: str) -> str:
 
 
 def write_request(context_dir: Path, task_id: str, text: str) -> Path:
-    """`.context/proposals/<task_id>.md`: the user's request as written, the input of A5 (ADR-0018)."""
+    """`.context/proposals/<task_id>.md`: the user's request as written, the input of A5."""
     path = context_dir / "proposals" / f"{_file_name(task_id)}.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"# Request: {task_id}\n\nTicket: {task_id}\nSource: the request as the user wrote it, "
@@ -354,7 +354,7 @@ def write_request(context_dir: Path, task_id: str, text: str) -> Path:
     return path
 
 
-# The run's documents that the summary peer reads (ADR-0018), as globs under .context.
+# The run's documents that the summary peer reads, as globs under .context.
 MANIFEST_GLOBS = ("proposals/*.md", "vibetest/*.md", "plans/*.md", "reviews/*.md", "adversarial/*.md",
                   "benchmarks/*.json", "deferrals/*.md", "implementation/*.md", "prs/*.md", "prs/reviews/*.md",
                   "prs/comments/*.md", "issues/*.md", "findings.jsonl")
@@ -367,7 +367,7 @@ def summary_path(context_dir: Path, task_id: str) -> Path:
 def write_manifest(context_dir: Path, workspace: Path, session: dict) -> Path:
     """`.context/manifests/<task_id>.md`: the run facts and each document of the run with its sha256.
 
-    The one input of the /session-summary peer (ADR-0018). The script lists; the peer judges.
+    The one input of the /session-summary peer. The script lists; the peer judges.
     """
     from artifact_requirements import run_scope_accept
 
@@ -526,7 +526,7 @@ def _add_run_marks(session: dict, args: argparse.Namespace, resumed: dict | None
         session["peer_models"] = snapshot
     kept = (resumed or {}).get("config")
     if kept or config:
-        session["config"] = kept or config  # ADR-0016: each layer file with its sha256, and the values
+        session["config"] = kept or config  # each layer file with its sha256, and the values
     # cd-64 D4: on a run marked here, only the PreToolUse hook writes lean delegation records.
     if (session["host"] == "claude" if session["fresh_run"] else (resumed or {}).get("lean_record_by_hook") is True):
         session["lean_record_by_hook"] = True

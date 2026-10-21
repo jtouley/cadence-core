@@ -14,7 +14,7 @@ project `.cadence.json`:
 here in core, in `~/.config/cadence/packs/` (user), or in `<project>/.cadence/packs/` (project). A
 user or project pack loads only when its lock (`cadence.lock.json`) pins it.
 
-Six packs here own stage rows (ADR-0007): `preflight`, `tracker`, `spec-review`,
+Six packs here own stage rows: `preflight`, `tracker`, `spec-review`,
 `architecture`, `test-plan` and `deferrals`. With no pack on, a run visits the twelve `core`
 rows of `stages.json`. `profile: strict` turns on all six, so a run visits all 25 rows.
 

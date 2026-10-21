@@ -1,4 +1,4 @@
-"""The registry drives the lean handoff (ADR-0010).
+"""The registry drives the lean handoff.
 
 Each peer row of stages.json has `inputs`. The hook resolves them from the run's
 .context and worktree, writes the packet, and renders the peer prompt: the slash
@@ -121,7 +121,7 @@ def test_a_corrupt_packet_on_disk_is_written_again(repo, monkeypatch):
 
 
 def test_a_scorecard_that_now_passes_leaves_the_p4_packet(repo, monkeypatch):
-    """ADR-0020: a stale pin of a plan scorecard would make the handoff check refuse the next P4 packet."""
+    """A stale pin of a plan scorecard would make the handoff check refuse the next P4 packet."""
     monkeypatch.chdir(repo)
     write_files(repo, {**FILES["review"], **FILES["failing-card"]})
     assert SCORECARD in [r["path"] for r in built(repo, "P4")["inputs"]]

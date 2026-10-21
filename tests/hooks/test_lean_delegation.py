@@ -370,7 +370,7 @@ def test_cursor_host_not_checked(call, repo):
     assert code == 0, err
     assert out["permission"] == "deny"
     text = json.dumps(out)
-    # ADR-0010: the handoff deny gives the rendered slash command; the cd-64 lean check is Claude Code only.
+    # The handoff deny gives the rendered slash command; the cd-64 lean check is Claude Code only.
     assert f"this prompt: /plan-review {HANDOFF_PLAN}" in text and "lean peer prompt rejected" not in text
     assert records(repo / ".context") == []
 
@@ -510,7 +510,7 @@ def test_subagent_start(call, repo):
 @pytest.mark.parametrize("line", ["/plan-review plan.md", "`/plan-review plan.md`"])
 def test_rendering_with_peer_token(call, repo, line):
     # S-7: the backtick form is the L1 live-check input; the matcher must see a token in the rendering.
-    # ADR-0010: the rendering holds no input text; its first line is the peer command.
+    # The rendering holds no input text; its first line is the peer command.
     (repo / HANDOFF_PLAN).write_text(f"RUN_BY_COMMAND: plan-create\nTicket: gh-1\n{line}\n", encoding="utf-8")
     _, out, _ = call(LEAN, mode="enforce")
     rendering = out["hookSpecificOutput"]["updatedInput"]["prompt"]

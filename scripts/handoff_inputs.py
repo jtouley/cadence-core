@@ -1,4 +1,4 @@
-"""The inputs of a peer handoff, from the `inputs` of its stages.json row (ADR-0010).
+"""The inputs of a peer handoff, from the `inputs` of its stages.json row.
 
 Each peer row names a list of input kinds. This module finds each kind in the run's
 .context and worktree, with the rules of the gates. It gives the slash command with its
@@ -24,7 +24,7 @@ from phase_ledger import select_plan
 
 KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review", "manifest",
          "request", "vibetest", "plan-benchmark")
-# The request and the vibe-test report are pinned when they exist (ADR-0019); A5 is in a pack.
+# The request and the vibe-test report are pinned when they exist; A5 is in a pack.
 # A plan scorecard is pinned while it fails, so that P4 applies its findings.
 OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest", "plan-benchmark"})
 
@@ -91,7 +91,7 @@ def _pr_number(run: Run) -> Found | None:
 
 
 def _pr_review(run: Run) -> Found | None:
-    """The R1 review of the run's PR, as the fix round's one input (ADR-0017)."""
+    """The R1 review of the run's PR, as the fix round's one input."""
     record = artifact_requirements.draft_pr_record(run.ctx, run.session, current_branch(run.workspace))
     number = artifact_requirements.draft_pr_number(record) if record is not None else None
     review = run.ctx / "prs" / "reviews" / f"PR_REVIEW_#{number}.md" if number is not None else None
@@ -106,7 +106,7 @@ def _task_file(run: Run, folder: str, suffix: str) -> Path | None:
 
 
 def _request(run: Run) -> Found | None:
-    """The user's request that activation saved (ADR-0018)."""
+    """The user's request that activation saved."""
     path = _task_file(run, "proposals", ".md")
     return ([], path) if path else None
 
@@ -129,7 +129,7 @@ def _plan_benchmark(run: Run) -> Found | None:
 
 
 def _manifest(run: Run) -> Found | None:
-    """The run's session manifest, which `activate_session.py --deactivate` writes (ADR-0018)."""
+    """The run's session manifest, which `activate_session.py --deactivate` writes."""
     path = _task_file(run, "manifests", ".md")
     return ([_shown(path, run)], path) if path else None
 

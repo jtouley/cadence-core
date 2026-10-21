@@ -1,4 +1,4 @@
-"""ADR-0009: a merge-ready verdict ends the R1 review loop; a nit after it goes to the tracker."""
+"""A merge-ready verdict ends the R1 review loop; a nit after it goes to the tracker."""
 
 from __future__ import annotations
 

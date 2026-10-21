@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Duplicated blocks of Python code, measured with tokenize (ADR-0008). Standard library only.
+"""Duplicated blocks of Python code, measured with tokenize. Standard library only.
 
 A unit is one logical line with its tokens normalized: a name that is not a keyword
 becomes N, and a number or a string (an f-string too) becomes L. Thus a copy with new

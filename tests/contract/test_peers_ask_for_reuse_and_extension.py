@@ -3,7 +3,7 @@
 #99: `core:dry-extension` covered gate modules and CLI shells only. No plan, implementation
 or review asked for the helpers it reuses or for an extension point, and the DRY score of
 `/test-benchmark` was the opinion of the peer. Each doc below carries its instruction.
-ADR-0008: R2 computes the DRY lists, and a peer reads the verdict of a measure; it does not judge again.
+R2 computes the DRY lists, and a peer reads the verdict of a measure; it does not judge again.
 """
 
 from __future__ import annotations

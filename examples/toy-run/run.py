@@ -200,7 +200,7 @@ def play_implement(box: Sandbox) -> None:
     say(box, "  committed: feat: subtract()")
 
 
-# The default run visits the core blocks only (ADR-0007). These are its peers.
+# The default run visits the core blocks only. These are its peers.
 PEERS = {"P1": play_plan_create, "P3": play_plan_review, "E1": play_implement}
 
 

@@ -47,7 +47,7 @@ def test_bundled_peers_registry_lists_every_slash_stage():
 
 
 def test_every_peer_row_names_its_handoff_inputs():
-    """ADR-0010: the hook builds each peer packet from the `inputs` of the row."""
+    """The hook builds each peer packet from the `inputs` of the row."""
     from handoff_inputs import KINDS
     from prompt_shape import EXTRA_PEER_ROWS
 

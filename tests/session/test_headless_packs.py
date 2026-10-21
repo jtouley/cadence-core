@@ -1,4 +1,4 @@
-"""ADR-0007: headless.py walks only the rows of the core pack and of the packs that are on."""
+"""Headless.py walks only the rows of the core pack and of the packs that are on."""
 
 from __future__ import annotations
 

@@ -2,19 +2,19 @@
 
 ## Unreleased
 
-- A plan finding closes in the plan (ADR-0020). P7 fails while the plan scorecard does not pass, as
+- A plan finding closes in the plan. P7 fails while the plan scorecard does not pass, as
   R2 does, and names `/plan-update` and then `/test-benchmark plan`. The P4 packet pins the failing
   plan scorecard. The plan benchmark writes no findings ledger row, because the plan freezes at P9
   and no commit can close the row.
-- A5 gaps are carried into the plan (ADR-0019). The vibe-test report labels each blocking gap `G-n`.
+- A5 gaps are carried into the plan. The vibe-test report labels each blocking gap `G-n`.
   The plan peer logs an assumption for each one under `## Assumptions` in the register, next to the
   deferrals. P9 fails while one has no row, and the R6 comment lists the assumptions.
-- A block writes its own markdown (ADR-0018). `activate_session.py --request -` saves the user's
+- A block writes its own markdown. `activate_session.py --request -` saves the user's
   request as written for A5. P8 writes the zero deferral register, R6 writes the closure comment
   from the ledger, and R7 writes the run's manifest for the new `/session-summary` peer. The plan
   peer writes the decision records and the approved deferrals. On Claude Code the orchestrator may
   not write the markdown of the run.
-- The orchestrator routes (ADR-0017). A peer gets a markdown file and gives back a markdown file. E1 is
+- The orchestrator routes. A peer gets a markdown file and gives back a markdown file. E1 is
   one `/spec-driven <plan>` peer call, and each review fix round is one `/spec-driven --fix <review>`
   peer call on the PR review. On Claude Code a hook denies an orchestrator read
   of a run artifact, the code or the diff, and an orchestrator write to the code
@@ -43,6 +43,5 @@ The first public release of Cadence core.
 - The toy run (`examples/toy-run/`): the real gates and hooks on a toy repository, with no model and
   no network.
 
-Cadence core grew out of an earlier repository (`jtouley/cadence`). The decision records in
-`docs/adr/` keep their history, so an issue number such as `#53` or `cd-53` there names an issue of
-that repository.
+Cadence core grew out of an earlier, private repository. An issue number such as `#53`, `gh-53` or
+`cd-53` in a comment names an issue of that repository, not of this one.

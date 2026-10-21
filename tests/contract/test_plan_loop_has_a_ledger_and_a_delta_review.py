@@ -1,4 +1,4 @@
-"""ADR-0011: the plan update answers each MF-n in a Revision ledger, and the next review reads it as a delta."""
+"""The plan update answers each MF-n in a Revision ledger, and the next review reads it as a delta."""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ def test_the_example_ledger_does_not_answer_another_review():
 
 def test_the_plan_loop_text_names_the_ledger_by_the_review_sha():
     """#187 (PR #186 N-10): the gate reads the ledger that names the review, not the newest ledger."""
-    for rel in ("commands/plan-update.md", "docs/adr/0011-the-plan-loop-has-a-ledger-and-a-delta-review.md"):
+    for rel in ("commands/plan-update.md",):
         text = (ROOT / rel).read_text(encoding="utf-8")
         assert "newest ledger" not in text, rel
     assert "heading with the word `update`" not in (ROOT / "commands" / "plan-update.md").read_text(encoding="utf-8")

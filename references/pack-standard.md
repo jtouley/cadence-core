@@ -5,7 +5,7 @@ A pack adds org or domain rules to a run without a change to core. A pack can:
 - judge the plan (P9), the code (E3) or the review (R3) with a gate in any language,
 - add, replace or remove blocks with overlay operations,
 - declare its own config keys, with types and defaults,
-- own rows of `stages.json` (the six stage packs of core do this, ADR-0007).
+- own rows of `stages.json` (the six stage packs of core do this).
 
 `packs` in a config layer turns a pack on ([docs/configuration.md](../docs/configuration.md)).
 

@@ -1136,8 +1136,7 @@ def plan_review_step(context_dir: Path, session: dict | None = None) -> tuple[st
 
     First match wins: no run or no blocking newest review, None; at the limit, the carry
     or the hard stop at P4; no plan, None; an unreadable file, P3 (fail closed); a plan
-    newer than the review, P3 (the next cycle), unless its Revision ledger for that review misses an MF-n (P4,
-    ADR-0011); else P4. A tie goes to P4 (D7).
+    newer than the review, P3 (the next cycle), unless its Revision ledger for that review misses an MF-n (P4); else P4. A tie goes to P4 (D7).
     """
     context_dir = Path(context_dir)
     if session is None:
@@ -1162,7 +1161,7 @@ def _mtime_step(context_dir: Path, session: dict, plan: Path, review: Path, verd
                 cycles: int) -> tuple[str, str]:
     """Below the limit: P3 when the plan is newer than the blocking review, else P4 (gh-104 D5, D7).
 
-    A newer plan whose `## Revision ledger (review <sha>)` for that review lacks a row for an open MF-n is P4 (ADR-0011)."""
+    A newer plan whose `## Revision ledger (review <sha>)` for that review lacks a row for an open MF-n is P4."""
     limit = plan_review_cycle_limit()
     try:
         plan_t, review_t = plan.stat().st_mtime, review.stat().st_mtime
@@ -1171,7 +1170,7 @@ def _mtime_step(context_dir: Path, session: dict, plan: Path, review: Path, verd
     if plan_t <= review_t:
         return "P4", (f"plan-update: {review.name} verdict is {verdict} (cycle {cycles} of {limit}) and the plan "
                       f"did not change after it. Run /plan-update, then /plan-review")
-    ledger = revision_ledger_problems(plan, review)  # ADR-0011: the update answers each MF-n, each cycle
+    ledger = revision_ledger_problems(plan, review)  # the update answers each MF-n, each cycle
     if ledger:
         return "P4", ledger[0]
     any_state = replace(P3_LOOP, blocking=frozenset(), keep_unread=True)
@@ -1223,7 +1222,7 @@ _LEDGER_ROW = re.compile(r"^\s*\|\s*[*_`]*(MF-\d+)\b")
 
 def revision_ledger_ids(text: str, review_sha: str) -> set[str] | None:
     """The MF-n row ids of the plan's `## Revision ledger (review <sha>)` table for the review whose sha256 is
-    `review_sha` (ADR-0011). The heading holds the first 12 or more hex characters of that sha, which the peer
+    `review_sha`. The heading holds the first 12 or more hex characters of that sha, which the peer
     reads from its packet's Input line. One source for both sides, no count (PR #186 R1 MF-2, MF-3).
 
     None when no ledger names that review: an older review's ledger does not answer a newer one, whatever
@@ -1249,7 +1248,7 @@ def revision_ledger_ids(text: str, review_sha: str) -> set[str] | None:
 
 
 def revision_ledger_problems(plan: Path, review: Path) -> list[str]:
-    """ADR-0011: the plan's ledger for `review` (named by its sha256) has a row for each open MF-n of it."""
+    """The plan's ledger for `review` (named by its sha256) has a row for each open MF-n of it."""
     try:
         review_bytes = review.read_bytes()
         sha = hashlib.sha256(review_bytes).hexdigest()
@@ -1531,7 +1530,7 @@ def section(text: str, header: str) -> str:
 
 
 def newest_vibetest(context_dir: Path, session: dict | None = None) -> Path | None:
-    """The newest vibe-test report of the run, by modification time (ADR-0019)."""
+    """The newest vibe-test report of the run, by modification time."""
     accept = run_scope_accept(context_dir, session=session)
     found = [p for p in Path(context_dir).glob("vibetest/*.md")
              if accept(p) and "RUN_BY_SKILL: vibe-test" in p.read_text(encoding="utf-8", errors="replace")]
@@ -1543,7 +1542,7 @@ def spec_gap_ids(report_text: str) -> set[str]:
 
 
 def logged_assumptions(context_dir: Path, session: dict | None = None) -> dict[str, list[str]]:
-    """{`G-n`: the row's cells} of the `## Assumptions` table in the run's register (ADR-0019).
+    """{`G-n`: the row's cells} of the `## Assumptions` table in the run's register.
 
     The register logs what the run assumes and what it defers. The plan peer writes each row.
     """
@@ -1559,7 +1558,7 @@ def logged_assumptions(context_dir: Path, session: dict | None = None) -> dict[s
 
 
 def check_spec_gaps(context_dir: Path, worktree: Path, session: dict | None) -> list[str]:
-    """P9 (ADR-0019): the register logs an assumption for each `G-n` of the run's vibe-test report."""
+    """P9: the register logs an assumption for each `G-n` of the run's vibe-test report."""
     report = newest_vibetest(context_dir, session)
     ids = spec_gap_ids(report.read_text(encoding="utf-8")) if report is not None else set()
     missing = sorted(ids - set(logged_assumptions(context_dir, session)), key=lambda g: int(g[2:]))
@@ -1575,7 +1574,7 @@ def check_required_before_execution(
     worktree: Path | None = None,
     on: set[str] | None = None,
 ) -> list[str]:
-    """`on`: the slugs of the rows that are on (ADR-0007); None requires every artifact."""
+    """`on`: the slugs of the rows that are on; None requires every artifact."""
     wt = Path(worktree) if worktree is not None else Path.cwd()
     errors: list[str] = []
     errors.extend(require_active_session(context_dir))

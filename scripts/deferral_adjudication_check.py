@@ -298,7 +298,7 @@ def register_row_problem(context_dir: Path, session: dict | None, ticket: str) -
 
 
 def write_zero_register(context_dir: Path) -> Path | None:
-    """The register of a run that approved no deferral, written by P8 itself (ADR-0018).
+    """The register of a run that approved no deferral, written by P8 itself.
 
     A deferral is a judgment: the plan peer writes its row. With no register at all, nobody
     proposed one, so the script writes the zero register. An existing register is never changed.

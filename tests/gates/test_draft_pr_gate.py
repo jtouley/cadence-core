@@ -143,7 +143,7 @@ def record(ctx: Path, run: str | None, pr: int, branch: str | None) -> Path:
 
 
 def e4(monkeypatch, cwd: Path, ctx: Path, *, check: bool = False) -> tuple[int, list[str]]:
-    enable_all_packs(cwd)  # ADR-0007: E4 reads the E2 artifact with the deferrals pack on
+    enable_all_packs(cwd)  # E4 reads the E2 artifact with the deferrals pack on
     monkeypatch.chdir(cwd)
     seen: list[str] = []
 

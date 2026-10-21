@@ -1,4 +1,4 @@
-"""ADR-0007 against the real stages.json: the default config visits 12 blocks, the full config 25."""
+"""The five-step core against the real stages.json: the default config visits 12 blocks, the full config 25."""
 
 from __future__ import annotations
 

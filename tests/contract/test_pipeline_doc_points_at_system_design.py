@@ -19,9 +19,6 @@ LINK_FILES = (
     ROOT / "docs" / "quickstart.md",
 )
 
-ADR_WHY_NOT = "docs/pipeline.md keeps a subagent stop guard as part of the design"
-
-
 def test_pipeline_doc_points_at_system_design_and_drops_phase_table():
     """pipeline.md keeps the host matrix and drops its own phase-exit heading."""
     pipeline = (ROOT / "docs" / "pipeline.md").read_text(encoding="utf-8")
@@ -39,8 +36,3 @@ def test_pipeline_doc_points_at_system_design_and_drops_phase_table():
         text = path.read_text(encoding="utf-8")
         assert "compact phase exits" not in text.lower(), path.name
         assert "Host enforcement matrix" in text, path.name
-
-    adr = (
-        ROOT / "docs" / "adr" / "0002-subagent-stops-do-not-spend-the-run-stop-budget.md"
-    ).read_text(encoding="utf-8")
-    assert ADR_WHY_NOT in adr

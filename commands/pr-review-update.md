@@ -48,7 +48,7 @@ python3 "$CADENCE_HOME/scripts/pr_threads.py" <PR>
    loop. Write each open nit as a tracker issue with the PR number, or under `## Follow-ups` in the
    update, and do not ask for a fix commit. A fix commit after a merge-ready verdict starts a new
    round, because the gate needs a review of HEAD. A new must-fix opens the loop again: the
-   orchestrator fixes it, pushes, and runs `/pr-review-update` once more (ADR-0009).
+   orchestrator fixes it, pushes, and runs `/pr-review-update` once more.
 7. Run the consolidate gate:
 
 ```bash
@@ -56,7 +56,7 @@ python3 "$CADENCE_HOME/scripts/final_consolidate.py" --check
 ```
 
 The gate fails while a must-fix is open, or while the review's last `Last reviewed commit:` line is not HEAD.
-Each `## Update` section is one fix round. At `review_fix_rounds` rounds (default 2), the gate also holds while the loop is open. Then do not ask for another fix commit. Defer each open must-fix with a ticket, or tell the user (ADR-0015).
+Each `## Update` section is one fix round. At `review_fix_rounds` rounds (default 2), the gate also holds while the loop is open. Then do not ask for another fix commit. Defer each open must-fix with a ticket, or tell the user.
 If the check reports `no join row`, that is information only: the join row comes after you return. Do not change the review file for it.
 The ledger stays the SSOT for findings. Do not invent a second consolidate format.
 

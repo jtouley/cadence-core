@@ -1,7 +1,7 @@
 {
   "name": "test-plan",
   "version": "0.1.0",
-  "description": "Stage pack (ADR-0007): Test plan audit before execution. Its rows in stages.json are P7.",
+  "description": "Stage pack: Test plan audit before execution. Its rows in stages.json are P7.",
   "triggers": [],
   "phases": [],
   "rules": []

@@ -4,7 +4,7 @@ Use this after an adversarial review leaves findings open on a Cadence PR.
 Inside the pipeline, [`references/review-rigor.md`](../references/review-rigor.md)
 is the enforced version: the R1 gate requires its sections, the R2 gate
 requires `adversarial_inputs` and computes the DRY lists of the changed tests,
-and the R3 gate measures complexity, code shape and duplication (ADR-0008). The
+and the R3 gate measures complexity, code shape and duplication. The
 reviewer carries the load: reproduce, fix, and choose between designs before
 asking the author anything.
 

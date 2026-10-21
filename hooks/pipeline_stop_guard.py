@@ -15,7 +15,7 @@ Where the run stands comes from evidence, not from `resume_slug`. Only activatio
 writes that field, so in a real run it stays at A1. The guard reads the P9 marker.
 With the marker, it walks the registered gates from the first execution row, read-only,
 and the first failing gate is the open block. `resume_slug` is still a lower bound:
-a stop that the old guard blocked stays blocked (docs/adr/0003-*.md).
+a stop that the old guard blocked stays blocked.
 
 Lean peer returns (gh-96): on Claude Code, a delegated peer's SubagentStop is held
 once when its final message is not one lean line (scripts/peer_return.py). The final
@@ -187,7 +187,7 @@ def with_next_phase(row: dict, context_dir: Path, workspace: Path, session: dict
     """E1 row that names the next plan phase (the concrete task), else the E1 gate's open work.
 
     The worker is the agent that writes the phase: the E1 peer, or the main agent on another
-    host. A Claude Code orchestrator is told to send the peer again (ADR-0017).
+    host. A Claude Code orchestrator is told to send the peer again.
     """
     try:
         from phase_ledger import assess, next_phase, open_work
@@ -210,7 +210,7 @@ def with_next_phase(row: dict, context_dir: Path, workspace: Path, session: dict
 
 
 # P8. P9 never runs here: a failed P9 clears its marker. With the deferrals pack off, the
-# walk ends at the last row before P8 that is on (headless.resolve_through, ADR-0007).
+# walk ends at the last row before P8 that is on (headless.resolve_through).
 LAST_PLANNING_GATE = "deferral-register"
 
 
@@ -744,7 +744,7 @@ def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corr
     plan_verdict = latest_plan_verdict(context_dir, session) if session and not corrupt else None
     open_block, plan_verdict = _plan_loop_limit(context_dir, session, open_block, plan_verdict)
     p3_holds = plan_verdict in BLOCKING_PLAN_VERDICTS or (open_block or {}).get("slug") == "plan-update"
-    # ADR-0007: with the spec-review pack off, a P6 report does not hold a stop.
+    # With the spec-review pack off, a P6 report does not hold a stop.
     if live and not unknown and not p3_holds and "adversarial-review" in stage_slugs(SKILL_ROOT, workspace):
         open_block, plan_verdict = _p6_route(context_dir, session, open_block, plan_verdict)
     decision, message = decide(
@@ -758,7 +758,7 @@ def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corr
 
 
 def e1_peer_hold(payload: dict, agent: str, repeat: bool) -> str | None:
-    """ADR-0015 at the E1 peer (ADR-0017): its stop is held once while a plan phase has no commit."""
+    """The E1 peer's stop is held once while a plan phase has no commit."""
     try:
         prompt = None if repeat else peer_return.first_prompt(payload.get("agent_transcript_path"))
         if prompt is None or block_for_prompt(prompt, SKILL_ROOT) != "E1":
@@ -822,7 +822,7 @@ def _guard(host: str, *, subagent: bool, repeat: bool, payload: dict | None = No
     elif decision == "escalate":
         stop_allow(host, notice=f"Cadence: {message}")
     else:
-        # Subagent stops are pushed back once but never spend the run's budget (ADR-0002).
+        # Subagent stops are pushed back once but never spend the run's budget.
         if judged and not subagent:
             apply_refusal(judged_ctx, judged, here, data_path=judged_path)
         stop_block(host, message)

@@ -3,7 +3,7 @@
 Before each orchestrator Agent or Task call during an active run, the handoff hook
 reads the size of the orchestrator's last request from the host transcript and
 writes one row to .context/attest/<run>.context.jsonl, and a notice above
-`context_budget.warn_tokens`. It never denies (ADR-0017). The sizes below are the final
+`context_budget.warn_tokens`. It never denies. The sizes below are the final
 requests of the harness-benchmark pilot (2026-10-13): 111,736 and 156,578 prompt tokens.
 """
 

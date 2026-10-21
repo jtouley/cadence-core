@@ -19,7 +19,7 @@ ORIGIN_RE = re.compile(
     r"(?im)^(?:#\s*)?(?:ORIGIN|Origin)\s*:\s*.+",
 )
 
-# The public core holds no org, owner or predecessor name (ADR-0016: core holds no owner value).
+# The public core holds no org, owner or predecessor name (core holds no owner value).
 # An org rule goes in a pack, and a personal setup goes in a config layer outside this repo.
 ORG_LEAK_RE = re.compile(
     r"(?i)\bskills/plan-to-pr\b|\bpsgen\b|\bscalar-lib\b|\bjolli\b|harness-benchmark|ship-feature"

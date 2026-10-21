@@ -1,4 +1,4 @@
-"""A5 gaps are carried into the plan (ADR-0019): vibe-test labels each blocking gap `G-n`, the plan
+"""A5 gaps are carried into the plan: vibe-test labels each blocking gap `G-n`, the plan
 peer logs an assumption for each one in the register, and P9 fails while a `G-n` has no row."""
 
 from __future__ import annotations

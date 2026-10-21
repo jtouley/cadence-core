@@ -23,7 +23,7 @@ RECORD = "`.context/gates/cognitive-complexity.json`"
     pytest.param("commands/spec-driven.md", RECORD, id="spec-driven-names-the-record"),
     pytest.param("commands/spec-driven.md", "Run R3 again", id="spec-driven-runs-r3-again"),
     pytest.param("commands/spec-driven.md", "Do the fix step one time", id="spec-driven-one-cycle"),
-    pytest.param("commands/spec-driven.md", "ADR-0009", id="spec-driven-then-adr-0009"),
+    pytest.param("commands/spec-driven.md", "Then the loop rule applies", id="spec-driven-then-the-loop-rule"),
 ])
 def test_the_r3_fix_step_is_written(rel, phrase):
     assert phrase in (ROOT / rel).read_text(encoding="utf-8"), f"{rel} does not say: {phrase}"

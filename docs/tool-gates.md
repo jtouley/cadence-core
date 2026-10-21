@@ -62,7 +62,7 @@ The appendix gives the record for each tool.
 | `core:dry-extension` 3, single responsibility | R3 | Yes: R3 (cognitive complexity) | None |
 | `core:dry-extension` 4, open for extension | Text | No | All |
 | `core:dry-extension` 5, cloned gate shells | Text | Yes: `jscpd` finds each cloned shell (see §2) | None |
-| `core:standalone-package` | Text | Yes: a stdlib scan of the changed files for host paths | The `peer_shadows.py` exception (ADR-0006) |
+| `core:standalone-package` | Text | Yes: a stdlib scan of the changed files for host paths | The `peer_shadows.py` exception |
 
 ### P7 and R2 scorecard dimensions (`scores`, floor 7)
 

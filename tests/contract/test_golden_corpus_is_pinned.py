@@ -1,4 +1,4 @@
-"""The golden corpus and its verdict table are pinned by hash (ADR-0008).
+"""The golden corpus and its verdict table are pinned by hash.
 
 A sample or a verdict that changes changes what a gate passes, so it is a product change.
 """

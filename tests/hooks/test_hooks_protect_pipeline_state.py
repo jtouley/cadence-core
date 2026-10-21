@@ -1,7 +1,7 @@
 """During a run, the agent cannot hand-edit the files that carry the pipeline's trust.
 
 Covers both session layouts and both hosts. R1 review of PR #10 (cd-10): M2, M3, M7,
-F1, F2, N1. Shell detection design: docs/adr/0001-*.md.
+F1, F2, N1.
 """
 
 from __future__ import annotations

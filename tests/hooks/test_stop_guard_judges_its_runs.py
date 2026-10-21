@@ -26,7 +26,7 @@ from artifact_requirements import write_entry_invariant_ok  # noqa: E402
 
 
 def past_p9(w, run: str, task: str) -> None:
-    """A subagent's planning stop is never held (ADR-0002); in execution it is."""
+    """A subagent's planning stop is never held; in execution it is."""
     write_entry_invariant_ok(w.ctx, pipeline_run_id=run, task_id=task, written_at="t")
 
 GUARD = "pipeline_stop_guard.py"

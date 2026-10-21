@@ -281,7 +281,7 @@ def main(argv: list[str] | None = None) -> int:
     # Each candidate with a session is judged; one deny denies (cd-82 D8).
     for workspace in _session_workspaces(payload):
         message = _gate_message(workspace, checks, mention)
-        if message is None and host == "claude":  # ADR-0017: a peer writes the code
+        if message is None and host == "claude":  # a peer writes the code
             message = orchestrator_scope.write_denial(payload, workspace, [p for _, p in checks])
         if message is not None:
             tool_deny(host, message)

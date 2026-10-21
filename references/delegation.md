@@ -2,7 +2,7 @@
 
 **When to load:** before Cursor Task calls for P1 / P3 / P6 (and review peers).
 
-## Stage-to-prompt table (ADR-0010)
+## Stage-to-prompt table
 
 The hook renders this. The orchestrator types the slash command with its arguments and nothing else.
 
@@ -28,7 +28,7 @@ The hook renders this. The orchestrator types the slash command with its argumen
 - `<N>` is the PR number in the draft-PR record of the run.
 - `<review>` is the PR review of that PR, `.context/prs/reviews/PR_REVIEW_#<N>.md`.
 - The `inputs` field of each peer row in `stages.json` gives the input kinds. The R4 peer row and the fix round row (block `RF`) are `EXTRA_PEER_ROWS` in `scripts/prompt_shape.py`.
-- The orchestrator reads no input itself. It sends the command and reads the peer's one-line return (ADR-0017).
+- The orchestrator reads no input itself. It sends the command and reads the peer's one-line return.
 
 The hook writes the packet `.context/handoff/<pipeline_run_id>/<block>.json` before the peer call. It writes the packet again when an input changes. The rendered prompt is the slash command, then the packet lines:
 

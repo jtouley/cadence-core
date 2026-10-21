@@ -624,7 +624,7 @@ def _unique_targets(targets: list[str]) -> list[str]:
 
 # Backstop for what the tokenizer can't resolve (cd, $VARS, ~, ../): a command that
 # names protected pipeline state, writes something, and has a target the parser
-# cannot place is denied (ADR-0001). Resolvable targets are judged precisely instead.
+# cannot place is denied. Resolvable targets are judged precisely instead.
 _PROTECTED_MENTION = re.compile(
     r"cadence-session\.json|\.active_skill\b|sessions/by-(?:worktree|task)|\.context/sessions\b|"
     r"\.context/gates\b|\.context/handoff\b|entry-invariant(?:-[\w-]+)?\.ok|draft-pr(?:-[\w-]+)?\.json|findings[\w.-]*\.jsonl|\.context/findings\b|"

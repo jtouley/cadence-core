@@ -10,7 +10,8 @@ welcome.
 - A new org rule, a house style or a personal skill does not go in core. Ship it as a pack
   ([references/pack-standard.md](references/pack-standard.md)), a config layer
   ([docs/configuration.md](docs/configuration.md)) or another plugin that you bind with `peers`.
-- A change to a gate, or to what a gate accepts, needs a short decision record in `docs/adr/`.
+- A change to a gate, or to what a gate accepts, gives its reason in the pull request and in one
+  `CHANGELOG.md` line. Do not add decision records, design notes or plans to this repository.
 
 ## Pull requests
 

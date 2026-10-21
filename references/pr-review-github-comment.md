@@ -24,7 +24,7 @@ it writes the command to `.context/issues/pr-guard-overrides.log`.
 
 `python3 "$CADENCE_HOME/scripts/guard_gh_pr_comment.py"` (no `--check`) writes the body to
 `.context/prs/comments/pr-comment-<run id>.md` from the ledger, checks it, and prints the
-`gh pr comment` command that posts it (ADR-0018). The orchestrator does not write the body. The
+`gh pr comment` command that posts it. The orchestrator does not write the body. The
 body starts with a closure summary: the ledger path, the counts of closed must-fix findings, the
 open findings that go to the tracker, and the next action for a person.
 

@@ -17,14 +17,14 @@ Convenience, nits, YAGNI, and "out of AC" without ripeness are **rejected**.
 
 The register is `.context/deferrals/<task>_deferral-register.md`. The plan peer (`/plan-update`)
 writes each approved deferral into it. When nobody proposed a deferral, P8
-(`deferral_adjudication_check.py` without `--check`) writes the zero register itself (ADR-0018).
+(`deferral_adjudication_check.py` without `--check`) writes the zero register itself.
 The orchestrator writes no register. The register has:
 
 - `## Approved deferrals` table (or explicit zero-approved sentence)
 - `## Deferrals rejected` for items pushed back in-PR
 - Optional `## Review deferrals` for review-phase adds
 - `## Assumptions` when A5 found blocking gaps: one row (`| G-n | assumption | settled by |`) for each
-  `G-n` of the vibe-test report (ADR-0019). P9 validates the rows, and R6 lists them in the PR comment
+  `G-n` of the vibe-test report. P9 validates the rows, and R6 lists them in the PR comment
 
 Validate:
 

@@ -69,7 +69,7 @@ def resolve_base(worktree: Path, session: dict) -> str | None:
 def select_plan(context_dir: Path, worktree: Path, session: dict, *, bold: bool = False) -> Path | None:
     """Newest plan-create plan in this run's ticket scope that does not name another run.
 
-    `bold`: read a `**RUN_BY_SKILL:**` marker too, as the P1 gate does (the handoff, ADR-0010).
+    `bold`: read a `**RUN_BY_SKILL:**` marker too, as the P1 gate does (the handoff).
     """
     candidates = list(Path(context_dir).glob("plans/*.plan.md"))
     candidates += list((Path(worktree) / ".cursor" / "plans").glob("*.plan.md"))

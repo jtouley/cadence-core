@@ -75,7 +75,7 @@ class Fixture:
         save_worktree_session(self.wt, pipeline_run_id=run, task_id=task, ticket_tokens=["47", task],
                               activated_at=activated, workspace=str(self.wt.resolve()),
                               orchestrator_agent_ids=[], orchestrator_source="toplevel")
-        enable_all_packs(self.wt)  # ADR-0007: E3 is in the architecture pack
+        enable_all_packs(self.wt)  # E3 is in the architecture pack
         (self.wt / "work.txt").write_text("w\n", encoding="utf-8")
         git(self.wt, "add", "-A")
         git(self.wt, "commit", "-q", "-m", "feat: phase 1 x")

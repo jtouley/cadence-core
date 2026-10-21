@@ -1,4 +1,4 @@
-"""The golden corpus pins the verdict of each measure on small samples (ADR-0008).
+"""The golden corpus pins the verdict of each measure on small samples.
 
 `good` samples pass and `bad` samples (a planted fault) fail. A `gamed` sample meets the
 metric and is still wrong; it passes, and its docstring names the limit that the gate does not catch.
@@ -28,7 +28,7 @@ ORDER = ("pass", "warn", "fail")
 
 
 def _verdict(sample: Path, measure: str) -> str:
-    """The verdict of the measure; for a `test_shape` sample (a layout, ADR-0014), the worst verdict of R2."""
+    """The verdict of the measure; for a `test_shape` sample (a layout), the worst verdict of R2."""
     if measure in ("helpers_reimplemented", "thin_files", "test_shape"):
         records = test_shape.measure_path(sample)["measures"]
     else:

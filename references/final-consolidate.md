@@ -14,10 +14,10 @@ is not an integer of at least 1 fails the gate.
 
 A fix round is one `## Update` section of the PR review. The R4 gate counts the
 sections of the run's PR review. At the budget, while a must-fix is open or the
-review does not cite HEAD, the gate holds with the ADR-0009 text: a `MERGE-READY`
+review does not cite HEAD, the gate holds with the loop rule: a `MERGE-READY`
 verdict with no open must-fix ends the loop, and a nit goes to the tracker. Do
 not start another fix round. Record each open must-fix as `deferred` with a
-ticket or as `spec_gap`, or stop and tell the user (ADR-0015).
+ticket or as `spec_gap`, or stop and tell the user.
 
 Promotion to `verified` happens only via `ledger_verify.py` after the finding's
 `check` command passes.

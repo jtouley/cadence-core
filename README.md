@@ -174,7 +174,7 @@ review peers before a person sees the PR.
 |---|---|---|
 | [Quickstart](docs/quickstart.md) | [Configuration](docs/configuration.md) | [System design](docs/system-design.md) |
 | [Toy run](examples/toy-run/README.md) | [Peer output contract](docs/peer-output-contract.md) | [Gate pattern for other hosts](docs/gate-pattern.md) |
-| [Testing](docs/testing.md) | [Pack standard](references/pack-standard.md) | [Decision records](docs/adr/) |
+| [Testing](docs/testing.md) | [Pack standard](references/pack-standard.md) | [Contributing](CONTRIBUTING.md) |
 
 Everything else is in the [docs index](docs/index.md).
 

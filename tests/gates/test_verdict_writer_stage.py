@@ -32,7 +32,7 @@ NO_JOIN = "no join row: call the peer again from the orchestrator"
 
 @pytest.fixture(name="ctx")
 def joined_ctx(tmp_path, monkeypatch):
-    repo = branch_repo(tmp_path / "repo")  # one commit: R2 reads the change against it (ADR-0008)
+    repo = branch_repo(tmp_path / "repo")  # one commit: R2 reads the change against it
     monkeypatch.chdir(repo)
     monkeypatch.delenv("CLAUDECODE", raising=False)
     context = repo / ".context"

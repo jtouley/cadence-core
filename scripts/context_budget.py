@@ -1,7 +1,7 @@
 """Orchestrator context budget (gh-96).
 
 The orchestrator sends its whole context again on each turn. An orchestrator that only
-routes (ADR-0017) adds a gate result and a one-line peer return for each block, so its
+routes adds a gate result and a one-line peer return for each block, so its
 context stays near the host's own prompt plus the skill. A context that grows past that
 means the orchestrator read files that a peer reads.
 

@@ -1,4 +1,4 @@
-"""ADR-0007: with the architecture pack off (no E3), escape (a) of the PR guard is E1 done.
+"""With the architecture pack off (no E3), escape (a) of the PR guard is E1 done.
 
 E3 writes the breadcrumb that escape (a) reads. In the default config E3 is off, and E4
 opens the draft PR before any review, so without this escape a default run could not open it.

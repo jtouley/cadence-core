@@ -1,4 +1,4 @@
-"""The runtime has a size budget. A change that passes it may not grow it back (ADR-0007, ADR-0008)."""
+"""The runtime has a size budget. A change that passes it may not grow it back."""
 
 from __future__ import annotations
 
@@ -9,12 +9,11 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_DIRS = ("scripts", "hooks", "shared")
 
 # Cadence core 0.1.0 has about 17,350 tracked Python lines under the runtime directories: the
-# private decision index left the tree, and the config loader (ADR-0016) came in. ADR-0017 adds
-# the orchestrator scope check, the E1 peer hold and the fix round input (17,550). ADR-0018 and
-# ADR-0019 add the block writers, the run manifest and the A5 gap checks (17,800). ADR-0020 adds
-# the P7 scorecard rules and the P4 plan-benchmark input (17,850). Lower this
-# number when a change removes code. Raise it only in a pull request of its own, with a decision
-# record that names the new value; never in the pull request that adds the code.
+# private decision index left the tree, and the config loader came in. The orchestrator scope
+# check, the E1 peer hold and the fix round input raised it to 17,550. The block writers, the run
+# manifest and the A5 gap checks raised it to 17,800, and the P7 scorecard rules to 17,850. Lower
+# this number when a change removes code. Raise it only with the reason in the pull request and in
+# this comment.
 BUDGET_LINES = 17_850
 
 

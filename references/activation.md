@@ -66,7 +66,7 @@ The agent that runs activation is the orchestrator of the run. It does not write
 
 `--request <file>` or `--request -` (stdin) gives activation the user's request as the user wrote
 it. A fresh run saves it as `.context/proposals/<task_id>.md`, the input of A5, with a `Ticket:`
-line (ADR-0018). A resumed run keeps the file that exists. An empty request fails activation.
+line. A resumed run keeps the file that exists. An empty request fails activation.
 
 ## Resume
 

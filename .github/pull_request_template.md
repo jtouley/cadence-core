@@ -10,4 +10,4 @@
 - [ ] Installer / hook changes were tested in a workspace that never ran Cadence
 - [ ] Contract docs (`SKILL.md`, `references/`, `docs/configuration.md`, `docs/peer-output-contract.md`) updated for any behavior change
 - [ ] A new config key is in `references/cadence.config.schema.json` and `cadence.defaults.json`
-- [ ] A change to a gate, or to what a gate accepts, has an ADR in `docs/adr/`
+- [ ] A change to a gate, or to what a gate accepts, gives its reason here and in one `CHANGELOG.md` line (no design records in the repo)

@@ -1,4 +1,4 @@
-"""ADR-0007: P9 reads the artifact of a planning row (P6, P7, P8) only when its pack is on."""
+"""P9 reads the artifact of a planning row (P6, P7, P8) only when its pack is on."""
 
 from __future__ import annotations
 

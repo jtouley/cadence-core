@@ -3,7 +3,7 @@
 
 Registered for Claude Code (PreToolUse on Read, Bash and Grep, with `--host claude`) and for Cursor
 (preToolUse on Read, beforeReadFile, beforeShellExecution). Output format per host: hook_protocol.py.
-On Claude Code the same paths go to orchestrator_scope (ADR-0017): the orchestrator reads no run
+On Claude Code the same paths go to orchestrator_scope: the orchestrator reads no run
 artifact and no code.
 The hook judges a call while a workspace candidate has an active run, or a session file that
 does not read. Then a payload that does not parse is denied. With no run the hook allows.

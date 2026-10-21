@@ -174,7 +174,7 @@ def run_stub_alignment_through_entry(
     root = Path(skill_root) if skill_root is not None else Path(
         __file__
     ).resolve().parent.parent.parent
-    registry = {row["slug"]: row for row in load_registry(root)["stages"]}  # every row (ADR-0007)
+    registry = {row["slug"]: row for row in load_registry(root)["stages"]}  # every row
     executed: list[str] = []
     context_dir = Path(context_dir)
     context_dir.mkdir(parents=True, exist_ok=True)

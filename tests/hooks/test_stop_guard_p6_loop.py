@@ -27,7 +27,7 @@ def _guard():
 @pytest.fixture
 def lp(tmp_path, monkeypatch):
     repo = git_repo(tmp_path / "r")
-    enable_all_packs(repo)  # ADR-0007: P6 is in the spec-review pack
+    enable_all_packs(repo)  # P6 is in the spec-review pack
     monkeypatch.chdir(repo)
     return Loop(repo)
 

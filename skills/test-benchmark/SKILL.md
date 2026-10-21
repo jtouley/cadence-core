@@ -44,7 +44,7 @@ and on a score below that floor.
 
 ## DRY measurement
 
-The R2 gate computes the DRY lists (ADR-0008). Do not make the lists with grep.
+The R2 gate computes the DRY lists. Do not make the lists with grep.
 In code mode, run this command before you score:
 
 ```bash
@@ -61,7 +61,7 @@ The script reads the changed test files and writes three lists:
 
 The script reads the layout of the repo from `test_shape.layout` of the
 resolved config: `test_dirs`, `conftest` and `runtime_dirs`. For a key
-that is not set, the script finds the value in the repo (ADR-0014). The output
+that is not set, the script finds the value in the repo. The output
 names the layout under `layout`. When the script finds no part of the layout that a measure needs, the
 record of that measure has an `unmeasured` entry. Its verdict is `warn`, or
 `fail` when `test_shape.unsupported` is `fail`. Write that the measure did not

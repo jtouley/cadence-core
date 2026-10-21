@@ -34,7 +34,7 @@ REQUIRED_BEFORE_EXECUTION = (
 
 
 def _rows_on(root: Path, wt: Path, errors: list[str]) -> set[str] | None:
-    """ADR-0007: the slugs of the rows that are on, so P9 skips the artifact of a row whose pack is off.
+    """The slugs of the rows that are on, so P9 skips the artifact of a row whose pack is off.
     An unknown pack name is recorded, and None then requires every artifact (fail closed)."""
     try:
         return set(stage_slugs(root, wt))

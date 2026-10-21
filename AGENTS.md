@@ -48,6 +48,24 @@ place. Docs point at `stages.json` and `docs/system-design.md`.
   `tests/contract/test_source_size_budget.py` in the same pull request that adds the code.
 - Write docs in plain English: short sentences, one meaning for each word, the result first.
 
+## Keep the repository public and ready for contributions
+
+This repository is public. It holds the product, its tests, and the docs that a user or a
+contributor reads. Keep it that way:
+
+- Do not add decision records (ADRs), design notes, plans, proposals, review transcripts, run
+  evidence, benchmark output or session notes. Design history stays with the maintainers, outside
+  this repository. A change gives its reason in the pull request and in one `CHANGELOG.md` line.
+- `docs/` holds only the pages that [`docs/index.md`](docs/index.md) lists. A new page goes in that
+  index, for a reader of this repository.
+- A comment or a doc says why in plain words. Do not cite a decision record id, a private issue or a
+  review round as the reason: a reader of this repository cannot open them.
+- `tests/contract/test_repo_holds_no_design_records.py` fails on a tracked design record or on a
+  decision record id outside the test data of the decision-coverage gate.
+
+The decision-coverage gate reads `docs/adr/` of the repository that Cadence runs on. That is product
+behavior, not a design record of this repository.
+
 ## Product and lab
 
 Git tracks the product only. Local evidence stays out of the tree: `.gitignore` lists

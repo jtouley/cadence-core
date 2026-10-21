@@ -1,4 +1,4 @@
-"""The run's mechanical markdown comes from its block's script, never from the orchestrator (ADR-0018).
+"""The run's mechanical markdown comes from its block's script, never from the orchestrator.
 
 A1 saves the user's request, P8 writes the zero deferral register, and R7 writes the manifest
 that the /session-summary peer reads. R6 is in tests/gates/test_guard_gh_pr_comment.py.

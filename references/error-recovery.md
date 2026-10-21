@@ -140,7 +140,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | R3 | `cognitive-complexity: bad config: <error>` | A config layer is not valid, for example a measured section | Fix the file and the key that the text names, then `python3 "$C/cognitive_complexity_gate.py" --check` |
 | R4 | `final-consolidate: open must-fix <id>` | A must-fix finding is open | Fix it, push, then `/pr-review-update <PR>` |
 | R4 | `final-consolidate: no PR review covers HEAD <head>` | A commit came after the review | `/pr-review-update <PR>` |
-| R4 | `final-consolidate: the review fix loop is at its budget` | `review_fix_rounds` fix rounds ran and the loop is open | Do not start a fix round. Add the row under `## Review deferrals` in the deferral register with the ticket, run `python3 "$C/deferral_adjudication_check.py"`, then `python3 "$C/findings_io.py" set-status --id <id> --status deferred --ticket <n>` (ADR-0012). Or stop and tell the user |
+| R4 | `final-consolidate: the review fix loop is at its budget` | `review_fix_rounds` fix rounds ran and the loop is open | Do not start a fix round. Add the row under `## Review deferrals` in the deferral register with the ticket, run `python3 "$C/deferral_adjudication_check.py"`, then `python3 "$C/findings_io.py" set-status --id <id> --status deferred --ticket <n>`. Or stop and tell the user |
 | R4 | `final-consolidate: bad config: <error>` | A config layer is not valid, for example `review_fix_rounds` is not an integer of at least 1 | Fix the file and the key that the text names, then `python3 "$C/final_consolidate.py" --check` |
 | R4 | `final-consolidate: no review of this run's PR` or `has no RUN_BY marker` | No R1 review of the PR | `/pr-review-local <PR>` |
 | R4 | `final-consolidate: not peer-written (ignored)` | The orchestrator wrote the review | `/pr-review-update <PR>`. The peer saves with the Write or Edit tool |
@@ -198,7 +198,7 @@ user when the run has no retries (see Self-healing in SKILL.md).
 |---|---|---|
 | P3 plan review | `plan_review_cycles` (default 5) | `## Carried review findings`, or a hard stop on `NOT READY` |
 | P6 adversarial review | `adversarial_cycles` (default 3) | `/plan-update` with each open `B-n` carried |
-| R1 to R4 fix rounds | `review_fix_rounds` `## Update` sections (default 2) | R4 holds. Defer each open must-fix with a ticket, or tell the user (ADR-0015) |
+| R1 to R4 fix rounds | `review_fix_rounds` `## Update` sections (default 2) | R4 holds. Defer each open must-fix with a ticket, or tell the user |
 | Held stops at one block | 3 refusals | The stop goes through with a note to the user |
 
 ## Provenance

@@ -1,13 +1,11 @@
-"""core:standalone-package names its one exception: a gate may lstat a host peer entry (cd-53, ADR-0006)."""
+"""core:standalone-package names its one exception: a gate may lstat a host peer entry (cd-53)."""
 
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ADR = ROOT / "docs" / "adr" / "0006-gate-may-lstat-host-peer-entries.md"
 
 
 def _rule_section() -> str:
@@ -28,12 +26,3 @@ def test_thesis_names_the_exception():
     thesis = json.loads((ROOT / "references" / "bundled-peers.json").read_text(encoding="utf-8"))["thesis"]
     assert "never reads the content of" in thesis
     assert "lstat" in thesis
-
-
-def test_standalone_exception_has_accepted_adr():
-    text = ADR.read_text(encoding="utf-8")
-    front = text.split("---", 2)[1]
-    assert re.search(r"^decision_id: ADR-0006$", front, re.M)
-    assert re.search(r"^status: accepted$", front, re.M)
-    assert "target_id: scripts/peer_shadows.py" in front
-    assert "jtouley/cadence#53" in text.split("---", 2)[2]

@@ -307,7 +307,7 @@ def test_p4_gate_review_not_utf8_gives_gate_result_not_traceback(p3_run_repo):
     assert "OK  plan-update-gate" in out
 
 
-# --- the Revision ledger (ADR-0011): each update answers every MF-n of the review, each cycle ------
+# --- the Revision ledger: each update answers every MF-n of the review, each cycle ------
 
 
 def _ledger_cycle(repo: Path, rows: dict[str, str] | None, mf: tuple[str, ...] = ("MF-1", "MF-2")):

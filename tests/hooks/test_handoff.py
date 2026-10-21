@@ -409,7 +409,7 @@ def test_enforce_rewrite_lets_an_exact_rendering_through_unchanged(call, repo):
     assert code == 0 and out == {}  # silent allow: the prompt already is the rendering
 
 
-# --- enforce with no packet: the hook writes it from the row (ADR-0010) ------
+# --- enforce with no packet: the hook writes it from the row ------
 
 @pytest.mark.parametrize("prompt", ["/plan-review plan.md", "/cadence:plan-review plan.md"])
 def test_enforce_writes_the_packet_of_a_plugin_prefixed_peer_call(call, repo, prompt):

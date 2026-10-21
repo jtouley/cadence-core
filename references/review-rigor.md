@@ -82,12 +82,12 @@ existing one.
 
 ### Measures (R2, R3)
 
-Two gates measure DRY and code shape (ADR-0008). A peer does not measure them.
+Two gates measure DRY and code shape. A peer does not measure them.
 
 - R2: `scripts/test_shape.py` lists each test helper that copies a conftest
   helper, and each thin test file. The R2 gate fails on a list that is longer
   than its `test_shape` limit. The script finds the test layout of the repo, or
-  reads it from `test_shape.layout` (ADR-0014).
+  reads it from `test_shape.layout`.
 - R3: `scripts/cognitive_complexity_gate.py` measures complexity, statements,
   branch chains and duplicated lines in each changed file. The R3 gate fails on
   a value over its limit that is new or larger than at the merge base.

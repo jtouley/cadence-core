@@ -237,7 +237,7 @@ def _runs(tmp_path: Path, case: str) -> tuple[Path, Path, Path]:
         save_worktree_session(trees["w1"], pipeline_run_id="run-2", workspace=str(trees["w1"]), **common)
     save_worktree_session(trees["w0"], pipeline_run_id="run-1", workspace=str(trees["w0"]), **common)
     context = primary / ".context"
-    # ADR-0010: the enforced handoff pins the run's plan, so the run has one.
+    # The enforced handoff pins the run's plan, so the run has one.
     write_files(context, {"plans/x.plan.md": "RUN_BY_COMMAND: plan-create\nTicket: gh-1\n"})
     # Setup, not the case under test: the gate's run has its lean record (the record run is #113).
     write_delegation_record(context, run_id="run-1", stage="plan-review", command="/plan-review x", source="PreToolUse")
@@ -256,7 +256,7 @@ def test_a_plan_review_peer_passes_p3_through_the_real_hooks(tmp_path, case):
 @pytest.mark.parametrize("case", ["linked-worktree", "two-runs"])
 def test_a_plan_update_peer_fails_p3_through_the_real_hooks(tmp_path, case):
     orchestrator, worktree, context = _runs(tmp_path, case)
-    # ADR-0010: P4 pins the newest plan review, so a plan-review peer writes one first.
+    # P4 pins the newest plan review, so a plan-review peer writes one first.
     _peer_writes_review(orchestrator, context, "/plan-review .context/plans/x.plan.md")
     _peer_writes_review(orchestrator, context, "/plan-update .context/plans/x.plan.md", chain("async"),
                         BODY + "\nUpdated by the wrong peer.\n")

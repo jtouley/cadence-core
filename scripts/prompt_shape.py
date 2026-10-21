@@ -69,10 +69,10 @@ SLASH_TO_STAGE = {
 # Peer commands with no stages.json row (gh-66 PD4). R4 runs /pr-review-update as a
 # delegated peer, but its stages.json row is the final_consolidate.py gate.
 # handoff._peer_stages appends these rows to the stages.json peer rows, so the lean check,
-# the call row and the handoff packet (ADR-0010) cover the R4 peer call.
-# A review fix round (ADR-0017) runs /spec-driven --fix on the PR review between R1 and R4.
+# the call row and the handoff packet cover the R4 peer call.
+# A review fix round runs /spec-driven --fix on the PR review between R1 and R4.
 # Its longer command wins over the E1 row, so the hook does not render it as E1.
-# At R7, /session-summary reads the run's manifest and writes the summary (ADR-0018).
+# At R7, /session-summary reads the run's manifest and writes the summary.
 EXTRA_PEER_ROWS = ({"slug": "pr-review-update", "block": "R4", "command": "/pr-review-update",
                     "inputs": ["pr-number"]},
                    {"slug": "review-fix", "block": "RF", "command": "/spec-driven --fix",

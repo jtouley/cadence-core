@@ -1,4 +1,4 @@
-"""ADR-0007: the stop guard walk never opens a row whose pack is off (default and full config)."""
+"""The stop guard walk never opens a row whose pack is off (default and full config)."""
 
 from __future__ import annotations
 

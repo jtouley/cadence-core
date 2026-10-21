@@ -1,7 +1,7 @@
 """The stage order of a run: core rows, the rows of the packs that are on, pack and config overlays, peer bindings.
 
-ADR-0007: load_stages() keeps the core rows and the rows of the packs that `packs` turns on, in file order.
-ADR-0016: overlays insert, replace and remove blocks by id; P9, R1 and R5 cannot lose their gate; `peers`
+load_stages() keeps the core rows and the rows of the packs that `packs` turns on, in file order.
+overlays insert, replace and remove blocks by id; P9, R1 and R5 cannot lose their gate; `peers`
 binds another peer to a block.
 """
 

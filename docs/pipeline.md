@@ -45,7 +45,7 @@ Rubber-stamping without a peer run is forbidden.
 
 Skill-gate runs **before** shadow-context on write tools (`Write`, `StrReplace`, `EditNotebook`, `ApplyPatch`, and on Claude Code `Write`, `Edit`, `MultiEdit`, `NotebookEdit`). Cursor entries are `failClosed: true`. On both hosts, any hook error exits 2, which blocks.
 
-The stop guard finds the open block from evidence. It reads the P9 marker. Then it walks the registered gates from E1 in read-only mode (`CADENCE_GATES_READONLY=1`). The first failing gate is the open block ([ADR-0003](adr/0003-stop-guard-reads-progress-from-evidence.md)). An orchestrator's subagent stops are pushed back once and never spend the run's three-refusal stop budget. A peer's stop is recorded and allowed (cd-76) ([ADR-0002](adr/0002-subagent-stops-do-not-spend-the-run-stop-budget.md)). Shell commands are gated best-effort ([ADR-0001](adr/0001-shell-writes-best-effort-detection-with-backstop.md)).
+The stop guard finds the open block from evidence. It reads the P9 marker. Then it walks the registered gates from E1 in read-only mode (`CADENCE_GATES_READONLY=1`). The first failing gate is the open block. An orchestrator's subagent stops are pushed back once and never spend the run's three-refusal stop budget. A peer's stop is recorded and allowed (cd-76). Shell commands are gated best-effort.
 
 ## Per-run files
 
@@ -73,7 +73,7 @@ Unlike modeling suites that score invariant expression rates, Cadence backtracks
 
 Core Cadence runs with **zero packs** by default (`profile: standard`). `packs` in a config layer turns a pack on. A pack lives in core (`packs/<name>/`), in the user dir (`~/.config/cadence/packs/<name>/`) or in the project (`.cadence/packs/<name>/`). A user or project pack loads only when its lock pins it. A version 2 pack can add a gate in any language (`gate_command`) and change the order with stage operations. [`references/pack-standard.md`](../references/pack-standard.md) is the contract.
 
-Thirteen blocks belong to six stage packs (ADR-0007). With zero packs, a run visits the twelve `core` blocks. `profile: strict` turns on every stage pack, so a run visits all 25 blocks. The `pack` column of `SKILL.md`'s pipeline table names the pack of each block.
+Thirteen blocks belong to six stage packs. With zero packs, a run visits the twelve `core` blocks. `profile: strict` turns on every stage pack, so a run visits all 25 blocks. The `pack` column of `SKILL.md`'s pipeline table names the pack of each block.
 
 ## Related
 

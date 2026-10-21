@@ -54,7 +54,7 @@ A recoverable gate failure is not a stop condition. Do these steps:
 
 Stop only for destructive risk, missing credentials with no fallback, a security or data-safety risk, or no retries left.
 Record each one with `activate_session.py --hard-stop {destructive,credentials,security,retries,a5-gap,not-needed} --reason "..."`.
-`not-needed` is the no-PR end (see "A Cadence run always ends in a PR"). A blocking A5 gap does not stop the run: the plan answers it (ADR-0019). `a5-gap` stays for a person who stops the run at A5. An ops-only handoff stops at **A3**.
+`not-needed` is the no-PR end (see "A Cadence run always ends in a PR"). A blocking A5 gap does not stop the run: the plan answers it. `a5-gap` stays for a person who stops the run at A5. An ops-only handoff stops at **A3**.
 `--deactivate` refuses an open run that has no hard stop.
 A peer can set a hard stop by mistake, for example a user-level copy of a peer with an old rule (a peer shadow).
 To clear it: Remove the cause, and run `scripts/preflight.py` until it passes. Start a new host session. Then run `activate_session.py --from-branch --resume`.
@@ -142,8 +142,8 @@ Do not run P3 and P6 on the same plan revision at the same time. Run P6 after th
 Use a new Agent call for each P3 and P6 review round. Do not resume the peer of the prior round.
 When the gate output names a step, do that step before the `NEXT` command.
 Post the GitHub comment only after **R5** closure and **R6**.
-Skip a row whose pack is off: its pack is not `core` and not in `packs` of the resolved config (ADR-0007).
-The table is the core order. A pack or `stages.overlays` can insert, replace or remove a block, and `peers.<block>` can bind another peer to a peer block (ADR-0016).
+Skip a row whose pack is off: its pack is not `core` and not in `packs` of the resolved config.
+The table is the core order. A pack or `stages.overlays` can insert, replace or remove a block, and `peers.<block>` can bind another peer to a peer block.
 `python3 "$SKILL_ROOT/scripts/load_stages.py"` prints the order of this run. Follow that order.
 
 | Block | Slug | Pack | Command | Intent |
@@ -214,7 +214,7 @@ and its arguments, and read the peer's one-line return (`ARTIFACT: <path>`). A p
 markdown file and gives back a markdown file: the plan, a review, the implementation artifact.
 The gates and the peers read those files and the code. The orchestrator does not. On Claude Code a hook
 denies an orchestrator read of a run artifact, of the code or of the diff. It also denies an
-orchestrator write to the code or to the markdown of the run (ADR-0017, ADR-0018).
+orchestrator write to the code or to the markdown of the run.
 A block whose file needs no judgment writes the file itself: A1 the request, P8 the zero deferral
 register, R6 the PR comment, R7 the manifest of the run. A block that needs judgment is a peer with a
 skill, and its input is a markdown file. E1 is one peer call, `/spec-driven <plan>`: the peer makes a task
@@ -279,7 +279,7 @@ A run ends without an open PR in one case: a review (**P3**, **P6**, **R1**, **R
 work is not needed or is wrong. Close the draft PR. The finding is in the review.
 A blocking gap at **A5** does not stop the run. The vibe-test report labels it `G-n`, and the plan
 peer logs an assumption for each `G-n` in the register, next to the deferrals. P9 fails while one
-has no row, and R6 shows the assumptions to the reviewer (ADR-0019).
+has no row, and R6 shows the assumptions to the reviewer.
 
 Record the reason with `activate_session.py --hard-stop not-needed --reason "..."`. Then run
 `activate_session.py --deactivate`, and send the `/session-summary` peer that it names. The manifest holds the reason. Every other case continues to **R7**.

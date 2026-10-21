@@ -151,7 +151,7 @@ def _complete(worktree: Path, stage: str) -> subprocess.CompletedProcess[str]:
 def test_p9_passes_on_hook_records_and_rejects_a_begin_record(tmp_path, monkeypatch):
     worktree = tmp_path / "toy"
     shutil.copytree(ROOT / "tests" / "fixtures" / "toy_repo", worktree)
-    enable_all_packs(worktree)  # ADR-0007: P6 and P7 count only with their packs on
+    enable_all_packs(worktree)  # P6 and P7 count only with their packs on
     monkeypatch.chdir(worktree)
     monkeypatch.setenv("CADENCE_HOME", str(ROOT))
     context = worktree / ".context"

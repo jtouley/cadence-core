@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Subagent hooks: render peer prompts from handoff packets (ADR-0010).
+"""Subagent hooks: render peer prompts from handoff packets.
 
 PreToolUse (matcher `Agent|Task`): for a Cadence peer call, write the packet from the
 `inputs` of the stages.json row (scripts/handoff_inputs.py), then replace the router's
@@ -24,7 +24,7 @@ SubagentStart is not checked.
 Context budget (gh-96): before each orchestrator Agent or Task call during an
 active run, the hook reads the orchestrator's last request size from the host
 transcript and writes one row to .context/attest/<run>.context.jsonl. It never
-denies: the call hands work to a peer (ADR-0017). It runs first, in every host, and
+denies: the call hands work to a peer. It runs first, in every host, and
 fails closed on a bad config.
 
 SubagentStart adds the data rule and the lean return rule (gh-96) to each subagent.

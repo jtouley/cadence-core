@@ -89,7 +89,7 @@ def test_cursor_fragment_leaves_task_to_the_lean_hook():
 
 
 def test_default_config_enforces_the_handoff_without_a_classifier(tmp_path):
-    """ADR-0010: the core defaults layer and the default profile, in a project with no layer of its own."""
+    """The core defaults layer and the default profile, in a project with no layer of its own."""
     code_paths()
     import cadence_config
 

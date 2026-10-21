@@ -37,7 +37,7 @@ def load_registry(skill_root: Path | None = None) -> dict[str, Any]:
 
 
 # The blocks that make the evidence that closes a run. An overlay can replace their peer and their
-# text, never remove them or change their gate (ADR-0016).
+# text, never remove them or change their gate.
 PROTECTED = ("P9", "R1", "R5")
 INSERT_KEYS = ("block", "slug", "phase", "gate_script")
 
@@ -142,7 +142,7 @@ def resolve_stages(skill_root: Path | None = None, workspace: Path | None = None
 
     The order is: the rows of stages.json whose pack is core or on (`packs`), then the stage
     operations of each pack that is on, then `stages.overlays` of the config layers, then the
-    peer bindings of `peers` (ADR-0007, ADR-0016).
+    peer bindings of `peers`.
     """
     import cadence_config
     from pack_loader import enabled_packs

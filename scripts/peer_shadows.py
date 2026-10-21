@@ -9,7 +9,7 @@ directory pair. A pair with no commands directory is a skills-only pair. An
 entry that exists is a peer shadow, unless it is the peer's own kind and
 resolves to the bundled file (a command) or the bundled skill directory (a skill).
 
-Exception to `core:standalone-package` (ADR-0006): this module may lstat and
+Exception to `core:standalone-package`: this module may lstat and
 resolve() a host entry with a peer's name. It never reads, loads, or runs the
 content of a host entry.
 

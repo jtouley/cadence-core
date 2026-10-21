@@ -311,7 +311,7 @@ def test_the_repo_cli_lists_functions_over_the_limit(tmp_path, capsys, monkeypat
     assert "1 of 1 functions are over 5" in capsys.readouterr().out  # D12: the limit comes from the config
 
 
-# --- code shape (ADR-0008): statements per function and the longest branch chain, Python only -----
+# --- code shape: statements per function and the longest branch chain, Python only -----
 
 GUARDS = "def f(x):\n" + "".join(f"    if x == {i}:\n        return {i}\n" for i in range(3)) + "    raise E\n"
 SHAPE = [
@@ -444,7 +444,7 @@ def test_a_failed_r3_ends_with_the_simplify_fix_step(change, capsys, check, firs
     last = capsys.readouterr().err.rstrip().splitlines()[-1]
     assert code == 1 and last.startswith(f"  - {first}"), last
     assert "subagents/simplify-code.md with .context/gates/cognitive-complexity.json as its one input" in last
-    assert last.endswith("then run R3 again (one cycle, then the rule of ADR-0009)")
+    assert last.endswith("then run R3 again (one cycle, then the review loop rule applies)")
 
 
 def test_a_fail_that_simplify_cannot_fix_names_no_fix_step(change, capsys):
@@ -687,7 +687,7 @@ def test_n16_same_named_functions_keep_their_lines_and_say_so(change, capsys):
     assert [f["line"] for f in crumb["findings"]] == [2]
 
 
-# --- R3 duplication and code shape (ADR-0008) -----------------------------------------------------
+# --- R3 duplication and code shape -----------------------------------------------------
 
 COPY = """def load(path):
     text = path.read_text()

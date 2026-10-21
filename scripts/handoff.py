@@ -5,7 +5,7 @@ A peer must start from a prompt that Cadence can audit. The packet holds the blo
 the slash command with its arguments, the contract path, the input paths with their
 sha256, the ticket and a nonce. It holds no free text. The hook
 (hooks/guard_subagent_handoff.py) writes the packet from the `inputs` of the stages.json
-row (scripts/handoff_inputs.py, ADR-0010) and renders the peer prompt from it.
+row (scripts/handoff_inputs.py) and renders the peer prompt from it.
 
 Usage (Pi and headless hosts, and a manual override):
   python3 handoff.py write  --block P3 [--input <extra path>]
@@ -97,14 +97,14 @@ def load_config(root: Path, workspace: Path | None = None) -> dict[str, Any]:
 # --- blocks and contracts ----------------------------------------------------
 
 def _peer_stages(root: Path, workspace: Path | None = None) -> list[dict[str, Any]]:
-    """Every peer row, also of a pack that is off: a lookup, not a walk (ADR-0007).
+    """Every peer row, also of a pack that is off: a lookup, not a walk.
 
     The rows of prompt_shape.EXTRA_PEER_ROWS (the R4 peer) come last.
     """
     import cadence_config
 
     rows = [s for s in load_registry(Path(root))["stages"] if str(s.get("command", "")).startswith("/")]
-    rows = bind_peers(rows, cadence_config.load(Path(root), workspace).get("peers") or {})  # ADR-0016: `peers` of the config
+    rows = bind_peers(rows, cadence_config.load(Path(root), workspace).get("peers") or {})  # `peers` of the config
     return rows + [dict(r) for r in EXTRA_PEER_ROWS]
 
 
@@ -286,7 +286,7 @@ def append_log(context_dir: Path, run_key: str, record: dict[str, Any]) -> None:
 # --- render ------------------------------------------------------------------
 
 def render_prompt(packet: dict[str, Any], workspace: Path, context_dir: Path | None = None) -> str:
-    """The peer prompt (ADR-0010): the slash command, then the packet lines. No input text.
+    """The peer prompt: the slash command, then the packet lines. No input text.
 
     The peer reads each input with its own tools and can check its sha256.
     """
@@ -368,7 +368,7 @@ def _session(workspace: Path) -> tuple[Path, str, str]:
 
 
 def _write(root: Path, workspace: Path, ctx: Path, block: str, extra: list[str]) -> int:
-    """The packet of the row, with each `--input` added (the manual override, ADR-0010)."""
+    """The packet of the row, with each `--input` added (the manual override)."""
     import handoff_inputs
     from pipeline_run_binding import load_session
 

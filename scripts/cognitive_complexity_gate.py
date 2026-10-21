@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""R3 — cognitive complexity, duplication and code shape of the change (gh-100, ADR-0008).
+"""R3 — cognitive complexity, duplication and code shape of the change (gh-100).
 
 The gate scores each function in the files that changed since the merge base
 with the run's base branch (committed, uncommitted and untracked). A function
@@ -16,7 +16,7 @@ The base is `--base <ref>`, else the env var CADENCE_BASE_REF, else the run's ba
 base branch itself the merge base is HEAD, so only uncommitted changes are judged. CADENCE_BASE_REF
 also applies to the local R3 stage and the stop guard, because both call `run()`.
 
-The same ratchet holds for two code-shape measures of a Python function (ADR-0008):
+The same ratchet holds for two code-shape measures of a Python function:
 its statement count (`code_shape.max_function_statements`) and its longest branch chain
 (`code_shape.max_branch_chain`, the open/closed proxy). For duplication the unit is
 the file: a changed Python file fails when its duplicated share (duplication.py, over
@@ -236,7 +236,7 @@ def measure_change(worktree: Path, fork: str | None, files: list[str], cfg: dict
 
 
 def records(report: Report, cfg: dict) -> list[dict]:
-    """One record per measure, with its verdict (ADR-0008). The exit code follows the verdicts."""
+    """One record per measure, with its verdict. The exit code follows the verdicts."""
     out = []
     for metric, (_attr, section, key, _text) in METRICS.items():
         mine = [f for f in report.findings if f.metric == metric]
@@ -298,7 +298,7 @@ def _fix_step(report: Report, check: bool) -> list[str]:
         return []
     write = "run R3 without --check to write the record, then " if check else ""
     return [f"fix step: {write}delegate $CADENCE_HOME/subagents/simplify-code.md with .context/gates/{SLUG}.json as "
-            "its one input, then run R3 again (one cycle, then the rule of ADR-0009)"]
+            "its one input, then run R3 again (one cycle, then the review loop rule applies)"]
 
 
 def _resolves(worktree: Path, ref: str) -> bool:

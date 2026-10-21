@@ -1,4 +1,4 @@
-"""The orchestrator routes, and the peers do the work (ADR-0017).
+"""The orchestrator routes, and the peers do the work.
 
 On Claude Code, during an active run, the orchestrator runs each gate, sends each peer its
 command and reads the one-line return. The read guard and the edit guard deny an orchestrator
@@ -200,7 +200,7 @@ def test_an_orchestrator_write_outside_the_code_is_not_judged(run_hook, e1_run):
     assert _call(run_hook, EDIT_GUARD, e1_run, "Write", {"file_path": "NOTES.md", "content": "x\n"})[0] == "allow"
 
 
-# --- ADR-0018: the orchestrator writes no markdown of the run --------------------------------------
+# --- the orchestrator writes no markdown of the run --------------------------------------
 
 @pytest.mark.parametrize("rel", [
     ".context/proposals/cd-7-storage.md",

@@ -40,7 +40,7 @@ def _reviews_need_update(context_dir: Path) -> bool:
 
 def run(context_dir: Path, *, check: bool = False) -> int:
     # gh-104 D3: a blocking review that is not older than the plan opens P4, whatever marker the plan has.
-    # ADR-0011: so does a newer plan whose `## Revision ledger (review <sha>)` for the review lacks a row for an open MF-n.
+    # So does a newer plan whose `## Revision ledger (review <sha>)` for the review lacks a row for an open MF-n.
     step = plan_review_step(context_dir)
     if step is not None and step[0] == "P4":
         return fail(SLUG, [step[1]])

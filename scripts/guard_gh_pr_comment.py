@@ -3,7 +3,7 @@
 
 gh-178: the comment body holds a `## Fixes` table (finding, commit) and a `## Deferrals`
 table (finding, ticket). The gate checks each row against the ledger and fails closed.
-ADR-0018: without --check, the script writes the body from the ledger itself, then checks it.
+without --check, the script writes the body from the ledger itself, then checks it.
 """
 
 from __future__ import annotations

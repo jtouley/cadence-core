@@ -36,10 +36,3 @@ def test_hygiene_mode_row_names_the_lean_check():
 def test_hook_docstring_no_longer_says_the_whole_hook_never_denies():
     text = (ROOT / "hooks" / "guard_subagent_handoff.py").read_text(encoding="utf-8")
     assert "never denies and never exits non-zero" not in text
-
-
-def test_adr_0004_records_the_cd64_consequences():
-    text = (ROOT / "docs" / "adr" / "0004-peer-prompts-come-from-handoff-packets.md").read_text(encoding="utf-8")
-    body = section(text, "Consequences (cd-64)")
-    for needle in ("cd-64", "every mode", "shadow", "452", "#73"):
-        assert needle in body, needle

@@ -392,7 +392,7 @@ def test_handoff_flow_in_process_decisions(hook_module, repo, monkeypatch, make_
     make_root(mode="off")
     assert hook_module.handoff_flow("claude", _payload(), ctx, False) == (0, "allow")
     make_root(mode="enforce")
-    (repo / HANDOFF_PLAN).unlink()  # ADR-0010: a missing input is the handoff deny
+    (repo / HANDOFF_PLAN).unlink()  # a missing input is the handoff deny
     assert hook_module.handoff_flow("claude", _payload(), ctx, False) == (0, "deny")
 
 

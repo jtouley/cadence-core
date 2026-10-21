@@ -125,7 +125,7 @@ def ok(slug: str, note: str | None = None) -> int:
 
 def measure_record(measure: str, value: float, threshold: float, offenders: list[str], *, failed: bool,
                    threshold_source: str, unmeasured: list[str] | None = None, unsupported: str = "warn") -> dict:
-    """One measure of R2 or R3 with exactly one verdict (ADR-0008). A peer reads `verdict`; it does not judge again.
+    """One measure of R2 or R3 with exactly one verdict. A peer reads `verdict`; it does not judge again.
 
     fail: `failed`, or a file the measure cannot read under `unsupported: fail`. warn: the value is over the
     threshold with no new offender (old debt that did not grow), or a file the measure cannot read.
@@ -197,7 +197,7 @@ def _r1_review(context_dir: Path) -> tuple[Path | None, list[str]]:
 
 
 def _r1_problems(context_dir: Path) -> list[str]:
-    """The review R1 judges cites HEAD (PR #168 R1 N-1: R4 is in a pack that is off by default, ADR-0007),
+    """The review R1 judges cites HEAD (PR #168 R1 N-1: R4 is in a pack that is off by default),
     and each of its must-fix items has a ledger row (gh-174)."""
     review, problems = _r1_review(context_dir)
     if review is None:
@@ -258,7 +258,7 @@ def _r1_ledger_problems(context_dir: Path, review: Path) -> list[str]:
 
 # The gates that read a verdict after the artifact check (cd-63 D4, gh-104 D2), and R1 reads the reviewed commit.
 def _a5_gaps(context_dir: Path) -> list[str]:
-    """ADR-0019: a NOT READY vibe-test report labels each blocking gap `G-n`, so the plan can answer it."""
+    """A NOT READY vibe-test report labels each blocking gap `G-n`, so the plan can answer it."""
     from artifact_requirements import BLOCKING_GAPS_HEADER, newest_vibetest, spec_gap_ids
 
     report = newest_vibetest(context_dir, run_for(context_dir, cwd=Path.cwd()))

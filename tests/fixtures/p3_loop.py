@@ -64,7 +64,7 @@ def review_sha(review: Path) -> str:
 
 
 def ledger(rows: dict[str, str], sha: str = "0" * 12) -> str:
-    """ADR-0011: the `## Revision ledger (review <sha>)` table that ends an update section, one row per MF-n."""
+    """The `## Revision ledger (review <sha>)` table that ends an update section, one row per MF-n."""
     return LEDGER_HEAD.format(sha=sha) + "".join(f"| {i} | {change} | Phase 1 | test_x |\n" for i, change in rows.items())
 
 

@@ -2,7 +2,7 @@
 """P7 / R2 — test-benchmark peer gate.
 
 Both modes fail on a scorecard that does not pass. In code mode the gate also computes the DRY
-lists of the changed test files itself (scripts/test_shape.py, ADR-0008) and fails on each list
+lists of the changed test files itself (scripts/test_shape.py) and fails on each list
 that is over its limit.
 """
 
@@ -72,7 +72,7 @@ DRY_MEASUREMENT_KEYS = ("helpers_reimplemented", "helpers_reused", "thin_files")
 
 
 def _shape_problems(shape: dict | str) -> list[str]:
-    """ADR-0008: each entry of a computed list that is over its limit. No change to read fails closed."""
+    """Each entry of a computed list that is over its limit. No change to read fails closed."""
     if isinstance(shape, str):
         return [f"test shape cannot be measured: {shape}"]
     lines = [f"{m['measure']}: {entry}" for m in shape["measures"] if m["verdict"] == "fail"

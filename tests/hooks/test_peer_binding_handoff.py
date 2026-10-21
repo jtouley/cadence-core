@@ -1,4 +1,4 @@
-"""ADR-0016: the handoff reads `peers` from the hook's workspace, and an external peer gets no core contract."""
+"""The handoff reads `peers` from the hook's workspace, and an external peer gets no core contract."""
 
 from __future__ import annotations
 

@@ -217,7 +217,7 @@ def _e3_problem(context, session: dict, verb: str, head: str, cwd) -> str | None
 
 
 def _e1_problem(context, session: dict, verb: str, cwd) -> str | None:
-    """ADR-0007: with the architecture pack off (no E3), escape (a) is E1 done, read now:
+    """With the architecture pack off (no E3), escape (a) is E1 done, read now:
     the run's own P9 marker and a commit for each plan phase (implement_gate.py).
 
     E1 done does not name a HEAD, so it opens `gh pr create` only. For `gh pr ready`

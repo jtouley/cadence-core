@@ -55,7 +55,7 @@ python3 "$CADENCE_HOME/scripts/findings_io.py" append --json '{"id": "MF-1", "st
 ## Verdict
 
 A verdict of `MERGE-READY` with no open must-fix ends the review loop. An open nit then goes to the
-tracker with the PR number, or under `## Follow-ups`, not into a fix commit (ADR-0009).
+tracker with the PR number, or under `## Follow-ups`, not into a fix commit.
 
 The file must carry every `##` section in `references/review-rigor.md`:
 Reproductions, End-to-end walk, Adversarial inputs, Contracts, Design choices,

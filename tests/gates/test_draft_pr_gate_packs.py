@@ -1,4 +1,4 @@
-"""ADR-0007: with the deferrals pack off (no E2), E4 reads the diff since the merge base itself."""
+"""With the deferrals pack off (no E2), E4 reads the diff since the merge base itself."""
 
 from __future__ import annotations
 

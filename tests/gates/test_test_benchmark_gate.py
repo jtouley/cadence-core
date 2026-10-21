@@ -142,7 +142,7 @@ THREE = "".join(f"\n\ndef test_{i}():\n    assert {i}\n" for i in "abc")
 
 @pytest.fixture(autouse=True)
 def worktree(tmp_path, monkeypatch):
-    """The run's worktree (ADR-0008: R2 measures its changed test files). `main` holds SHAPE_BASE."""
+    """The run's worktree (R2 measures its changed test files). `main` holds SHAPE_BASE."""
     repo = feature_repo(tmp_path / "repo", SHAPE_BASE)
     monkeypatch.chdir(repo)
     return repo
@@ -298,7 +298,7 @@ def test_code_mode_without_must_fix_findings_ignores_a_corrupt_ledger(tmp_path):
     assert run(tmp_path, mode="code", check=True) == 0
 
 
-# ADR-0008: R2 computes the DRY lists (scripts/test_shape.py) and fails on measured duplication.
+# R2 computes the DRY lists (scripts/test_shape.py) and fails on measured duplication.
 # The peer's dry_measurement is optional; a mismatch is a note, not a verdict.
 
 

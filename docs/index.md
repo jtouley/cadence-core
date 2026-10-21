@@ -26,7 +26,6 @@ Start with the part that matches what you want to do.
 | [Pipeline](pipeline.md) | See the Host enforcement matrix and the findings ledger |
 | [Gate pattern](gate-pattern.md) | Build the same enforcement on another host: the gate contract, the ledger rules and the hook points |
 | [Tool gates](tool-gates.md) | See which tool computes each R3 measure |
-| [Decision records](adr/) | Read why each rule is the way it is |
 
 ## Work on Cadence
 
@@ -60,7 +59,7 @@ Git tracks these top-level paths and no others.
 | `packs/` | The stage packs of core and two sample packs |
 | `pi/` | Pi extension `cadence-gates.ts`: runs the hooks of `hooks/hooks.json` on Pi |
 | `adapters/` | Tracker adapters |
-| `.cadence.json` | The project config layer of this repo. It turns on every stage pack, so a run on Cadence visits all 25 blocks (ADR-0007). It adds the gated prefixes `scripts/`, `hooks/`, `shared/` and `install.sh` with `gated_prefixes: {"append": [...]}`. A prefix matches from the repo root or from the workspace directory, not below another directory. Its `measure_exclude` keeps the golden fixtures (`tests/fixtures/golden/`) out of the R2 and R3 measures |
+| `.cadence.json` | The project config layer of this repo. It turns on every stage pack, so a run on Cadence visits all 25 blocks. It adds the gated prefixes `scripts/`, `hooks/`, `shared/` and `install.sh` with `gated_prefixes: {"append": [...]}`. A prefix matches from the repo root or from the workspace directory, not below another directory. Its `measure_exclude` keeps the golden fixtures (`tests/fixtures/golden/`) out of the R2 and R3 measures |
 | `install.sh` | Home-only installer for Cursor, Pi, and linked Claude Code |
 | `.claude-plugin/` | Claude Code plugin and marketplace manifests |
 | `.claude/` | The repo's own `verify` skill for contributors |

@@ -107,7 +107,7 @@ def test_latest_plan_verdict_reads_a_bare_heading(tmp_path):
 
 # --- stop_guard_budget_and_session_layouts: Stop guard: subagents never spend the run's stop budget; corrupt sessions escalate; pointers survive.
 #
-# R1 review of PR #10 (cd-10): M1, M4, F3. Decisions: docs/adr/0002-*.md.
+# R1 review of PR #10 (cd-10): M1, M4, F3.
 
 MAIN = {"cursor": {"hook_event_name": "stop"}, "claude": {"hook_event_name": "Stop"}}
 SUB = {"cursor": {"hook_event_name": "subagentStop"}, "claude": {"hook_event_name": "SubagentStop"}}
@@ -260,7 +260,7 @@ def test_a_subagent_stop_in_planning_is_not_held(tmp_path, run_hook):
 def test_the_documented_a3_ops_stop_is_not_held(tmp_path, run_hook, monkeypatch):
     """SKILL.md: ops-only work stops at A3. The planning hold must not fight that stop."""
     repo = activated_repo(tmp_path / "proj")
-    enable_all_packs(repo)  # ADR-0007: A3 is in the preflight pack
+    enable_all_packs(repo)  # A3 is in the preflight pack
     # gh-181: A2 passes first. It needs gh auth and a clean tree, so the pack config is committed.
     git(repo, "add", ".cadence.json")
     git(repo, "commit", "-qm", "packs")

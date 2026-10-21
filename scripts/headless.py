@@ -67,7 +67,7 @@ REQUIRED_KEYS = ("block", "slug", "gate_script")
 
 
 def load_rows(root: Path, workspace: Path) -> list[dict[str, Any]]:
-    """The rows of the core pack and the packs enabled for `workspace` (ADR-0007)."""
+    """The rows of the core pack and the packs enabled for `workspace`."""
     path = root / "stages.json"
     try:
         rows = load_stages(root, workspace)
@@ -162,7 +162,7 @@ def kill_group(proc: subprocess.Popen) -> None:
 
 def resolve_through(rows: list[dict[str, Any]], through: str | None, root: Path | None = None) -> int:
     """Index of the last row to run. With `root`, a row whose pack is off stands for the last
-    row before it that is on (ADR-0007)."""
+    row before it that is on."""
     if through is None:
         return len(rows) - 1
     wanted = through.lower()

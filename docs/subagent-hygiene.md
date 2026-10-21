@@ -37,7 +37,7 @@ The settings are the `subagent_hygiene` key of the resolved config ([configurati
 
 ## Lean returns, the orchestrator scope and the context budget
 
-The checks above control what goes into a peer. These three checks control what goes into the orchestrator (#96, ADR-0017).
+The checks above control what goes into a peer. These three checks control what goes into the orchestrator (#96).
 
 **Lean return.** A peer's final message goes into the orchestrator's context.
 The gates read the artifact on disk, so the orchestrator needs only a pointer.

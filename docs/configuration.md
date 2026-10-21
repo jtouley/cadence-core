@@ -80,7 +80,7 @@ values). A resumed run keeps the config of its first activation.
 | `decision_frontmatter_required` | `true` | `true`: decision coverage needs an ADR or a proposal with decision frontmatter |
 | `peer_models` | `{}` | Claude Code only: a peer stage slug, or `default`, to a model alias |
 | `subagent_hygiene.*` | `mode: enforce` | The handoff packet checks ([subagent-hygiene.md](subagent-hygiene.md)) |
-| `orchestrator_scope.mode` | `enforce` | Claude Code only: deny an orchestrator read of a run artifact, the code or the diff, and an orchestrator write to the code (ADR-0017). `off` turns it off |
+| `orchestrator_scope.mode` | `enforce` | Claude Code only: deny an orchestrator read of a run artifact, the code or the diff, and an orchestrator write to the code. `off` turns it off |
 | `context_budget.*` | `mode: shadow` | The orchestrator context size: a row and a notice above `warn_tokens`. It never denies |
 | `cognitive_complexity.*`, `duplication.*`, `code_shape.*`, `test_shape.*`, `bugs.*`, `types.*` | see the defaults | The measured R2 and R3 limits ([tool-gates.md](tool-gates.md)). `unsupported` is `warn` or `fail` |
 | `measure_exclude` | `[]` | Path prefixes that R2 and R3 do not measure |
