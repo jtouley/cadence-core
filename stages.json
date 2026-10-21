@@ -74,7 +74,9 @@
       "pack": "core",
       "description": "Author structured execution plan (.cursor/plans/*.plan.md)",
       "inputs": [
-        "ticket"
+        "ticket",
+        "request",
+        "vibetest"
       ]
     },
     {
@@ -103,7 +105,8 @@
       ],
       "inputs": [
         "plan",
-        "plan-review-previous"
+        "plan-review-previous",
+        "vibetest"
       ]
     },
     {
@@ -118,7 +121,8 @@
       "description": "Address review feedback until plan is READY TO EXECUTE",
       "inputs": [
         "plan",
-        "plan-review"
+        "plan-review",
+        "vibetest"
       ]
     },
     {

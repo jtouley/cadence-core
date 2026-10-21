@@ -81,6 +81,11 @@
       "slash": "/pr-review-update",
       "path": "commands/pr-review-update.md",
       "why": "R4 re-review: a peer reviews the commits since the last reviewed commit and appends a Last reviewed commit line; final_consolidate.py then checks that line against HEAD."
+    },
+    {
+      "slash": "/session-summary",
+      "path": "commands/session-summary.md",
+      "why": "R7 summary: a peer reads the run's manifest and its documents and writes .context/summaries/<task_id>.md; activate_session.py --deactivate closes the run only after that peer write."
     }
   ]
 }

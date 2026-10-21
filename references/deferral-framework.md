@@ -15,11 +15,16 @@ Convenience, nits, YAGNI, and "out of AC" without ripeness are **rejected**.
 
 ## Register
 
-Write `.context/deferrals/<task>_deferral-register.md` with:
+The register is `.context/deferrals/<task>_deferral-register.md`. The plan peer (`/plan-update`)
+writes each approved deferral into it. When nobody proposed a deferral, P8
+(`deferral_adjudication_check.py` without `--check`) writes the zero register itself (ADR-0018).
+The orchestrator writes no register. The register has:
 
 - `## Approved deferrals` table (or explicit zero-approved sentence)
 - `## Deferrals rejected` for items pushed back in-PR
 - Optional `## Review deferrals` for review-phase adds
+- `## Assumptions` when A5 found blocking gaps: one row (`| G-n | assumption | settled by |`) for each
+  `G-n` of the vibe-test report (ADR-0019). P9 validates the rows, and R6 lists them in the PR comment
 
 Validate:
 
@@ -38,6 +43,6 @@ on the run ledger, from `append` and from `set-status`, unless both are true:
 Add the row under `## Review deferrals` first, with its ripeness. Then run
 `set-status --status deferred --ticket <ticket>`.
 
-Zero approved deferrals still requires a minimal register artifact for P8.
+Zero approved deferrals still requires a register for P8. P8 writes that zero register.
 With no `<path>`, the script finds this ticket's register itself (the P8 gate).
 P9 reads the same file: it must name the ticket and pass adjudication.

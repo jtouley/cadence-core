@@ -53,7 +53,13 @@ These rules apply to each peer block. `references/peer-contract.md` tells the bu
 | `vibetest/*.md` | `**Ticket:** <ticket id>`, raw: `(?m)^\*\*Ticket:\*\*[ \t]*(.+?)\s*$`. The value matches the adapter `ticket_pattern`, or is `TICKET_SKIPPED (<reason>)` and the reason names the adapter. | Yes | `scripts/tracker_header.py:tracker_header_problems`, `scripts/tracker_header.py:_ticket_line_problems` |
 | `vibetest/*.md` | No `**Linear:**` line unless the adapter is `linear` | Yes | `scripts/tracker_header.py:tracker_header_problems` |
 
-A5 checks the header of each marked report of the run, not only the newest.
+A5 checks the header of each marked report of the run, not only the newest. A NOT READY report labels its blocking gaps:
+
+| Artifact path | Line or marker (exact form) | Required? | Read by |
+|---|---|---|---|
+| `vibetest/*.md` | `Verdict: READY FOR PLANNING` or `Verdict: NOT READY FOR PLANNING`, at the start of a line | Yes | `scripts/gate_common.py:_a5_gaps` |
+| Same | Under `## Blocking gaps`, one id `G-<n>` for each blocking gap: `G-1: <the gap>` | If the verdict is NOT READY | `scripts/artifact_requirements.py:spec_gap_ids`, `scripts/gate_common.py:_a5_gaps` |
+| `deferrals/<task>_deferral-register.md` (the plan peer writes it) | Under `## Assumptions`, a table row whose first cell is `G-<n>`, for each `G-n` of the newest report of the run | If the report names a `G-n` | `scripts/artifact_requirements.py:logged_assumptions`, `scripts/artifact_requirements.py:check_spec_gaps` (P9) |
 
 ## P1: /plan-create
 
@@ -162,6 +168,16 @@ R4 is a script block. `peers` does not bind it. Its peer `/pr-review-update` app
 | Same | `## Update <date>`: `^##[ \t]+Update\b`. Each section is one fix round. At `review_fix_rounds` (default 2), the gate holds an open loop. | No (counted) | `scripts/final_consolidate.py:fix_rounds`, `scripts/final_consolidate.py:review_rounds` |
 | Same | New must-fix items under a `Must-fix` heading, for example `### Must-fix items`, with the next free `MF-<n>` ids | If the update finds a new must-fix | `scripts/artifact_requirements.py:review_must_fix_ids`, `scripts/gate_common.py:_r1_ledger_problems` |
 | `findings.jsonl` | A must-fix row for each new `MF-<n>`. R4 fails while a must-fix row of the task is `open`. | If the update has a new `MF-<n>` | `scripts/gate_common.py:_r1_ledger_problems`, `scripts/findings_io.py:is_open_must_fix`, `scripts/final_consolidate.py:consolidate` |
+
+## R7: /session-summary (supporting command)
+
+R7 is a script block. `activate_session.py --deactivate` writes the manifest
+`manifests/<task_id>.md` and closes the run only after this peer writes the summary.
+
+| Artifact path | Line or marker (exact form) | Required? | Read by |
+|---|---|---|---|
+| `summaries/<task_id>.md` | The file, written by a peer with the Write or Edit tool. On Claude Code its current content is the newest content that a peer wrote (attested). | Yes | `scripts/activate_session.py:summary_missing` |
+| Same | `RUN_BY_COMMAND: session-summary` | No | None |
 
 ## Findings ledger rows
 

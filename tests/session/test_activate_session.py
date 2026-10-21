@@ -13,7 +13,7 @@ from typing import TypedDict, Unpack
 
 import pytest
 
-from conftest import (CLAUDE_CHAT, HostEnv, activate, activation_repo, branch_repo, code_paths, git_repo, project_config,
+from conftest import (peer_summary, CLAUDE_CHAT, HostEnv, activate, activation_repo, branch_repo, code_paths, git_repo, project_config,
                       read_session, run_py, skill_gate_hook, worktree_session)
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -92,6 +92,7 @@ def test_activate_session_main_deactivate_clears_active_skill(
     # An open run ends only after R6 or a recorded hard stop.
     code, _out, _err = _invoke(monkeypatch, tmp_path, "--hard-stop", "not-needed", "--reason", "test")
     assert code == 0
+    peer_summary(tmp_path)
     code, out, _err = _invoke(monkeypatch, tmp_path, "--deactivate")
     session = read_session(tmp_path)
     assert code == 0
@@ -686,6 +687,7 @@ def _close(repo: Path, root: Path, *, draft_pr: bool) -> str:
         record.parent.mkdir(parents=True, exist_ok=True)
         record.write_text("RUN_BY_COMMAND: commit-push-pr\nhttps://github.com/o/r/pull/1\n", encoding="utf-8")
     assert _activate(repo, root, "--hard-stop", "not-needed", "--reason", "test").returncode == 0
+    peer_summary(repo)
     assert _activate(repo, root, "--deactivate").returncode == 0
     assert session_store.load_worktree_session(repo)["status"] == "completed"
     return run

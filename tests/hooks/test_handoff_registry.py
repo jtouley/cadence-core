@@ -25,10 +25,14 @@ PLAN = HANDOFF_PLAN
 REVIEW = ".context/reviews/plan_feature.md"
 RECORD = ".context/prs/draft-pr-run-1.md"
 PR_REVIEW = ".context/prs/reviews/PR_REVIEW_#42.md"
+REQUEST = ".context/proposals/gh-1.md"
+VIBE = ".context/vibetest/gh-1_2026-10-21.md"
 REPORT = ".context/adversarial/adversarial_feature.md"
 FILES = {
     "review": {REVIEW: "RUN_BY_COMMAND: plan-review\nTicket: gh-1\nVerdict: READY WITH CHANGES\n"},
     "record": {RECORD: "Branch: feature/gh-1-x\nPR: https://github.com/o/r/pull/42\n"},
+    "spec": {REQUEST: "# Request: gh-1\n\nTicket: gh-1\n\nAdd x.\n",
+             VIBE: "RUN_BY_SKILL: vibe-test\nPipeline-Run: run-1\n\n## Blocking gaps\n\n- G-1: no rule\n"},
     "pr-review": {RECORD: "Branch: feature/gh-1-x\nPR: https://github.com/o/r/pull/42\n",
                   PR_REVIEW: "RUN_BY_COMMAND: pr-review-local\nVerdict: NO MERGE\n"},
     "report": {REPORT: "RUN_BY_SKILL: de-adversarial-reviewer\nMode: plan-gate\nTicket: gh-1\n\n"
@@ -66,6 +70,7 @@ def rewritten(out: dict) -> str:
 ROWS = [
     pytest.param("A5", (), "/vibe-test gh-1", (), id="A5-ticket"),
     pytest.param("P1", (), "/plan-create gh-1", (), id="P1-ticket"),
+    pytest.param("P1", ("spec",), "/plan-create gh-1", (REQUEST, VIBE), id="P1-pins-the-request-and-the-vibe-test"),
     pytest.param("P3", (), f"/plan-review {PLAN}", (PLAN,), id="P3-cycle-one-plan-only"),
     pytest.param("P3", ("review",), f"/plan-review {PLAN}", (PLAN, REVIEW), id="P3-cycle-two-plan-and-previous-review"),
     pytest.param("P4", ("review",), f"/plan-update {PLAN} --from-review {REVIEW}", (PLAN, REVIEW), id="P4-plan-and-review"),

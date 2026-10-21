@@ -48,6 +48,7 @@ LEAN_STAGES = frozenset(
         "vibe-test",
         "spec-driven",
         "commit-push-pr",
+        "session-summary",
     }
 )
 
@@ -62,6 +63,7 @@ SLASH_TO_STAGE = {
     "/vibe-test": "vibe-test",
     "/spec-driven": "spec-driven",
     "/commit-push-pr": "commit-push-pr",
+    "/session-summary": "session-summary",
 }
 
 # Peer commands with no stages.json row (gh-66 PD4). R4 runs /pr-review-update as a
@@ -70,10 +72,13 @@ SLASH_TO_STAGE = {
 # the call row and the handoff packet (ADR-0010) cover the R4 peer call.
 # A review fix round (ADR-0017) runs /spec-driven --fix on the PR review between R1 and R4.
 # Its longer command wins over the E1 row, so the hook does not render it as E1.
+# At R7, /session-summary reads the run's manifest and writes the summary (ADR-0018).
 EXTRA_PEER_ROWS = ({"slug": "pr-review-update", "block": "R4", "command": "/pr-review-update",
                     "inputs": ["pr-number"]},
                    {"slug": "review-fix", "block": "RF", "command": "/spec-driven --fix",
-                    "inputs": ["pr-review"]})
+                    "inputs": ["pr-review"]},
+                   {"slug": "session-summary", "block": "R7", "command": "/session-summary",
+                    "inputs": ["manifest"]})
 
 # A Claude Code plugin install lists the peers as /cadence:<name>. Only Cadence's
 # own prefix is stripped: /other:plan-review is not a Cadence peer call.
@@ -103,6 +108,7 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     "vibe-test": re.compile(r"^/vibe-test(\s+\S+)?\s*$"),
     "spec-driven": re.compile(r"^/spec-driven(\s+--fix)?(\s+\S+)?\s*$"),
     "commit-push-pr": re.compile(r"^/commit-push-pr(\s+--draft)?\s*$"),
+    "session-summary": re.compile(r"^/session-summary\s+\S+\s*$"),
 }
 
 

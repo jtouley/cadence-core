@@ -49,7 +49,8 @@ An id in its `## Status of earlier items` table, or in a note, is not open.
 RUN_BY_COMMAND: plan-update
 ```
 
-- This update writes the plan only. Do not start E1.
+- This update writes the plan, and the decision records and deferral rows that the review asks
+  for (below). Do not start E1.
 - Do not create or edit `reviews/plan_*.md`. Only a plan-review run writes that file.
 - Do not run `/plan-review`. Do not call the `plan-review` skill. Do not review your own update.
   When a Cadence run delegates this peer, end after the plan write with the one-line return in `peer-contract.md`.
@@ -63,6 +64,17 @@ Add `## Carried review findings` and map each open `MF-n` to the phase whose tes
 At the limit, the gate reads `## Carried review findings`, not the ledger. Write the ledger of this update too.
 `NOT READY` after the fifth review: the orchestrator runs `activate_session.py --hard-stop retries --reason "..."`.
 Do not ask the user to allow another cycle.
+
+## Decisions and deferrals
+
+- When a review asks for a decision record, write it as step 5 of `commands/plan-create.md` says.
+- When a review proposes a deferral, take it only with a follow-up ticket and a ripeness
+  (`references/deferral-framework.md`). Add its row under `## Approved deferrals` in
+  `.context/deferrals/<task_id>_deferral-register.md`, and write the register with that heading
+  when it does not exist. Add a deferral that you reject under `## Deferrals rejected`.
+- P8 writes the register itself only when no deferral was proposed. The orchestrator writes none.
+- Keep the `## Assumptions` row of each `G-n` of the vibe-test report in the register. When a
+  review disputes an assumption, change its row and the phase that settles it.
 
 ## Adversarial review (P6)
 

@@ -50,7 +50,10 @@ fails when two phase commits have the same author time.
 
 For each finding of `--fix <review>`:
 
-1. Commit a failing test that reproduces it: `test: <finding id> <behavior> (red)`.
+1. Commit a failing test that reproduces it: `test: <finding id> <behavior> (red)`. The finding's
+   `check` must select this test: `ledger_verify.py` runs the check at HEAD, and a check that runs
+   no test cannot prove the fix. Name the test so that the check selects it (for `-k dueIn`, a
+   name with `dueIn`). Do not remove or rename a test that the check selects.
 2. Commit the fix: `fix: <finding id> <behavior>`.
 3. Record it: `python3 $CADENCE_HOME/scripts/findings_io.py set-status --id <id> --status fixed --fixed-in <sha>`.
 

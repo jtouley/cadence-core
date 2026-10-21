@@ -150,7 +150,7 @@ def test_the_two_tables_match_the_ledger(scripts_path, tmp_path, fixes):
 def test_a_table_that_does_not_match_the_ledger_fails(scripts_path, tmp_path, capsys, fixes, deferrals, want):
     context = _closed_ledger(tmp_path)
     _body(context, fixes=fixes, deferrals=deferrals)
-    assert run(context) == 1
+    assert run(context, check=True) == 1
     assert want in capsys.readouterr().err
     assert not (context / "gates" / "guard-gh-pr-comment.json").exists()
 
@@ -174,3 +174,43 @@ def test_the_body_file_flag_names_another_file(scripts_path, tmp_path):
     moved = good.rename(tmp_path / "body.md")
     assert run(context, check=True) == 1
     assert run(context, check=True, body=moved) == 0
+
+
+# --- ADR-0018: without --check, R6 writes the body from the ledger. No agent writes it.
+
+def test_without_check_r6_writes_the_body_from_the_ledger_and_names_the_post(scripts_path, tmp_path, capsys):
+    context = _closed_ledger(tmp_path)
+    assert run(context, cwd=tmp_path) == 0
+    body = (context / "prs" / "comments" / "pr-comment.md").read_text(encoding="utf-8")
+    assert "| gh-1-F03 | aaaaaaaaaaaa |" in body and "| gh-1-F04 | #7 |" in body
+    assert "- gh-1-F05" in body and body.startswith("## Closure summary")
+    assert "NEXT: gh pr comment <N> --body-file " in capsys.readouterr().out
+    assert run(context, check=True, cwd=tmp_path) == 0
+
+
+def test_without_check_r6_replaces_a_hand_written_body(scripts_path, tmp_path):
+    context = _closed_ledger(tmp_path)
+    _body(context, fixes=[("gh-1-F03", "b" * 40)], deferrals=[])
+    assert run(context, cwd=tmp_path) == 0
+    assert "b" * 40 not in (context / "prs" / "comments" / "pr-comment.md").read_text(encoding="utf-8")
+
+
+def test_with_check_r6_writes_nothing(scripts_path, tmp_path):
+    context = _closed_ledger(tmp_path)
+    assert run(context, check=True, cwd=tmp_path) == 1
+    assert not (context / "prs" / "comments").exists()
+
+
+def test_an_open_must_fix_writes_no_body(scripts_path, tmp_path):
+    context = tmp_path / ".context"
+    write_ledger(context / "findings.jsonl", OPEN)
+    assert run(context, cwd=tmp_path) == 1
+    assert not (context / "prs" / "comments").exists()
+
+
+def test_the_body_lists_the_assumptions_that_the_register_logs(scripts_path, tmp_path):
+    from guard_gh_pr_comment import render_body
+
+    body = render_body([FIXED], {"G-1": ["G-1", "days 1 to 28", "phase 2"]})
+    assert "## Assumptions" in body and "| G-1 | days 1 to 28 | phase 2 |" in body
+    assert "## Assumptions" not in render_body([FIXED], {})

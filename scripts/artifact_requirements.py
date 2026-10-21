@@ -1512,6 +1512,63 @@ _EXECUTION_ARTIFACTS = (
 )
 
 
+SPEC_GAP_ID = re.compile(r"\bG-\d+\b")
+BLOCKING_GAPS_HEADER, ASSUMPTIONS_HEADER = "## Blocking gaps", "## Assumptions"
+
+
+def section(text: str, header: str) -> str:
+    """The body of the `header` section of a markdown text: up to the next `## ` heading."""
+    lines = text.splitlines()
+    starts = [i for i, line in enumerate(lines) if line.strip().lower() == header.lower()]
+    if not starts:
+        return ""
+    body = []
+    for line in lines[starts[0] + 1:]:
+        if line.startswith("## "):
+            break
+        body.append(line)
+    return "\n".join(body)
+
+
+def newest_vibetest(context_dir: Path, session: dict | None = None) -> Path | None:
+    """The newest vibe-test report of the run, by modification time (ADR-0019)."""
+    accept = run_scope_accept(context_dir, session=session)
+    found = [p for p in Path(context_dir).glob("vibetest/*.md")
+             if accept(p) and "RUN_BY_SKILL: vibe-test" in p.read_text(encoding="utf-8", errors="replace")]
+    return max(found, key=lambda p: p.stat().st_mtime) if found else None
+
+
+def spec_gap_ids(report_text: str) -> set[str]:
+    return set(SPEC_GAP_ID.findall(section(report_text, BLOCKING_GAPS_HEADER)))
+
+
+def logged_assumptions(context_dir: Path, session: dict | None = None) -> dict[str, list[str]]:
+    """{`G-n`: the row's cells} of the `## Assumptions` table in the run's register (ADR-0019).
+
+    The register logs what the run assumes and what it defers. The plan peer writes each row.
+    """
+    from deferral_adjudication_check import _parse_table
+
+    accept = run_scope_accept(context_dir, session=session)
+    found = [p for p in Path(context_dir).glob("deferrals/*_deferral-register.md") if accept(p)]
+    if not found:
+        return {}
+    text = max(found, key=lambda p: p.stat().st_mtime).read_text(encoding="utf-8")
+    _header, rows = _parse_table(section(text, ASSUMPTIONS_HEADER))
+    return {m.group(0): row for row in rows if row and (m := SPEC_GAP_ID.fullmatch(row[0].strip("`* ")))}
+
+
+def check_spec_gaps(context_dir: Path, worktree: Path, session: dict | None) -> list[str]:
+    """P9 (ADR-0019): the register logs an assumption for each `G-n` of the run's vibe-test report."""
+    report = newest_vibetest(context_dir, session)
+    ids = spec_gap_ids(report.read_text(encoding="utf-8")) if report is not None else set()
+    missing = sorted(ids - set(logged_assumptions(context_dir, session)), key=lambda g: int(g[2:]))
+    if not missing:
+        return []
+    return [f"spec-gaps: the register logs no assumption for {', '.join(missing)} of {report.name} under "
+            f"`{ASSUMPTIONS_HEADER}`. Send /plan-update <plan>, then /plan-review <plan>"]
+
+
 def check_required_before_execution(
     context_dir: Path,
     *,
@@ -1531,6 +1588,7 @@ def check_required_before_execution(
         if spec["label"] == "plan-review":
             # cd-76 D7: P9 reads the plan of the run of its own worktree.
             errors.extend(check_plan_review_verdict(context_dir, session=run_for(context_dir, cwd=wt)))
+            errors.extend(check_spec_gaps(context_dir, wt, run_for(context_dir, cwd=wt)))
         if spec["label"] == "adversarial-review":
             # cd-63 D4: P9 reads the P6 verdict, with the conditions check.
             errors.extend(check_adversarial_verdict(context_dir, session=run_for(context_dir, cwd=wt), stage="p9"))

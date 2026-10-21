@@ -33,6 +33,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | A1 | `FAIL  peer_models: <error>` | The `peer_models` map of the resolved config has an error | Fix the map in the layer that sets it (`python3 "$C/cadence_config.py" resolve` names the layer), then `python3 "$C/activate_session.py" --from-branch --fresh` |
 | A1 | `WARNING: orchestrator unknown` or `<slug>: orchestrator unknown` | Activation did not run through the Bash tool | `python3 "$C/activate_session.py" --from-branch --resume`, through the Bash tool |
 | A1 | `WARNING: the PostToolUse Agent hook is not registered` | The install has no verdict join hook | `"$CADENCE_HOME/install.sh"`, then start a new host session and `--resume` |
+| R7 | `FAIL  no session summary at <path>` or `<path> is not the latest write of a peer` | No peer wrote the summary | Send `/session-summary <manifest>` (the text names it), then `python3 "$C/activate_session.py" --deactivate` |
 | R7 | `FAIL  the run is open: R6 (pr-comment) has not passed` | `--deactivate` before R6 | `python3 "$C/guard_gh_pr_comment.py" --check`, or `python3 "$C/activate_session.py" --hard-stop <class> --reason "..."` |
 
 ### Alignment (A2 to A5)
@@ -50,6 +51,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | A4 | `ticket-gate: the config names the adapter none, but adapters/none.json` | The none adapter file has an error | Restore `adapters/none.json` with `git -C "$CADENCE_HOME" checkout -- adapters/none.json` |
 | A5 | `vibe-test: no Cadence run for this worktree` | A5 ran outside the run's worktree | `cd` to the run's worktree, then `python3 "$C/validate_gate.py" --check` |
 | A5 | `vibe-test: <report>: **Tracker:** ...` or `**Ticket:** ...` | The report header does not name the adapter or the ticket | `/vibe-test <ticket>`. The peer writes a `-rev{N}` report |
+| A5 | `vibe-test: <report> is not ready for planning and lists no G-n under ## Blocking gaps` | The report has blocking gaps with no ids | `/vibe-test <ticket>` again |
 
 ### Peer artifacts (A5, P1, P3, P6, P7, R1, R2)
 
@@ -79,14 +81,16 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | P4 | `plan-update: <where> for <ids> of <review>` | The Revision ledger has no row for an `MF-n` | `/plan-update <plan> --from-review <review>` |
 | P4 | `plan-update: review requests changes but no RUN_BY_COMMAND: plan-update` | No plan update since the review | `/plan-update <plan> --from-review <review>` |
 | P4 | `plan-update: <review> verdict is <verdict> (cycle N of M) and the plan` | The plan did not change after the review | `/plan-update <plan> --from-review <review>` |
-| P5 | `  must-fix <rule>: <evidence>` (architecture review) | The plan breaks a layer rule | Fix the plan, then `python3 "$C/architecture_review.py" --phase plan --check` |
+| P5 | `  must-fix <rule>: <evidence>` (architecture review) | The plan breaks a layer rule | `/plan-update <plan>`: the peer fixes the plan. Then `/plan-review <plan>`, then `python3 "$C/architecture_review.py" --phase plan --check` |
+| P5 | `  must-fix core:decision-coverage: ...` | No decision record for the plan | `/plan-update <plan>`: the peer writes the decision record (`commands/plan-create.md`, step 5). Then `python3 "$C/architecture_review.py" --phase plan` |
 | E3 | `  must-fix <rule>: <evidence>` (architecture review) | The change breaks a layer rule | Fix the code, then `python3 "$C/architecture_review.py" --phase impl --check` |
 | P6 | `adversarial-review: no plan-gate report of run <id>` | No P6 report for this run | `/de-adversarial-reviewer plan-gate <plan>` |
 | P6 | `adversarial-review: <report> verdict is REQUEST CHANGES (cycle N of M)` | The report asks for changes | `/plan-update <plan> --from-review <report>`, then `/de-adversarial-reviewer plan-gate <plan>` |
 | P6 | `adversarial-review: cycle limit reached` | `adversarial_cycles` P6 cycles ran (default 3) | `/plan-update <plan> --from-review <report>` with each open `B-n` carried. Do not run P6 again |
 | P6 | `adversarial-review: <report> does not name the plan` or `has no readable verdict` | The report is not complete | `/de-adversarial-reviewer plan-gate <plan>` |
 | P7 | `test-benchmark-plan: no artifact matching benchmarks/*_plan.json` | No plan scorecard | `/test-benchmark plan <plan>` |
-| P8 | `deferral-register: <file>: <code>: <message>` | A register row breaks `references/deferral-framework.md` | Fix the row, then `python3 "$C/deferral_adjudication_check.py" --check` |
+| P8 | `deferral-register: <file>: <code>: <message>` | A register row breaks `references/deferral-framework.md` | `/plan-update <plan>`: the peer fixes the row. Then `python3 "$C/deferral_adjudication_check.py"` |
+| P9 | `spec-gaps: the register logs no assumption for G-n of <report> under ## Assumptions` | A blocking A5 gap has no logged assumption | `/plan-update <plan>`, then `/plan-review <plan>`, then `python3 "$C/entry_invariant.py" --phase execution` |
 | P9 | `entry-invariant: ...` with the lines of earlier blocks | An earlier block did not pass | Do the row of each line, then `python3 "$C/entry_invariant.py" --phase execution` |
 | P9 | `entry-invariant: no Cadence run in this worktree` | P9 ran outside the run's worktree | `cd` to the run's worktree, then `python3 "$C/entry_invariant.py" --phase execution` |
 | P9 | `packs: <error>` or `pack <name> gate failed` | A pack that is on does not load, or a pack gate failed | Fix `packs` in the config layer that sets it, or lock the pack (`python3 "$C/pack_loader.py" lock`). For a pack gate, do what its text says |
@@ -140,8 +144,9 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | R4 | `final-consolidate: no review of this run's PR` or `has no RUN_BY marker` | No R1 review of the PR | `/pr-review-local <PR>` |
 | R4 | `final-consolidate: not peer-written (ignored)` | The orchestrator wrote the review | `/pr-review-update <PR>`. The peer saves with the Write or Edit tool |
 | R5 | `closure: <id>: must-fix status='fixed' not terminal` | The fix has no `verified` status | `python3 "$C/ledger_verify.py"` |
-| R5 | `closure: <id>: must-fix status='open' not terminal` | The finding is open | Fix it, or defer it: a register row with the ticket, `deferral_adjudication_check.py`, then `python3 "$C/findings_io.py" set-status --id <id> --status deferred --ticket <n>` |
-| R6 | `guard-gh-pr-comment: N open must-fix finding(s) block PR comment` | A must-fix is open | Close each finding (R4, R5), then `python3 "$C/guard_gh_pr_comment.py" --check` |
+| R5 | `closure: <id>: must-fix status='open' not terminal` | The finding is open | `/spec-driven --fix <review>`: the peer fixes it, or defers it with a register row and its ticket |
+| R6 | `guard-gh-pr-comment: N open must-fix finding(s) block PR comment` | A must-fix is open | Close each finding (R4, R5), then `python3 "$C/guard_gh_pr_comment.py"` |
+| R6 | `guard-gh-pr-comment: no comment body at <path>` | R6 ran only with `--check` | `python3 "$C/guard_gh_pr_comment.py"`: it writes the body from the ledger and prints the `gh pr comment` command |
 | R6 | `guard-gh-pr-comment: unreadable findings ledger` | A ledger row is not valid | Do not edit the ledger by hand. Tell the user the ledger line that the text names |
 | R6 | `gh pr comment` exits non-zero (no gate text) | `gh` is offline or the post failed | `gh auth status`, then `gh pr comment <PR> --body-file <file>` once more. If it fails again, tell the user |
 
@@ -165,7 +170,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | Handoff | `BLOCKED: lean peer prompt rejected: <reason>` | The prompt is not a peer command | The command that the text names |
 | Handoff | `BLOCKED: peer_models sets <slug> to <model>` | The Agent call has the wrong model | The Agent call with `model: "<model>"`, not a fork |
 | Handoff | `BLOCKED: a peer call may not be a fork` | A fork carries the parent context | A new Agent call that is not a fork |
-| Scope | `BLOCKED: the orchestrator does not read or write <path>` | The orchestrator read a run artifact, the code or the diff, or wrote the code (Claude Code) | Run the block's gate, or send its peer the command. E1 is `/spec-driven <plan>`, a fix round is `/spec-driven --fix <review>` |
+| Scope | `BLOCKED: the orchestrator does not read or write <path>` | The orchestrator read a run artifact, the code or the diff, or wrote the code or the markdown of the run (Claude Code) | Run the block's gate, or send its peer the command. E1 is `/spec-driven <plan>`, a fix round is `/spec-driven --fix <review>`. P8, R6 and R7 write their files when you run them without `--check` |
 | Handoff | `BLOCKED: the cadence session file is unreadable, so no handoff packet can be found` | The session file is not readable | `python3 "$C/activate_session.py" --from-branch --fresh` |
 | PR | `BLOCKED: gh pr <verb> needs a Cadence run past E1` (or E3) | A PR before the run reached E1 or E3 | Do the next block (`python3 "$C/headless.py" next --json`), or get a peer review of HEAD |
 | Stop | `BLOCKED early stop in <phase>. Continue paceline: next <block> (<slug>) via <command>` | The run has an open block | Run `<command>` |

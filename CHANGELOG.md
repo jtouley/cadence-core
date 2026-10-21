@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- A5 gaps are carried into the plan (ADR-0019). The vibe-test report labels each blocking gap `G-n`.
+  The plan peer logs an assumption for each one under `## Assumptions` in the register, next to the
+  deferrals. P9 fails while one has no row, and the R6 comment lists the assumptions.
+- A block writes its own markdown (ADR-0018). `activate_session.py --request -` saves the user's
+  request as written for A5. P8 writes the zero deferral register, R6 writes the closure comment
+  from the ledger, and R7 writes the run's manifest for the new `/session-summary` peer. The plan
+  peer writes the decision records and the approved deferrals. On Claude Code the orchestrator may
+  not write the markdown of the run.
 - The orchestrator routes (ADR-0017). A peer gets a markdown file and gives back a markdown file. E1 is
   one `/spec-driven <plan>` peer call, and each review fix round is one `/spec-driven --fix <review>`
   peer call on the PR review. On Claude Code a hook denies an orchestrator read

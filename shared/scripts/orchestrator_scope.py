@@ -32,6 +32,8 @@ from skill_gate import (
 # Run artifacts, relative to .context: what the peers write and read. Session, gate and
 # ledger state is not here: the scripts that the orchestrator runs read it.
 RUN_ARTIFACTS = (*peer_attest.PEER_ARTIFACT_GLOBS, "plans/*", "proposals/*", "implementation/*")
+# The markdown of a run that a peer or a block's script writes (ADR-0018): the orchestrator writes none.
+WRITTEN_FOR_IT = (*RUN_ARTIFACTS, "deferrals/*", "prs/comments/*", "summaries/*")
 WORKSPACE_PLANS = ".cursor/plans/"
 # A `git diff` or `git show` prints the change. `--stat` and the name forms print only its shape.
 GIT_DIFF = re.compile(
@@ -70,11 +72,11 @@ def code_path(path: str, workspace: Path) -> str | None:
     return rel if is_gated_path(rel, workspace) or is_gated_path(rel + "/", workspace) or is_test_path(rel) else None
 
 
-def out_of_scope(path: str, workspace: Path) -> str | None:
-    """The path to show when the orchestrator may not read `path`, else None."""
+def out_of_scope(path: str, workspace: Path, globs: tuple[str, ...] = RUN_ARTIFACTS) -> str | None:
+    """The path to show when the orchestrator may not read (or, with WRITTEN_FOR_IT, write) `path`, else None."""
     rel = context_relative(path, workspace)
     if rel is not None:
-        return f".context/{rel}" if any(fnmatchcase(rel, g) for g in RUN_ARTIFACTS) else None
+        return f".context/{rel}" if any(fnmatchcase(rel, g) for g in globs) else None
     rel = workspace_relative(path, workspace)
     if rel and rel.startswith(WORKSPACE_PLANS):
         return rel
@@ -100,8 +102,8 @@ def read_denial(payload: dict[str, Any], workspace: Path, paths: list[str]) -> s
 
 
 def write_denial(payload: dict[str, Any], workspace: Path, paths: list[str]) -> str | None:
-    """The deny text for an orchestrator write to a source or test file, else None."""
-    hit = next((h for p in paths if (h := code_path(p, workspace))), None)
+    """The deny text for an orchestrator write to the code or to the markdown of the run, else None."""
+    hit = next((h for p in paths if (h := out_of_scope(p, workspace, WRITTEN_FOR_IT))), None)
     if hit is None or not is_orchestrator(payload, workspace) or not enforced(workspace):
         return None
     return _denial(f"`{hit}`")

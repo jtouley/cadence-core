@@ -25,7 +25,7 @@ Read script output: `task_id`, `pipeline_run_id`, `resume_block` (a
    `Code paths:` line, `CATALOG_STALE`, `OPS_ONLY`, or `OPS HANDOFF`)
 4. A4 ticket gate (adapter regex from `adapters/*.json`)
 5. Load the registry row for the resume block. Run through R7
-6. On exit: `activate_session.py --deactivate` + summary under `.context/summaries/`
+6. On exit: `activate_session.py --deactivate`. It writes the manifest `.context/manifests/<task_id>.md` and closes the run only after the `/session-summary <manifest>` peer writes `.context/summaries/<task_id>.md`.
 
 ## Session file
 
@@ -61,6 +61,12 @@ The agent that runs activation is the orchestrator of the run. It does not write
 - When the top-level agent activates and a subagent orchestrates, the hook does not know the subagent. That subagent can still write verdicts (G-C7, #50).
 
 **Missing note:** when activation finds no fresh note, `orchestrator_source` is `missing`. On Claude Code, activation prints `WARNING: orchestrator unknown: activate through the Bash tool`. The attestation gates then fail closed with the same text. A command that you type with `!` does not go through the hook. To recover, run `--resume` again through the Bash tool.
+
+## Request
+
+`--request <file>` or `--request -` (stdin) gives activation the user's request as the user wrote
+it. A fresh run saves it as `.context/proposals/<task_id>.md`, the input of A5, with a `Ticket:`
+line (ADR-0018). A resumed run keeps the file that exists. An empty request fails activation.
 
 ## Resume
 

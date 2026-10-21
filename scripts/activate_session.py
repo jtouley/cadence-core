@@ -278,6 +278,8 @@ def apply_verdict_join(session: dict, *, host: str, resumed: dict | None, worksp
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Activate cadence session")
     parser.add_argument("--task-desc", help="Task description")
+    parser.add_argument("--request", help="The user's request as written: a file, or - for stdin. "
+                                          "A fresh run saves it as .context/proposals/<task_id>.md")
     parser.add_argument("--task-id", help="Explicit task ID")
     parser.add_argument("--from-branch", action="store_true", help="Derive task ID from branch")
     parser.add_argument("--workspace", default=".", help="Workspace root")
@@ -339,6 +341,82 @@ def _status(args: argparse.Namespace, context_dir: Path, workspace: Path) -> int
     return 0
 
 
+def _file_name(task_id: str) -> str:
+    return re.sub(r"[\\/]", "-", task_id)
+
+
+def write_request(context_dir: Path, task_id: str, text: str) -> Path:
+    """`.context/proposals/<task_id>.md`: the user's request as written, the input of A5 (ADR-0018)."""
+    path = context_dir / "proposals" / f"{_file_name(task_id)}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"# Request: {task_id}\n\nTicket: {task_id}\nSource: the request as the user wrote it, "
+                    f"saved at activation.\n\n{text.strip()}\n", encoding="utf-8")
+    return path
+
+
+# The run's documents that the summary peer reads (ADR-0018), as globs under .context.
+MANIFEST_GLOBS = ("proposals/*.md", "vibetest/*.md", "plans/*.md", "reviews/*.md", "adversarial/*.md",
+                  "benchmarks/*.json", "deferrals/*.md", "implementation/*.md", "prs/*.md", "prs/reviews/*.md",
+                  "prs/comments/*.md", "issues/*.md", "findings.jsonl")
+
+
+def summary_path(context_dir: Path, task_id: str) -> Path:
+    return context_dir / "summaries" / f"{_file_name(task_id)}.md"
+
+
+def write_manifest(context_dir: Path, workspace: Path, session: dict) -> Path:
+    """`.context/manifests/<task_id>.md`: the run facts and each document of the run with its sha256.
+
+    The one input of the /session-summary peer (ADR-0018). The script lists; the peer judges.
+    """
+    from artifact_requirements import run_scope_accept
+
+    task_id, run_id = str(session.get("task_id") or ""), str(session.get("pipeline_run_id") or "")
+    base = str(session.get("base") or "")
+    log = subprocess.run(["git", "log", "--oneline", f"{base}..HEAD"], cwd=workspace, capture_output=True,
+                         text=True).stdout.splitlines() if base else []
+    accept = run_scope_accept(context_dir, session=session)
+    docs = sorted({p for g in MANIFEST_GLOBS for p in context_dir.glob(g) if p.is_file() and accept(p)})
+    docs += sorted(p for p in (workspace / ".cursor" / "plans").glob("*.plan.md") if accept(p))
+    stop = session.get("hard_stop") or {}
+    lines = [f"# Session manifest: {task_id}", "", f"Ticket: {task_id}", f"Pipeline-Run: {run_id}",
+             f"Branch: {session.get('branch')}", f"Base: {base or 'none'}"]
+    if isinstance(stop, dict) and stop:
+        lines.append(f"Hard stop: {stop.get('class')}: {stop.get('reason')}")
+    if session.get("reopened_at"):
+        lines.append(f"Reopened: {session['reopened_at']}")
+    lines += ["", "## Documents", "", "| Document | sha256 |", "|---|---|"]
+    lines += [f"| {_shown(p, context_dir, workspace)} | {hashlib.sha256(p.read_bytes()).hexdigest()} |" for p in docs]
+    lines += ["", "## Commits", "", *[f"- {line}" for line in log], "",
+              f"Write the summary to {_shown(summary_path(context_dir, task_id), context_dir, workspace)}."]
+    path = context_dir / "manifests" / f"{_file_name(task_id)}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def _shown(path: Path, context_dir: Path, workspace: Path) -> str:
+    for root, prefix in ((context_dir, ".context/"), (workspace, "")):
+        try:
+            return prefix + path.resolve().relative_to(root.resolve()).as_posix()
+        except ValueError:
+            continue
+    return str(path)
+
+
+def summary_missing(context_dir: Path, session: dict) -> str | None:
+    """Why the run has no summary from a peer, else None. On Claude Code the hook attests the peer's write."""
+    import peer_attest
+
+    path = summary_path(context_dir, str(session.get("task_id") or ""))
+    if not path.is_file():
+        return f"no session summary at {path}"
+    if session.get("host") == "claude" and not peer_attest.attested(
+            context_dir, str(session.get("pipeline_run_id") or ""), path, peer_attest.orchestrator_ids(context_dir)):
+        return f"{path} is not the latest write of a peer"
+    return None
+
+
 def _deactivate(context_dir: Path, workspace: Path) -> int:
     session = load_run_session(context_dir, workspace)
     if _is_active(session) and not session.get("hard_stop") and not closure_done(workspace):
@@ -348,6 +426,12 @@ def _deactivate(context_dir: Path, workspace: Path) -> int:
             f"  activate_session.py --hard-stop {{{','.join(HARD_STOP_CLASSES)}}} --reason \"...\"",
             file=sys.stderr,
         )
+        return 1
+    missing = summary_missing(context_dir, session) if _is_active(session) else None
+    if missing:
+        manifest = write_manifest(context_dir, workspace, session)
+        print(f"FAIL  {missing}.\nACTION: send the peer `/session-summary {_shown(manifest, context_dir, workspace)}`, "
+              "then run --deactivate again", file=sys.stderr)
         return 1
     # cd-76 D3: remove only this run's P9 marker and E4 breadcrumb; keep its draft-PR record.
     run_id = str((session or {}).get("pipeline_run_id") or "")
@@ -520,6 +604,8 @@ def _start_run(args: argparse.Namespace, ctx: dict, resumed: dict | None, snapsh
     _add_run_marks(session, args, resumed, snapshot, ctx.get("config"))
     apply_verdict_join(session, host=session["host"], resumed=resumed, workspace=workspace)
     _report_activation(session, save_run_session(context_dir, workspace, session))
+    if ctx.get("request") and (fresh_run or not (context_dir / "proposals" / f"{_file_name(task_id)}.md").is_file()):
+        print(f"Request: {write_request(context_dir, task_id, ctx['request'])}", file=sys.stderr)
     return 0
 
 
@@ -561,6 +647,17 @@ def _activate(args: argparse.Namespace, workspace: Path, primary: Path, context_
         if model_errors:
             return 2
 
+    request = None
+    if args.request and not already_active:
+        try:
+            request = (sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")).strip()
+        except OSError as exc:
+            print(f"FAIL  --request: {exc}", file=sys.stderr)
+            return 2
+        if not request:
+            print("FAIL  --request: the request is empty", file=sys.stderr)
+            return 2
+
     # Take the orchestrator note after the checks, so a failed activation keeps it for the next try.
     noted, orchestrator = (
         session_store.take_pending_orchestrator(context_dir) if session_store is not None else (False, None)
@@ -568,7 +665,8 @@ def _activate(args: argparse.Namespace, workspace: Path, primary: Path, context_
     if already_active:
         return _rejoin_active_run(existing, noted, orchestrator, context_dir, workspace)
     ctx = {"workspace": workspace, "primary": primary, "context_dir": context_dir, "branch": branch,
-           "task_id": task_id, "task_source": task_source, "host": host, "config": config_record}
+           "task_id": task_id, "task_source": task_source, "host": host, "config": config_record,
+           "request": request}
     return _start_run(args, ctx, resumed, snapshot, noted, orchestrator)
 
 

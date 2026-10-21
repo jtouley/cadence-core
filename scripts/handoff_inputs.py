@@ -8,6 +8,7 @@ cannot find gives one message that names the artifact and the block that writes 
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -20,8 +21,10 @@ from gate_common import current_branch
 from load_stages import load_registry
 from phase_ledger import select_plan
 
-KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review")
-OPTIONAL = frozenset({"plan-review-previous"})
+KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review", "manifest",
+         "request", "vibetest")
+# The request and the vibe-test report are pinned when they exist (ADR-0019); A5 is in a pack.
+OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest"})
 
 # What a missing kind is, and the stages.json slug of the block that writes it.
 _MISSING = {
@@ -30,6 +33,7 @@ _MISSING = {
     "plan-review": ("plan review of the run with a verdict in .context/reviews/plan_<slug>.md", "plan-review"),
     "pr-number": ("draft-PR record of the run with a PR URL in .context/prs/", "draft-pr"),
     "pr-review": ("PR review of the run's PR in .context/prs/reviews/PR_REVIEW_#<N>.md", "pr-review-local"),
+    "manifest": ("session manifest in .context/manifests/<task_id>.md", "session-close"),
 }
 
 
@@ -92,9 +96,28 @@ def _pr_review(run: Run) -> Found | None:
     return ([_shown(review, run)], review) if review is not None and review.is_file() else None
 
 
+def _request(run: Run) -> Found | None:
+    """The user's request that activation saved (ADR-0018)."""
+    path = run.ctx / "proposals" / f"{re.sub(r'[\\/]', '-', str(run.session.get('task_id') or ''))}.md"
+    return ([], path) if path.is_file() else None
+
+
+def _vibetest(run: Run) -> Found | None:
+    report = artifact_requirements.newest_vibetest(run.ctx, run.session)
+    return ([], report) if report is not None else None
+
+
+def _manifest(run: Run) -> Found | None:
+    """The run's session manifest, which `activate_session.py --deactivate` writes (ADR-0018)."""
+    task = re.sub(r"[\\/]", "-", str(run.session.get("task_id") or ""))
+    path = run.ctx / "manifests" / f"{task}.md"
+    return ([_shown(path, run)], path) if task and path.is_file() else None
+
+
 _RESOLVERS: dict[str, Callable[[Run], Found | None]] = {
     "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "plan-review-previous": _previous_review,
-    "pr-number": _pr_number, "pr-review": _pr_review,
+    "pr-number": _pr_number, "pr-review": _pr_review, "manifest": _manifest,
+    "request": _request, "vibetest": _vibetest,
 }
 
 

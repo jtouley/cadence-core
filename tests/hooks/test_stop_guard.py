@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import (HOOKS_DIR, SESSION_LAYOUTS, activate, activated_repo, assert_decision, code_paths, enable_all_packs, fake_gh, git, git_repo, hook_session, host_shape, pushed_repo, read_session, run_py, stop_decision)
+from conftest import (peer_summary, HOOKS_DIR, SESSION_LAYOUTS, activate, activated_repo, assert_decision, code_paths, enable_all_packs, fake_gh, git, git_repo, hook_session, host_shape, pushed_repo, read_session, run_py, stop_decision)
 
 ROOT = Path(__file__).resolve().parents[2]
 code_paths()
@@ -441,7 +441,8 @@ def test_deactivate_closes_only_this_worktree(two_worktrees):
     _, w1, w2 = two_worktrees
     activate(w1, CLAUDE_CODE_SESSION_ID="chat-A")
     activate(w2, CLAUDE_CODE_SESSION_ID="chat-B")
-    for args in (["--hard-stop", "not-needed", "--reason", "test"], ["--deactivate"]):
-        activate(w1, *args)
+    activate(w1, "--hard-stop", "not-needed", "--reason", "test")
+    peer_summary(w1)
+    activate(w1, "--deactivate")
     assert session_store.load_worktree_session(w1)["active_skill"] is None
     assert session_store.load_worktree_session(w2)["active_skill"] == "cadence"

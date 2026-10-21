@@ -198,3 +198,29 @@ def test_after_p9_an_orchestrator_write_to_the_code_is_denied_and_a_peer_write_i
 
 def test_an_orchestrator_write_outside_the_code_is_not_judged(run_hook, e1_run):
     assert _call(run_hook, EDIT_GUARD, e1_run, "Write", {"file_path": "NOTES.md", "content": "x\n"})[0] == "allow"
+
+
+# --- ADR-0018: the orchestrator writes no markdown of the run --------------------------------------
+
+@pytest.mark.parametrize("rel", [
+    ".context/proposals/cd-7-storage.md",
+    ".context/deferrals/cd-7_deferral-register.md",
+    ".context/prs/comments/pr-comment-run.md",
+    ".context/summaries/cd-7.md",
+])
+def test_an_orchestrator_write_to_the_markdown_of_the_run_is_denied(run_hook, e1_run, rel):
+    decision, reason = _call(run_hook, EDIT_GUARD, e1_run, "Write", {"file_path": rel, "content": "# x\n"})
+    # A peer artifact (a summary) is denied first by the peer-artifact guard, with its own text.
+    assert decision == "deny" and (SCOPE in reason or "only a delegated peer writes" in reason)
+    shell = _call(run_hook, EDIT_GUARD, e1_run, "Bash", {"command": f"cat > {rel} <<'EOF'\n# x\nEOF"})
+    assert shell[0] == "deny"
+
+
+@pytest.mark.parametrize("rel", [".context/proposals/cd-7-storage.md", ".context/deferrals/cd-7_deferral-register.md"])
+def test_a_peer_writes_the_markdown_that_needs_judgment(run_hook, e1_run, rel):
+    assert _call(run_hook, EDIT_GUARD, e1_run, "Write", {"file_path": rel, "content": "# x\n"}, agent="peer-1")[0] == "allow"
+
+
+def test_a_tracker_post_is_not_run_markdown(run_hook, e1_run):
+    payload = {"file_path": ".context/issues/cd-7.md", "content": "A5 gap.\n"}
+    assert _call(run_hook, EDIT_GUARD, e1_run, "Write", payload)[1].find(SCOPE) == -1
