@@ -68,7 +68,8 @@
       ],
       "inputs": [
         "ticket",
-        "request"
+        "request",
+        "repo-map"
       ]
     },
     {
@@ -84,7 +85,8 @@
       "inputs": [
         "ticket",
         "request",
-        "vibetest"
+        "vibetest",
+        "repo-map"
       ]
     },
     {
@@ -115,7 +117,8 @@
         "plan",
         "plan-review-previous",
         "vibetest",
-        "acceptance"
+        "acceptance",
+        "repo-map"
       ],
       "review_round": {
         "round": "plan",
@@ -174,7 +177,8 @@
       "inputs": [
         "plan",
         "request",
-        "acceptance"
+        "acceptance",
+        "repo-map"
       ],
       "review_round": {
         "round": "plan",
@@ -235,7 +239,8 @@
       "description": "TDD implementation with red-green-refactor loop",
       "inputs": [
         "plan",
-        "acceptance"
+        "acceptance",
+        "repo-map"
       ]
     },
     {
@@ -290,7 +295,8 @@
         "pr-number",
         "request",
         "acceptance",
-        "acceptance-repair"
+        "acceptance-repair",
+        "repo-map"
       ]
     },
     {

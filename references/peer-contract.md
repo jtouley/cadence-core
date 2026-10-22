@@ -29,6 +29,13 @@ P9 only counts planning artifacts that carry a session ticket token as a whole
 token, so another ticket's leftovers never clear entry, and `cd-1` never matches
 `cd-12`.
 
+## Inputs
+
+Read the files on the `Input:` lines of your packet before you search the repository.
+When the packet pins `.context/repo-map/<tree>.md`, read it first. It lists the tracked files, the
+build targets and the top-level Python names of the tree at HEAD. Open a source file only for
+the lines that you need. Search only for what the map does not give.
+
 ## Chat
 
 Human-facing close uses C.O.R.E.: SUMMARY, DECISIONS NEEDED (max 3), ACTIONS

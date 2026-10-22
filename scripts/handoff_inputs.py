@@ -24,14 +24,14 @@ from phase_ledger import select_plan
 
 KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review", "manifest",
          "request", "vibetest", "plan-benchmark", "deferral-manifest",
-         "deferral-ruling", "acceptance", "acceptance-repair")
+         "deferral-ruling", "acceptance", "acceptance-repair", "repo-map")
 # The request and the vibe-test report are pinned when they exist; A5 is in a pack.
 # A plan scorecard is pinned while it fails, so that P4 applies its findings.
 # The deferral ruling is pinned when it exists, so that P4 applies its RED and AMBER rows.
-# Before P1 writes them, there are no acceptance checks.
+# Before P1 writes them, there are no acceptance checks. Outside a repository with a commit, there is no repo map.
 # The acceptance repair log exists only when a check had a defect after P9.
 OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest", "plan-benchmark", "deferral-ruling", "acceptance",
-                      "acceptance-repair"})
+                      "acceptance-repair", "repo-map"})
 
 # What a missing kind is, and the stages.json slug of the block that writes it.
 _MISSING = {
@@ -165,12 +165,20 @@ def _acceptance_repair(run: Run) -> Found | None:
     return ([], path) if path else None
 
 
+def _repo_map(run: Run) -> Found | None:
+    """The map of the tree at HEAD (scripts/repo_map.py), written once per tree."""
+    import repo_map
+
+    path = repo_map.ensure(run.ctx, run.workspace)
+    return ([], path) if path is not None else None
+
+
 _RESOLVERS: dict[str, Callable[[Run], Found | None]] = {
     "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "plan-review-previous": _previous_review,
     "pr-number": _pr_number, "pr-review": _pr_review, "manifest": _manifest,
     "request": _request, "vibetest": _vibetest, "plan-benchmark": _plan_benchmark,
     "deferral-manifest": _deferral_manifest, "deferral-ruling": _deferral_ruling,
-    "acceptance": _acceptance, "acceptance-repair": _acceptance_repair,
+    "acceptance": _acceptance, "acceptance-repair": _acceptance_repair, "repo-map": _repo_map,
 }
 
 

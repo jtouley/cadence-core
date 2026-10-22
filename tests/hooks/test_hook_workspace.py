@@ -473,7 +473,8 @@ def test_handoff_packet_check_uses_the_process_worktree(run_hook, make_root, han
     result = run_hook(HANDOFF_HOOK, w1, _agent(cwd=str(w0)), "claude", hooks_dir=root / "hooks",
                       cwd=w1, project_env={})
     assert_decision(result, "claude", "allow")
-    rendered = handoff_mod.render_prompt(handoff_mod.load_packet(primary / ".context", "run-1", "P3"), w1)
+    rendered = handoff_mod.render_prompt(handoff_mod.load_packet(primary / ".context", "run-1", "P3"), w1,
+                                         primary / ".context")  # the repo map is a .context input
     assert json.loads(result[1])["hookSpecificOutput"]["updatedInput"]["prompt"] == rendered
     assert rendered.startswith(f"/plan-review {HANDOFF_PLAN}\n")
 

@@ -9,6 +9,9 @@
   implementer records the defect with a repro, the plan peer fixes that one check
   (`/plan-update <plan> --acceptance AC-n`), and `acceptance.py repin` logs the old and the new text for R1.
   This is the one plan change after P9.
+- The repo map. A5, P1, P3, P6, E1 and R1 get `.context/repo-map/<tree>.md` in their packets: the
+  tracked files, the build targets and the top-level Python names of the tree at HEAD, written once
+  per tree (`scripts/repo_map.py`). A peer reads it before it searches the repository.
 - Each phase is committed red, then green. `phase_evidence.py record` stores the test command of a phase,
   and the E1 gate runs it in a clean checkout of each commit: it must fail at the `phase N: red` commit and
   pass at the green one. This replaces the check of commit times, which commits one second apart passed.
