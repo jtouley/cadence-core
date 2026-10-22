@@ -5,7 +5,11 @@
     "plan": {
       "driver": "python3 scripts/plan_wave.py",
       "cycle_limit": "plan_review_cycles",
-      "description": "The plan reviewers read one plan sha in parallel; one /plan-update answers all of them. Each reviewer reviews up to the cycle limit of its round, unless its row names another"
+      "description": "The plan reviewers read one plan sha in parallel; one /plan-update answers all of them. Each reviewer reviews once unless its row names another limit"
+    },
+    "pr": {
+      "driver": "python3 scripts/review_round.py --round pr",
+      "description": "The reviewers of one HEAD run in parallel; one fix round answers all of them"
     }
   },
   "stages": [
@@ -263,7 +267,10 @@
       "manifest_type": "arch-review-impl",
       "trigger": "always",
       "pack": "architecture",
-      "description": "Verify plan conformance, layer integrity, and boundary compliance on code diff"
+      "description": "Verify plan conformance, layer integrity, and boundary compliance on code diff",
+      "review_round": {
+        "round": "pr"
+      }
     },
     {
       "slug": "draft-pr",
@@ -297,7 +304,10 @@
         "acceptance",
         "acceptance-repair",
         "repo-map"
-      ]
+      ],
+      "review_round": {
+        "round": "pr"
+      }
     },
     {
       "slug": "test-benchmark-pr",
@@ -314,7 +324,10 @@
       ],
       "inputs": [
         "pr-number"
-      ]
+      ],
+      "review_round": {
+        "round": "pr"
+      }
     },
     {
       "slug": "cognitive-complexity",
@@ -325,7 +338,10 @@
       "manifest_type": "cognitive-complexity",
       "trigger": "always",
       "pack": "core",
-      "description": "Fail a changed function over the cognitive complexity limit (each language with an analyzer) or the statement and branch-chain limits (Python), and a changed Python file over the duplication limit, when it is new or got worse"
+      "description": "Fail a changed function over the cognitive complexity limit (each language with an analyzer) or the statement and branch-chain limits (Python), and a changed Python file over the duplication limit, when it is new or got worse",
+      "review_round": {
+        "round": "pr"
+      }
     },
     {
       "slug": "final-consolidate",

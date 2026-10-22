@@ -116,6 +116,11 @@ A version 2 pack can change the block order with the operations of `stages.overl
 - The operations of each pack that is on apply first, in the order of `packs`. Then the
   `stages.overlays` of the config layers apply, so a project can remove a pack's row.
 - No operation can remove P9, R1 or R5, or change their gate.
+- A row joins a review round with `review_round`: `{"round": "plan"}` or `{"round": "pr"}`, with an
+  optional `cycle_limit` (a config key such as `plan_review_cycles`, or a number). `stages.json`
+  `review_rounds` declares each round and its driver. A row with a slash command is a peer that the
+  orchestrator sends in parallel with the other peers of the round. Any other row is a script that the
+  round runs. When the pack is on, its row joins the round. No script names the members.
 
 ## Samples
 

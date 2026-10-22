@@ -260,15 +260,25 @@ Load [`references/review-rigor.md`](references/review-rigor.md) for E3, R1, and
 R2. The reviewer reproduces each finding, walks the documented path, runs
 adversarial inputs, and tests each design choice three ways with strict TDD.
 
-1. Run **R1** `/pr-review-local`. Check the artifact, the provenance, and the rigor sections.
-2. Resolve each must-fix finding: send `/spec-driven --fix <review>`, or open a ticket.
-3. Run **R2** `/test-benchmark --code`. Resolve each HIGH item. Record `adversarial_inputs`.
-4. Run **R3** cognitive complexity. When it fails, do the fix step that it names, or send `/spec-driven --fix <review>`. That peer fixes each `offenders` entry of the R3 record, with the `bugs` (ruff) and `types` (mypy) findings.
-5. After fix commits, run `/pr-review-update` on the new head. **R1** `pr_review_local_gate.py --check` fails while the newest PR review does not cite HEAD. When the deferrals pack is on, **R4** `final_consolidate.py --check` also fails while a must-fix is open.
-   Repeat the fix round and `/pr-review-update` until R4 passes. R4 holds only when a round changes nothing. The
-   fix loop has no retry count: a round that closes one row is progress. Record `--hard-stop retries` only when
-   R4 or `review_fix_rounds` says so. When `/pr-review-update` adds a row under `## Review deferrals`, run P8 and
-   send the `/deferral-review <manifest>` that it names.
+The review round runs the reviewers of one HEAD in parallel, and one fix round answers all of them:
+
+1. Run `python3 "$C/review_round.py" --round pr`. The members of the round are the rows of `stages.json` whose
+   `review_round.round` is `pr` (E3, R1, R2 and R3 with all packs on). It runs the script members and prints
+   `NEXT: send these peers in one message, in parallel: ...`: send each peer (**R1** `/pr-review-local <N>`,
+   **R2** `/test-benchmark <N>`) as its own Agent call, all in one message. Each reads only the draft-PR record
+   and writes its must-fix rows to the findings ledger. Run the round again until it passes, or names the fix round.
+2. When R1, R2 or R3 left a must-fix, send one `/spec-driven --fix <review>`. It fixes each open must-fix row of
+   the ledger, from each reviewer, and each `offenders` entry of the R3 record, with the `bugs` (ruff) and
+   `types` (mypy) findings. A must-fix is fixed in this PR. Do not send one fix round for each reviewer.
+3. After the fix round, send `/pr-review-update <N>` and, only when R2 had a must-fix or the fix round changed a
+   test file, `/test-benchmark <N>` again, in one message. Then run R3 again. The pass of a reviewer that had no
+   must-fix stands. **R1** `pr_review_local_gate.py --check` fails while the newest PR review does not cite HEAD.
+4. When the deferrals pack is on, **R4** `final_consolidate.py --check` fails while a must-fix is open. Repeat
+   steps 2 and 3 until R4 passes. R4 holds only when a round changes nothing. The fix loop has no retry count:
+   a round that closes one row is progress. Record `--hard-stop retries` only when R4 or `review_fix_rounds`
+   says so. When `/pr-review-update` adds a row under `## Review deferrals`, run P8 and send the
+   `/deferral-review <manifest>` that it names.
+5. The orchestrator does not merge the reports: the ledger is the join, and each peer writes its own rows.
 6. Run **R5** `closure.py`. It runs the repository's own checks, and a failing check becomes a must-fix: send the fix round again. Then run **R6** `guard_gh_pr_comment.py`: it writes the comment from the ledger and prints the `gh pr comment` command. Run that command. Then run **R7** deactivate: it names the `/session-summary <manifest>` peer to send first.
 
 ## Anti-patterns (pointers)

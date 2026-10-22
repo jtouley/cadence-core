@@ -9,6 +9,11 @@
   implementer records the defect with a repro, the plan peer fixes that one check
   (`/plan-update <plan> --acceptance AC-n`), and `acceptance.py repin` logs the old and the new text for R1.
   This is the one plan change after P9.
+- The PR review round. `review_round.py --round pr` runs the script members of the round (E3, R3) and
+  names the peers (R1, R2) to send in one message. One fix round then answers the must-fix rows of every
+  reviewer. A peer that reviewed this HEAD and still fails goes to the fix round, not back to review, and
+  an open acceptance defect is sent to the plan peer first. The members are the rows of `stages.json`
+  with `review_round`, so a pack row joins a round with no code change.
 - On Cursor, the Task hook writes one history line for each peer call it allows, so the P3 and P6 cycle
   limits stop the loop there too. Before, only a Claude Code run counted its cycles.
 - The repo map. A5, P1, P3, P6, E1 and R1 get `.context/repo-map/<tree>.md` in their packets: the
