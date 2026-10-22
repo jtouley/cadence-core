@@ -14,8 +14,8 @@ from conftest import (PROBE_PLAN, assert_decision, hook_session, p9_marker, prob
 HOSTS = ["claude", "cursor"]
 FROZEN = ("BLOCKED: the plan is frozen while the P9 marker exists (.context/gates/entry-invariant.ok). "
           "A plan change in execution is a new review cycle.")
-ACTION = ("ACTION: do not edit the plan. Return the defect in your artifact; the run goes on with the frozen plan "
-          "and without a person (SKILL.md step 3)")
+ACTION = ("ACTION: do not edit the plan. After P9 the one plan change is `/plan-update <plan> --acceptance AC-n`. "
+          "Return the defect in your artifact; the run goes on without a person (SKILL.md step 3)")
 
 
 @pytest.mark.parametrize("host", HOSTS)

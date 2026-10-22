@@ -21,7 +21,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import (HOOKS_DIR, clean_env, code_paths, commit_file, context_ignored_repo, enable_all_packs, git, head_sha, hook_denied, pr_review, run_py, save_worktree_session, shell_call)
+from conftest import (HOOKS_DIR, clean_env, code_paths, commit_file, context_ignored_repo, enable_all_packs, git,
+                      head_sha, hook_denied, pr_review, run_py, save_worktree_session, shell_call, passing_acceptance)
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(HOOKS_DIR))
@@ -535,6 +536,7 @@ def test_a_comment_and_a_create_segment_each_need_their_own_pass(tmp_path):
 def test_closure_writes_the_breadcrumb_that_the_guard_reads(tmp_path, flag):
     repo = _repo(tmp_path / "r")
     _session(repo)
+    passing_acceptance(repo / ".context", repo)
     done = run_py(ROOT / "scripts" / "closure.py", *flag, cwd=repo)
     assert done.returncode == 0, done.stderr
     crumb = repo / ".context" / "gates" / f"closure-{RUN}.json"

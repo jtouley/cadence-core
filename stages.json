@@ -67,7 +67,8 @@
         "vibe-test"
       ],
       "inputs": [
-        "ticket"
+        "ticket",
+        "request"
       ]
     },
     {
@@ -113,7 +114,8 @@
       "inputs": [
         "plan",
         "plan-review-previous",
-        "vibetest"
+        "vibetest",
+        "acceptance"
       ],
       "review_round": {
         "round": "plan",
@@ -170,7 +172,9 @@
         "plan-gate"
       ],
       "inputs": [
-        "plan"
+        "plan",
+        "request",
+        "acceptance"
       ],
       "review_round": {
         "round": "plan",
@@ -230,7 +234,8 @@
       "pack": "core",
       "description": "TDD implementation with red-green-refactor loop",
       "inputs": [
-        "plan"
+        "plan",
+        "acceptance"
       ]
     },
     {
@@ -282,7 +287,10 @@
         "pr-review-update"
       ],
       "inputs": [
-        "pr-number"
+        "pr-number",
+        "request",
+        "acceptance",
+        "acceptance-repair"
       ]
     },
     {

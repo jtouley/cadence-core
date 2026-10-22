@@ -31,7 +31,7 @@ OK    P3  plan-review
 OK    P4  plan-update
 OK    P9  entry-invariant
 FAIL  E1  implement
-        - implement-gate: no commits since main. Implement the plan and commit
+        - implement-gate: acceptance: AC-1 failed (exit 1). Claim: subtract(a, b) returns a - b. Output:   File "<sandbox>/toy/acceptance/check_subtract.py", line 3, in <module> |     from toy_pkg.core import subtract | ImportError: cannot import name 'subtract' from 'toy_pkg.core' (<sandbox>/toy/src/toy_pkg/core.py). If no code can pass the check as it is, write a script that shows it and record the defect: python3 "$CADENCE_HOME/scripts/acceptance.py" defect --id AC-1 --repro "python3 acceptance/repro_AC-1.py" --why "<reason>"
   Task '/spec-driven cd-12'                    allow
   Edit src/toy_pkg/core.py                     allow
   committed: feat: subtract()

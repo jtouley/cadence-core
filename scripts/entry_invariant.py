@@ -18,6 +18,8 @@ from artifact_requirements import (  # noqa: E402
     plan_changed_after_review,
     write_entry_invariant_ok,
 )
+from acceptance import pin as pin_acceptance  # noqa: E402
+from acceptance import problems as acceptance_problems  # noqa: E402
 from gate_common import ctx, fail, ok  # noqa: E402
 from load_stages import SKILL_ROOT, load_registry, stage_slugs, stages_by_phase  # noqa: E402
 from pack_loader import gate_errors, phase_packs  # noqa: E402
@@ -64,6 +66,7 @@ def check_execution_entry(
 
     errors.extend(check_required_before_execution(context_dir, worktree=wt, on=_rows_on(root, wt, errors)))
     errors.extend(plan_changed_after_review(context_dir, session=run_for(context_dir, cwd=wt)))
+    errors.extend(acceptance_problems(context_dir, worktree=wt))  # P9 pins these checks; R5 runs them
 
     # The planning gate of each pack that `packs` of the resolved config turns on.
     packs, load_errors = phase_packs(root, "planning", wt)
@@ -103,6 +106,10 @@ def main() -> int:
     if session is None:
         clear_entry_invariant_ok(context_dir, run_id)
         return fail("entry-invariant", ["entry-invariant: session vanished after check"])
+    pin_errors = pin_acceptance(context_dir, Path.cwd(), session)
+    if pin_errors:
+        clear_entry_invariant_ok(context_dir, run_id)
+        return fail("entry-invariant", pin_errors)
     write_entry_invariant_ok(
         context_dir,
         pipeline_run_id=str(session.get("pipeline_run_id") or ""),

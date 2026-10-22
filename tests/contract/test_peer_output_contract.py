@@ -27,7 +27,7 @@ SUPPORTING_BLOCKS = {"/pr-review-update": "R4", "/session-summary": "R7", "/defe
 # rows of DOC.
 REQUIRED: dict[str, list[str | tuple[str, str]]] = {
     "A5": ["vibetest/", "RUN_BY_SKILL: vibe-test", "**Tracker:**", "**Ticket:**", "TICKET_SKIPPED", "**Linear:**"],
-    "P1": ["RUN_BY_COMMAND: plan-create", ".plan.md", "### Phase N:"],
+    "P1": ["RUN_BY_COMMAND: plan-create", ".plan.md", "### Phase N:", "acceptance/<task_id>.json"],
     "P3": ["RUN_BY_COMMAND: plan-review", "reviews/plan_", "Verdict:", "READY TO EXECUTE", "READY WITH CHANGES",
            "NOT READY", "## Must-fix items", "MF-"],
     "P4": ["RUN_BY_COMMAND: plan-update", "## Revision ledger (review", "not changed: <reason>",
@@ -37,7 +37,7 @@ REQUIRED: dict[str, list[str | tuple[str, str]]] = {
            "## Blocking issues", "## Conditions", ("### B-n.", "### B-<n>."), ("### C-n.", "### C-<n>."),
            "Verdict:", "APPROVE WITH CONDITIONS"],
     "P7": ['"RUN_BY_SKILL": "test-benchmark"', ("{task_id}_plan.json", "<task_id>_plan.json")],
-    "E1": ["phase N:", "author time"],
+    "E1": ["phase N:", "phase N: red"],
     "E4": ["RUN_BY_COMMAND: commit-push-pr", "prs/draft-pr-<pipeline_run_id>.md",
            ("https://github.com/", "https://github\\.com/"), "Branch:"],
     "R1": ["RUN_BY_COMMAND: pr-review-local", ("PR_REVIEW_#{N}.md", "PR_REVIEW_#<n>.md"), "Last reviewed commit:",

@@ -1,7 +1,8 @@
 """A run has no person in the loop, after P9 and at a hard stop too.
 
 Runs stopped, or ended with a choice for the user, where a contract or a hook told the orchestrator to
-stop and tell the user. A change after P9 is logged and the run goes on with the frozen plan. This pins that wording, so a later edit cannot bring the stop back.
+stop and tell the user. The one plan change after P9 is the acceptance repair; any other change is logged
+and the run goes on. This pins that wording, so a later edit cannot bring the stop back.
 """
 
 from __future__ import annotations
@@ -32,9 +33,10 @@ def test_no_contract_tells_the_run_to_stop_for_a_person(rel):
     assert not STOPS.search(_text(rel)), STOPS.search(_text(rel))
 
 
-def test_skill_md_goes_on_with_the_frozen_plan_and_asks_no_question_at_the_end():
+def test_skill_md_names_the_one_plan_change_after_p9_and_no_question_at_the_end():
     text = _text("SKILL.md")
     assert "go on with the frozen plan" in text
+    assert "One plan change after P9 is part of the run: when a gate names `/plan-update <plan> --acceptance AC-n`" in text
     assert "Do not stop to ask the user." in text
     assert "It asks the user no question and offers no choice" in text
 
@@ -45,6 +47,7 @@ def test_p1_writes_the_plan_on_a_blocking_gap_and_a_request_that_contradicts_its
     assert "the item stays in this change: plan it in a phase, and put the deferral under `## Deferrals rejected`" in text
 
 
-def test_the_plan_freeze_names_no_person():
+def test_the_plan_freeze_names_the_acceptance_repair_and_no_person():
+    assert "--acceptance AC-n" in PLAN_FROZEN_ACTION
     assert "without a person" in PLAN_FROZEN_ACTION
     assert "the user" not in PLAN_FROZEN_ACTION

@@ -697,8 +697,8 @@ def protected_shell_mention(command: str) -> Optional[str]:
 # The plan freeze after P9: the two places commands/plan-review.md resolves a plan. While the run's
 # P9 marker exists, a write there is denied: a plan change in execution is a new review cycle.
 PLAN_DIRS = (".cursor/plans", ".context/plans")
-PLAN_FROZEN_ACTION = ("do not edit the plan. Return the defect in your artifact; the run goes on with the frozen plan "
-                      "and without a person (SKILL.md step 3)")
+PLAN_FROZEN_ACTION = ("do not edit the plan. After P9 the one plan change is `/plan-update <plan> --acceptance AC-n`. "
+                      "Return the defect in your artifact; the run goes on without a person (SKILL.md step 3)")
 
 
 def plan_document(target_file: Optional[str], workspace: Path) -> Optional[str]:

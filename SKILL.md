@@ -49,8 +49,10 @@ A recoverable gate failure is not a stop condition. Do these steps:
 
 1. Classify the failure.
 2. Log it in the ticket or in `.context/issues/`.
-3. If the scope or the tests change before P9, run `/plan-update`. After P9 the plan is frozen. Log a change of
-   scope after P9 in `.context/issues/` as a follow-up, and go on with the frozen plan. Do not stop to ask the user.
+3. If the scope or the tests change before P9, run `/plan-update`. After P9 the plan is frozen. One plan change
+   after P9 is part of the run: when a gate names `/plan-update <plan> --acceptance AC-n`, send it, then the
+   repin that the gate names. Log any other change of scope after P9 in `.context/issues/` as a follow-up, and
+   go on with the frozen plan. Do not stop to ask the user.
 4. Run the gate again.
 
 Stop only for destructive risk, missing credentials with no fallback, a security or data-safety risk, or no retries left.

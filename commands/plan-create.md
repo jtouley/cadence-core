@@ -31,6 +31,9 @@ RUN_BY_COMMAND: plan-create
    quality-gate commands from the repo (do not invent make targets).
    Give each phase a header in this form: `### Phase N: <title>`.
    These headers are the E1 task list. The E1 gate fails when the plan has none.
+   Each phase holds its own failing test and the code that makes that test pass. E1 commits each
+   phase red, then green, and runs the phase's test at both commits. Do not write a phase of tests
+   alone: a phase whose tests need the code of a later phase can never be green, and E1 stops on it.
 4. Add a `## Reuse and extension` section (`core:dry-extension`).
    Name the existing helpers and modules that the plan reuses.
    Name the extension point that the plan adds or uses.
@@ -84,7 +87,34 @@ RUN_BY_COMMAND: plan-create
    With the adapter `none`, also write the follow-up ticket as a `LOCAL-<n>` section in
    `.context/issues/<task_id>.md`. An item that the request asks for is not deferred: put it under
    `## Deferrals rejected` with its request trace, and plan it in a phase.
-8. Footer: next step is `/plan-review <plan>`. Do not tell the user to
+8. Write the acceptance checks: `.context/acceptance/<task_id>.json`. P1 fails without them.
+   Each check proves one outcome that the request asks for. The packet pins the request when
+   activation saved it (`.context/proposals/<task_id>.md`):
+
+   ```json
+   {"RUN_BY_COMMAND": "plan-create", "task_id": "<task_id>",
+    "checks": [{"id": "AC-1", "claim": "<the words of the request that it proves>",
+                "run": "python3 acceptance/check_marts.py"}]}
+   ```
+
+   - A check runs in the worktree and reads the delivered files, not the diff. Write it from the
+     request, not from the plan. A check that runs a unit test of a helper proves nothing about the
+     request.
+   - `run` names a test runner or a script path. `true`, `:` and `manual` do not count.
+   - Write a check script outside the gated prefixes (for example `acceptance/`), so P1 can write it.
+     Commit it (`test: acceptance checks of the request`): A2 needs a clean tree, and the PR then holds
+     the checks that the reviewer runs. The P1 gate fails while a script is not committed, and it gives
+     the command.
+   - Write one script for each check. Do not let two checks name one script: a repin of one check may
+     change only its own script. P1 and P9 fail on a script that two checks name.
+   - A check of a printed value makes the expected text from its own input (the rows that it writes).
+     It compares the whole line or the whole file, not a pattern or a digit. A pattern passes code that
+     prints a fixed value. In four live runs, the check of "prints the row count" was weak in this way.
+   - A claim about bytes (line ends, an encoding) reads the output in binary mode. In text mode,
+     Python changes `\r\n` to `\n`, and then no code can pass the check.
+   - P9 pins the file and each script that a check names. E1 runs each check when the last phase is
+     done, and R5 runs them again at HEAD. A change after P9 is a new plan review.
+9. Footer: next step is `/plan-review <plan>`. Do not tell the user to
    `/plan-update` before a review file exists.
 
 Chat close is C.O.R.E. First action: `/plan-review`. When a Cadence run delegates this peer, replace the C.O.R.E. close with the one-line return in `peer-contract.md`.

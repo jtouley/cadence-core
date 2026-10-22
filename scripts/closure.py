@@ -83,6 +83,9 @@ def main() -> int:
     scope = ledger_scope(load_findings(ledger), ctx(), cwd=Path.cwd())
     summary = {**scope_summary(scope, blocks_closure), "manually_confirmed": manually_confirmed(scope["rows"])}
     errors = closure_errors(scope["rows"], ledger) + checks
+    from acceptance import verify as verify_acceptance
+
+    errors += verify_acceptance(ctx(), Path.cwd())  # the delivered files meet the request
     stream = sys.stderr if errors else sys.stdout
     for row in summary["manually_confirmed"]:
         print(f"MANUAL  {row['id']} confirmed by {row['confirmed_by']} at {row['confirmed_at']}", file=stream)

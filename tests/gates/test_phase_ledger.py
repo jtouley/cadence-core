@@ -1,8 +1,13 @@
 """E1 runs the plan's phases as the task list (ported from ship-feature stage4_phase_state).
 
 A phase is done when a commit since the base names it: the subject starts with "phase N" after an optional conventional prefix.
+A `phase N: red ...` commit holds the failing test of the phase; it does not finish the phase.
 E1 passes only when every plan phase is done, or, for a plan with no phases, when
 at least one commit exists since the base. The stop guard names the next phase.
+
+Each phase also has red-before-green evidence. The check of the phase fails at its red
+commit and passes at its green commit, in a clean checkout of each. The one-second author-time
+check went away: commits one second apart from a finished tree passed it.
 """
 
 from __future__ import annotations
@@ -14,12 +19,13 @@ from pathlib import Path
 
 import pytest
 
-from conftest import commit_file, git, make_session, pushed_repo, run_py
+from conftest import commit_file, git, make_session, passing_acceptance, pushed_repo, run_py
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from artifact_requirements import write_entry_invariant_ok  # noqa: E402
+import phase_evidence  # noqa: E402
 from phase_ledger import assess, parse_phases, resolve_base  # noqa: E402
 
 PLAN = """RUN_BY_COMMAND: plan-create
@@ -39,10 +45,20 @@ def _commit(repo: Path, name: str, subject: str, when: str | None = None) -> Non
     commit_file(repo, subject, name, subject + "\n", **env)
 
 
-def _phase_commits(repo: Path, *, same_time: bool = False, count: int = 3) -> None:
-    """Commit phases 1..count, each at its own minute unless `same_time` (one shell)."""
-    for n, name in list(((1, "parser"), (2, "wiring"), (3, "docs")))[:count]:
-        _commit(repo, f"p{n}.py", f"feat: phase {n} {name}", f"2030-01-01T00:{0 if same_time else n:02d}:00+00:00")
+NAMES = ((1, "parser"), (2, "wiring"), (3, "docs"))
+
+
+def _phase_commits(repo: Path, *, count: int = 3, evidence: bool = True, same_time: bool = False) -> None:
+    """For each phase: a red commit with a check that fails, a green commit that makes it pass, the record."""
+    for n, name in NAMES[:count]:
+        when = f"2030-01-01T00:{0 if same_time else n:02d}:00+00:00"
+        _commit(repo, f"check_p{n}.py", f"test: phase {n}: red {name}", when)
+        (repo / f"check_p{n}.py").write_text(f"import p{n}\n", encoding="utf-8")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-q", "--amend", "--no-edit", GIT_COMMITTER_DATE=when, GIT_AUTHOR_DATE=when)
+        commit_file(repo, f"feat: phase {n} {name}", f"p{n}.py", "", GIT_COMMITTER_DATE=when, GIT_AUTHOR_DATE=when)
+        if evidence:
+            assert phase_evidence.record(repo / ".context", n, run=f"python3 check_p{n}.py") == []
 
 
 @pytest.fixture
@@ -55,6 +71,7 @@ def run_repo(tmp_path):
     (ctx / "plans").mkdir(parents=True)
     (ctx / "plans" / "gh-1_x.plan.md").write_text(PLAN, encoding="utf-8")
     write_entry_invariant_ok(ctx, pipeline_run_id="run-1", task_id="gh-1", written_at="t")
+    passing_acceptance(ctx, repo)  # : P9 pins the checks, and E1 runs them
     return repo
 
 
@@ -91,30 +108,94 @@ def test_implement_gate_passes_when_every_phase_is_committed(run_repo):
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
-def test_implement_gate_fails_when_phase_commits_share_one_timestamp(run_repo):
-    """Nine phase commits with one timestamp were written in one shell, not phase by phase."""
+def test_phase_commits_with_one_timestamp_pass_when_each_red_commit_fails(run_repo):
+    """The time of a commit proves nothing. The evidence is what the check does at each commit."""
     _phase_commits(run_repo, same_time=True)
     proc = _implement_gate(run_repo)
-    assert proc.returncode == 1
-    assert "one shell, not phased work" in proc.stdout + proc.stderr
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_a_phase_with_no_check_record_fails(run_repo):
+    _phase_commits(run_repo, evidence=False)
+    proc = _implement_gate(run_repo)
+    assert proc.returncode == 1 and "phase 1" in proc.stdout + proc.stderr and "phase_evidence.py" in proc.stdout + proc.stderr
+
+
+def test_a_phase_with_no_red_commit_fails(run_repo):
+    for n, name in NAMES:
+        _commit(run_repo, f"p{n}.py", f"feat: phase {n} {name}")
+        (run_repo / f"check_p{n}.py").write_text(f"import p{n}\n", encoding="utf-8")
+        git(run_repo, "add", "-A")
+        git(run_repo, "commit", "-q", "--amend", "--no-edit")
+        assert phase_evidence.record(run_repo / ".context", n, run=f"python3 check_p{n}.py") == []
+    out = _implement_gate(run_repo)
+    assert out.returncode == 1 and "red" in out.stdout + out.stderr
+
+
+def test_a_red_commit_from_a_finished_tree_fails(run_repo):
+    """The shape of the benchmark run: the code was written first, then split into phase commits."""
+    for n, name in NAMES:
+        (run_repo / f"p{n}.py").write_text("", encoding="utf-8")
+    for n, name in NAMES:
+        (run_repo / f"check_p{n}.py").write_text(f"import p{n}\n", encoding="utf-8")
+        git(run_repo, "add", "-A")
+        git(run_repo, "commit", "-q", "-m", f"test: phase {n}: red {name}")
+        _commit(run_repo, f"n{n}.txt", f"feat: phase {n} {name}")
+        assert phase_evidence.record(run_repo / ".context", n, run=f"python3 check_p{n}.py") == []
+    proc = _implement_gate(run_repo)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 1 and "passes at its red commit" in out
+
+
+def test_a_green_commit_where_the_check_fails_fails(run_repo):
+    _phase_commits(run_repo)
+    (run_repo / "p3.py").unlink()
+    _commit(run_repo, "x.txt", "feat: phase 3 docs again")
+    proc = _implement_gate(run_repo)
+    assert proc.returncode == 1 and "fails at its green commit" in proc.stdout + proc.stderr
+
+
+def test_a_phase_with_no_code_records_a_reason(run_repo):
+    _phase_commits(run_repo, count=2)
+    _commit(run_repo, "README.md", "docs: phase 3 docs")
+    assert phase_evidence.record(run_repo / ".context", 3, none="the phase changes the README only") == []
+    proc = _implement_gate(run_repo)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "phase 3 has no check: the phase changes the README only" in proc.stdout + proc.stderr
+
+
+def test_a_phase_that_pins_working_behavior_records_a_reason(run_repo):
+    """Live run y1 stopped at the E1 gate: its last phase added a test that pins the totals output, which
+    already worked, so the phase could not be red. The gate names the --none record, which clears it."""
+    _phase_commits(run_repo, count=2)
+    commit_file(run_repo, "test: phase 3 pin the totals output", "check_p3.py", "import p1\n")
+    assert phase_evidence.record(run_repo / ".context", 3, run="python3 check_p3.py") == []
+    proc = _implement_gate(run_repo)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode == 1 and "no red commit" in out and "--phase 3 --none" in out
+    assert phase_evidence.record(run_repo / ".context", 3, none="pins the totals output; no code") == []
+    assert _implement_gate(run_repo).returncode == 0
+
+
+@pytest.mark.parametrize("kwargs, needle", [
+    ({"run": "true"}, "no-op"), ({"none": ""}, "reason"), ({}, "give --run"),
+])
+def test_a_record_that_proves_nothing_is_refused(run_repo, kwargs, needle):
+    errors = phase_evidence.record(run_repo / ".context", 1, **kwargs)
+    assert errors and needle in errors[0]
 
 
 def test_a_rebased_phased_branch_passes(run_repo):
-    """A rebase gives every commit one committer time. The author time stays, so the branch passes."""
+    """The evidence names phases, not shas, so a rebase keeps it."""
     _phase_commits(run_repo)
     git(run_repo, "rebase", "-q", "--force-rebase", "origin/main", GIT_COMMITTER_DATE="2031-01-01T00:00:00+00:00")
-    times = git(run_repo, "log", "origin/main..HEAD", "--format=%ct").split()
-    assert len(set(times)) == 1  # the trap is set
     proc = _implement_gate(run_repo)
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
-def test_a_plan_of_two_phases_may_share_one_timestamp(run_repo):
-    plan = run_repo / ".context" / "plans" / "gh-1_x.plan.md"
-    plan.write_text(PLAN.replace("### Phase 3: docs\n", ""), encoding="utf-8")
-    _phase_commits(run_repo, same_time=True, count=2)
-    proc = _implement_gate(run_repo)
-    assert proc.returncode == 0, proc.stdout + proc.stderr
+def test_a_red_commit_does_not_finish_its_phase(run_repo):
+    _commit(run_repo, "check_p1.py", "test: phase 1: red parser")
+    assert assess(run_repo / ".context", run_repo)["completed"] == []
 
 
 def test_next_phase_is_the_first_phase_with_no_commit(run_repo):

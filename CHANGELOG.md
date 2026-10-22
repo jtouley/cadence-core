@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Acceptance checks. P1 writes `.context/acceptance/<task_id>.json`: one check for each outcome that the
+  request asks for, each with its own committed script. P9 pins the checks, E1 runs them when the last
+  phase is done (E1.5), and R5 runs them again at HEAD. P3, P6, E1 and R1 get the checks in their
+  packets, and P6 and R1 also get the request. When no code can pass a check as it is written, the
+  implementer records the defect with a repro, the plan peer fixes that one check
+  (`/plan-update <plan> --acceptance AC-n`), and `acceptance.py repin` logs the old and the new text for R1.
+  This is the one plan change after P9.
+- Each phase is committed red, then green. `phase_evidence.py record` stores the test command of a phase,
+  and the E1 gate runs it in a clean checkout of each commit: it must fail at the `phase N: red` commit and
+  pass at the green one. This replaces the check of commit times, which commits one second apart passed.
 - The plan is reviewed once. `plan_review_cycles` and `adversarial_cycles` default to 1, and a config layer
   may raise them (`x-cadence-stricter: higher`): a raise only adds review. Live runs of one request compared
   no plan review, one plan round and up to four. The code after no plan review and after one round passed

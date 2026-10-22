@@ -29,6 +29,7 @@ REQUEST = ".context/proposals/gh-1.md"
 VIBE = ".context/vibetest/gh-1_2026-10-21.md"
 REPORT = ".context/adversarial/adversarial_feature.md"
 SCORECARD = ".context/benchmarks/gh-1_plan.json"
+CHECKS = ".context/acceptance/gh-1.json"
 FILES = {
     "review": {REVIEW: "RUN_BY_COMMAND: plan-review\nTicket: gh-1\nVerdict: READY WITH CHANGES\n"},
     "record": {RECORD: "Branch: feature/gh-1-x\nPR: https://github.com/o/r/pull/42\n"},
@@ -38,6 +39,8 @@ FILES = {
                   PR_REVIEW: "RUN_BY_COMMAND: pr-review-local\nVerdict: NO MERGE\n"},
     "failing-card": {SCORECARD: '{"RUN_BY_SKILL": "test-benchmark", "verdict": "FAIL"}\n'},
     "passing-card": {SCORECARD: '{"RUN_BY_SKILL": "test-benchmark", "verdict": "PASS"}\n'},
+    "checks": {CHECKS: '{"RUN_BY_COMMAND": "plan-create", "checks": []}\n'},
+    "request": {REQUEST: "# Request: gh-1\n\nAnything downstream reads only out/marts/.\n"},
     "report": {REPORT: "RUN_BY_SKILL: de-adversarial-reviewer\nMode: plan-gate\nTicket: gh-1\n\n"
                        "Verdict: REQUEST CHANGES\n"},
 }
@@ -89,6 +92,13 @@ ROWS = [
     pytest.param("R2", ("record",), "/test-benchmark 42", (RECORD,), id="R2-pr-number"),
     pytest.param("R4", ("record",), "/pr-review-update 42", (RECORD,), id="R4-pr-number"),
     pytest.param("RF", ("pr-review",), f"/spec-driven --fix {PR_REVIEW}", (PR_REVIEW,), id="RF-fix-round-pr-review"),
+    pytest.param("A5", ("request",), "/vibe-test gh-1", (REQUEST,), id="A5-request"),
+    pytest.param("P3", ("checks",), f"/plan-review {PLAN}", (PLAN, CHECKS), id="P3-plan-and-checks"),
+    pytest.param("P6", ("request", "checks"), f"/de-adversarial-reviewer plan-gate {PLAN}", (PLAN, REQUEST, CHECKS),
+                 id="P6-plan-request-checks"),
+    pytest.param("E1", ("checks",), f"/spec-driven {PLAN}", (PLAN, CHECKS), id="E1-plan-and-checks"),
+    pytest.param("R1", ("record", "request", "checks"), "/pr-review-local 42", (RECORD, REQUEST, CHECKS),
+                 id="R1-pr-request-checks"),
 ]
 
 
@@ -191,6 +201,20 @@ def test_a_lean_prompt_is_rewritten_to_the_rendered_packet_on_claude_code(call, 
         f"Input: {PLAN} sha256 {pin['sha256']}",
         f"Packet sha256: {handoff.packet_sha(packet)}",
     ]
+
+
+def test_the_acceptance_repair_keeps_its_command_and_pins_the_check_and_its_defect(call, repo):
+    """E1 sent `/plan-update <plan> --acceptance AC-4`, and the hook rewrote it each time to the round's P4
+    packet (`--from-review round-1.md`), so the check was never repaired."""
+    repair = ".context/acceptance/gh-1.repair.jsonl"
+    write_files(repo, {**FILES["checks"], **FILES["review"], repair: '{"kind": "defect", "id": "AC-1"}\n'})
+    code, out, err = call(f"/plan-update {PLAN} --acceptance AC-1", packet=False, mode="enforce")
+    assert code == 0, err
+    sent = out["hookSpecificOutput"]["updatedInput"]["prompt"].splitlines()
+    assert sent[0] == f"/plan-update {PLAN} --acceptance AC-1"
+    assert [line.split(" sha256 ")[0] for line in sent if line.startswith("Input: ")] == [
+        f"Input: {PLAN}", f"Input: {CHECKS}", f"Input: {repair}"]
+    assert handoff_inputs.acceptance_repair_id(f"/plan-update {PLAN} --from-review {REVIEW}") is None
 
 
 def test_a_fat_prompt_is_rewritten_on_claude_code(call, repo):

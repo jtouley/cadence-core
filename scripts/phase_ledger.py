@@ -6,9 +6,9 @@ since the base names it: the subject starts with "phase N", after an optional
 conventional prefix (`feat(x): phase 2 ...`). The E1 gate and the stop
 guard read `assess()`, so the agent is told the next concrete phase, and E1
 does not pass while a phase is open. The stop guard holds an open E1 with
-`next_phase()`. In a plan of three or more phases, two phase commits
-with one author time (to the second) were written in one shell: E1 fails. A rebase
-keeps the author time, so a phased branch passes after a rebase.
+`next_phase()`. A `phase N: red ...` commit holds the failing test of the
+phase and does not finish it. The red-before-green evidence of each phase is in
+scripts/phase_evidence.py.
 
     python3 phase_ledger.py --json     # state for the active run
 """
@@ -19,7 +19,6 @@ import json
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 _SCRIPTS = Path(__file__).resolve().parent
@@ -33,7 +32,6 @@ PHASE_HEADER = re.compile(r"^#{2,4}\s+Phase\s+(\d+)\b[ \t]*[:.\-–—]?[ \t]*(.
 # `phase 2 ...`, `feat(x): phase 2 ...`, `phase 2: ...`. Not `docs: a note on phase 2`.
 PHASE_COMMIT = re.compile(r"^(?:\[[^\]]*\]\s*)?(?:(?:fixup|squash)!\s*)?(?:\w+(?:\([^)]*\))?!?:\s*)?phase[\s_-]*(\d+)\b",
                           re.I)
-ONE_SHELL_MIN_PHASES = 3
 PLAN_MARKERS = ("RUN_BY_COMMAND: plan-create", "RUN_BY_SKILL: plan-create")
 BASE_CHAIN = ("origin/HEAD", "origin/main", "origin/master", "main", "master")
 
@@ -185,9 +183,11 @@ def revert_depth(subject: str) -> int:
 
 def done_phases(subjects: list[str]) -> set[int]:
     """The phase numbers that the subjects (newest first) complete."""
+    from phase_evidence import is_red
+
     done: set[int] = set()
     for subject in reversed(subjects):  # oldest first, so a later revert undoes the phase
-        number = phase_of(subject)
+        number = phase_of(subject) if not is_red(_inner(subject)) else None
         numbers = {number} if number is not None else set()
         if revert_depth(subject) % 2:
             done -= numbers
@@ -209,18 +209,6 @@ def next_phase(plan: Path, worktree: Path, session: dict | None = None) -> tuple
     return next(((n, title) for n, title in phases if n not in done), None)
 
 
-def one_shell(log: list[tuple[int, str]]) -> tuple[str, str, int] | None:
-    """(older, newer) phase commits (not reverts) with one author time, and that time; else None."""
-    seen: dict[int, str] = {}
-    for when, subject in log:
-        if phase_of(subject) is None or revert_depth(subject) % 2:
-            continue
-        if when in seen:
-            return subject, seen[when], when
-        seen[when] = subject
-    return None
-
-
 def assess(context_dir: Path, worktree: Path) -> dict:
     """Where E1 stands: phases, completed, next, commits since base, phase commits with one time."""
     session = worktree_run_session(Path(context_dir), Path(worktree)) or {}
@@ -236,7 +224,6 @@ def assess(context_dir: Path, worktree: Path) -> dict:
         "completed": [n for n, _ in phases if n in done],
         "next": next(((n, title) for n, title in phases if n not in done), None),
         "commits": len(log),
-        "one_shell": one_shell(log) if len(phases) >= ONE_SHELL_MIN_PHASES else None,
     }
 
 
@@ -251,7 +238,7 @@ def open_work(state: dict) -> str | None:
         )
     if state["phases"]:
         if state["next"] is None:
-            return _one_shell_text(state)
+            return None  # every phase has a green commit; implement_gate.py then reads the evidence
         n, title = state["next"]
         total = len(state["phases"])
         return (
@@ -262,19 +249,6 @@ def open_work(state: dict) -> str | None:
     if state["commits"] == 0:
         return f"no commits since {state['base']}. Implement the plan and commit"
     return None
-
-
-def _one_shell_text(state: dict) -> str | None:
-    if not state.get("one_shell"):
-        return None
-    older, newer, when = state["one_shell"]
-    stamp = datetime.fromtimestamp(when, timezone.utc).isoformat()
-    return (
-        f"the phase commits '{older}' and '{newer}' have the same author time ({stamp}). "
-        f"In a plan of {len(state['phases'])} phases, that is one shell, not phased work. "
-        f"Implement, test and commit each phase in its own step. To start again, run `git reset {state['base']}` "
-        "and commit each phase after its tests pass, or stop and tell the user"
-    )
 
 
 def main() -> int:

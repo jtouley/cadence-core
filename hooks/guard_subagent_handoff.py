@@ -137,7 +137,7 @@ def pre_agent(
 
     run = handoff_inputs.Run(root=root, ctx=ctx, workspace=Path.cwd() if workspace is None else workspace,
                              session=session)
-    packet, reasons = handoff_inputs.packet_for(block, run)
+    packet, reasons = handoff_inputs.packet_for(block, run, acceptance=handoff_inputs.acceptance_repair_id(prompt))
     rendered = ""
     if packet is not None:
         reasons += handoff.verify_packet(packet, run.workspace, root, ctx)

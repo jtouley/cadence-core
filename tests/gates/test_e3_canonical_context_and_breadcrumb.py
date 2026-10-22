@@ -20,7 +20,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import (clean_env, enable_all_packs, git, head_sha, hook_denied, ledger_row, linked_worktrees, save_worktree_session, shell_call, write_ledger)
+from conftest import (clean_env, enable_all_packs, git, head_sha, hook_denied, ledger_row, linked_worktrees,
+                      passing_acceptance, save_worktree_session, shell_call, write_ledger)
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -62,7 +63,7 @@ class Fixture:
             self.primary, trees = linked_worktrees(root, (name,))
             self.wt = trees[name]
         self.context = self.primary / ".context"
-        self.run = run
+        self.run, self.task = run, task
         (self.wt / ".context").mkdir()
         (self.wt / ".context" / "manifest.json").write_text("{}\n", encoding="utf-8")
         self.plan = self.context / "plans" / f"x_{task}.plan.md"
@@ -233,6 +234,7 @@ def test_supersede_closes_this_stages_own_must_fix(tmp_path):
     [row] = [r for r in fx.rows() if r["rule_ref"] == "core:plan-conformance"]
     assert row["status"] == "verified" and row["verified_at"] and row["verification_exit_code"] == 0
     assert row["note"].startswith(f"superseded by E3 pass at {fx.head}")
+    passing_acceptance(fx.context, fx.wt, fx.task)  # R5 also runs the checks of the run
     closure = _run([sys.executable, str(ROOT / "scripts" / "closure.py"), "--check"], fx.wt)
     assert closure.returncode == 0, closure.stderr
     assert consolidate(fx.context / "findings.jsonl")["close_pass"]["open_must_fix"] == []

@@ -75,6 +75,9 @@ Write one row for each `MF-n` of the previous review:
   must-fix item: E1 cannot commit it green
 - Weakened assertions or partial-success tests
 - Rollback / blast radius
+- The acceptance checks (`.context/acceptance/<task_id>.json`, pinned in the packet). Each outcome
+  that the request asks for has a check that reads the delivered files. A missing outcome or a
+  check that only runs a unit test is a must-fix item.
 
 A must-fix item names a missing phase, a wrong order, a spec gap, a helper that exists, or a weak test.
 A test name, a file name, a phase title or a word choice is not a must-fix item. Write it as a note.

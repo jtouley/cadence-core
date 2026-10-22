@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""E1 — implement gate. Passes when every plan phase has a commit (phase_ledger).
-
-It fails when the plan has three or more phases and two phase commits have the same
-author time to the second: those commits were written in one shell, so they are
-not phased work.
+"""E1 — implement gate. Passes when every plan phase has a green commit (phase_ledger),
+and the check of each phase fails at its red commit and passes at its green commit
+(phase_evidence). Then it runs the acceptance checks at HEAD (E1.5), so a deliverable
+that does not meet the request fails here, before the draft PR.
 """
 
 from __future__ import annotations
@@ -47,15 +46,27 @@ def run(context_dir: Path, *, check: bool = False) -> int:
             f"implement-gate: {invariant} missing; "
             "run entry_invariant.py (P9) to clear all pre-execution gates first"
         )
+    notes: list[str] = []
     if not errors:
-        work = open_work(assess(context_dir, run_worktree(context_dir)))
+        worktree = run_worktree(context_dir)
+        state = assess(context_dir, worktree)
+        work = open_work(state)
         if work:
             errors.append(f"implement-gate: {work}")
+        elif state["phases"]:  # each phase fails at its red commit and passes at its green one
+            from phase_evidence import problems
+
+            found, notes = problems(context_dir, worktree, state["phases"], state["base"], session)
+            errors.extend(f"implement-gate: {e}" for e in found)
+        if not errors:  # E1.5: the deliverable meets the request before the draft PR; R5 runs them again
+            from acceptance import verify
+
+            errors.extend(f"implement-gate: {e}" for e in verify(context_dir, worktree, session))
     if errors:
         return fail(SLUG, errors)
     if not check:
         write_gate_breadcrumb(SLUG, context_dir=context_dir)
-    return ok(SLUG)
+    return ok(SLUG, "; ".join(notes)) if notes else ok(SLUG)
 
 
 if __name__ == "__main__":

@@ -171,6 +171,15 @@ def play_plan_create(box: Sandbox) -> None:
     task(box, f"/plan-create {TASK}")
     box.write(PLAN, f"# Plan: {TASK}\n\n**RUN_BY_SKILL:** plan-create\nTicket: #12\n{run_line(box)}\n"
               "1. Add subtract(a, b) to src/toy_pkg/core.py.\n2. Add tests/test_core.py.\n")
+    # The plan comes with a check of the request. P9 pins it, and R5 runs it.
+    check = box.repo / "acceptance" / "check_subtract.py"
+    check.parent.mkdir(exist_ok=True)
+    check.write_text("import sys\nsys.path.insert(0, 'src')\nfrom toy_pkg.core import subtract\n"
+                     "assert subtract(5, 3) == 2 and subtract(2, 5) == -3\n", encoding="utf-8")
+    box.write(f"acceptance/{TASK}.json", json.dumps({"RUN_BY_COMMAND": "plan-create", "task_id": TASK, "checks": [
+        {"id": "AC-1", "claim": "subtract(a, b) returns a - b", "run": "python3 acceptance/check_subtract.py"}]}))
+    box.git("add", "acceptance/check_subtract.py")  # P1 commits its check scripts
+    box.git("commit", "-qm", "test: acceptance checks of the request")
 
 
 def play_plan_review(box: Sandbox) -> None:

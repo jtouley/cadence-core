@@ -334,6 +334,10 @@ def run_plan_create_gate(
     worktree = worktree or Path.cwd()
     errors = check_plan_create_artifacts(context_dir, worktree, accept=run_scope_accept(context_dir, worktree))
     errors += require_peer_model(context_dir, "plan-create")
+    if not errors:  # the plan comes with the checks that prove the request
+        from acceptance import problems as acceptance_problems
+
+        errors += acceptance_problems(context_dir, worktree=worktree)
     if errors:
         return fail("plan-create-gate", errors)
     if not check:

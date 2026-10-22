@@ -24,6 +24,8 @@ fresh `git init`), never the user's tree.
 Run the path the PR's docs describe (`docs/quickstart.md`, the changed command
 or skill) for real, with the repo's real branch naming. List each step and
 whether it cleared. Unchecked test-plan items in the PR are yours to run.
+Run the acceptance checks of the run (`scripts/acceptance.py run`), and compare the delivered
+files with each outcome of the request (`.context/proposals/<task_id>.md`).
 
 ### `## Adversarial inputs`
 
@@ -41,6 +43,11 @@ review does not find this class of defect. The PR round must find it.
 - a trailing newline or a space in a parsed value
 - a very large number, NaN or a negative number
 - text that does not encode, for example a lone surrogate in a note
+
+When the packet pins `.context/acceptance/<task_id>.repair.jsonl`, an acceptance check changed after
+P9. Each `repin` row holds the text of the check before and after the change. Compare them with the
+claim. A new check that is weaker than its claim is a must-fix: for example, it no longer reads the
+delivered output, or it accepts an output that the claim does not.
 
 ### `## Contracts`
 

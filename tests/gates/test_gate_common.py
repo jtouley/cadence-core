@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import branch_repo, code_paths, commit_file, git, git_repo, head_sha, make_session
+from conftest import branch_repo, code_paths, commit_file, git, git_repo, head_sha, make_session, passing_acceptance
 
 ROOT = Path(__file__).resolve().parents[2]
 code_paths()
@@ -192,6 +192,7 @@ def test_implement_gate_session_and_ok_file_passes(scripts_path, tmp_path, monke
     ok_path = context / "gates" / "entry-invariant-run-1.ok"  # The run's own marker
     ok_path.parent.mkdir(parents=True)
     ok_path.write_text("ok\n", encoding="utf-8")
+    passing_acceptance(context, repo)  # P9 pins the checks, and E1 runs them
     code = run(context)
     breadcrumb = context / "gates" / "implement-gate.json"
     assert code == 0

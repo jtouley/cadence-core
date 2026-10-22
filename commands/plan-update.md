@@ -111,3 +111,16 @@ finding has no row in the findings ledger, so do not write one.
 One budget: a P3 review that a P6 round causes counts in the P3 limit. At the P3 limit the P3 carry rule applies.
 A carry-only update (P3 or P6 at its limit) needs no new review. The gates check the carried ids.
 Chat: C.O.R.E. When a Cadence run delegates this peer, replace the C.O.R.E. close with the one-line return in `peer-contract.md`.
+
+## Acceptance check defect
+
+`/plan-update <plan> --acceptance AC-n` comes from E1, R1 or R5. The log
+(`.context/acceptance/<task_id>.repair.jsonl`) holds the defect of AC-n, with its repro and its reason.
+
+1. Fix the check script, or the `run` command of AC-n, so that code that meets the claim passes.
+2. Keep the claim of AC-n. Do not change another check.
+3. Commit the script (`test: fix acceptance check AC-n`).
+4. Run `python3 "$CADENCE_HOME/scripts/acceptance.py" repin --id AC-n`. It refuses a changed claim
+   and a change to another check. It logs the old and the new sha256 for R1.
+
+Do not change the plan for this. The plan is frozen after P9.

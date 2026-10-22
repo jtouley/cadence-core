@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import activated_repo, code_paths, read_session, run_py, write_files
+from conftest import activated_repo, code_paths, passing_acceptance, read_session, run_py, write_files
 
 code_paths()
 from repo_checks import check_commands  # noqa: E402
@@ -39,6 +39,7 @@ def _repo(tmp_path: Path, check: str) -> Path:
     repo = activated_repo(tmp_path / "proj")
     write_files(repo, {"check.py": "import sys\nraise SystemExit(int(sys.argv[1]))\n"})  # a check of the repo
     (repo / ".cadence.json").write_text(json.dumps({"ci_commands": [check]}), encoding="utf-8")
+    passing_acceptance(repo / ".context", repo, read_session(repo)["task_id"])  # R5 also runs these
     return repo
 
 

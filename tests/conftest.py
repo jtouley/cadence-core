@@ -249,6 +249,26 @@ def review_cycles(repo: Path, plan: int = 5, adversarial: int = 3) -> Path:
     return project_config(repo, {**data, "plan_review_cycles": plan, "adversarial_cycles": adversarial})
 
 
+def passing_acceptance(context: Path, worktree: Path, task_id: str = "gh-1") -> Path:
+    """P1's acceptance checks with one check that exits 0, pinned as P9 pins them.
+
+    The check script sits under .context, so the git tree of the test stays clean. R5 runs it by its
+    absolute path, so a linked worktree that shares the primary's .context runs it too.
+    """
+    code_paths()
+    import acceptance
+
+    script = context / "acceptance" / "ok.py"
+    script.parent.mkdir(parents=True, exist_ok=True)
+    script.write_text("print('ok')\n", encoding="utf-8")
+    path = context / "acceptance" / f"{task_id}.json"
+    path.write_text(json.dumps({"RUN_BY_COMMAND": "plan-create", "task_id": task_id, "checks": [
+        {"id": "AC-1", "claim": "the request is met", "run": f"python3 {script}"}]}), encoding="utf-8")
+    errors = acceptance.pin(context, worktree)
+    assert errors == [], errors
+    return path
+
+
 @pytest.fixture
 def legacy_cycle_limits(monkeypatch):
     """Five P3 and three P6 cycles, for the tests of the loop mechanics in process.
@@ -819,6 +839,8 @@ def two_worktree_runs(tmp_path):
     primary, trees = linked_worktrees(tmp_path, ("wa", "wb"))
     save_worktree_session(trees["wa"], pipeline_run_id=RUN_A, task_id="cd-901")
     save_worktree_session(trees["wb"], pipeline_run_id=RUN_B, task_id="cd-902")
+    for tree, task in ((trees["wa"], "cd-901"), (trees["wb"], "cd-902")):
+        passing_acceptance(primary / ".context", tree, task)  # R5 also runs the checks of the run
     return SimpleNamespace(primary=primary, a=trees["wa"], b=trees["wb"], ctx=primary / ".context",
                            run_a=RUN_A, run_b=RUN_B)
 

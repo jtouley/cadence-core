@@ -99,6 +99,10 @@ def _artifact_for(slug: str, context_dir: Path, task_id: str) -> None:
             "Stub plan for cadence fixture pipeline.\n"
         )
         _write(context_dir / "plans" / f"{task_id}.plan.md", body)
+        # P1 writes the acceptance checks of the request with the plan.
+        checks = {"RUN_BY_COMMAND": "plan-create", "task_id": task_id, "checks": [
+            {"id": "AC-1", "claim": "the stub request is met", "run": 'python3 -m pytest --version'}]}
+        _write(context_dir / "acceptance" / f"{task_id}.json", json.dumps(checks) + "\n")
         return
     if slug == "plan-review":
         body = (

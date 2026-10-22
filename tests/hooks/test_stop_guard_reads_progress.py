@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-from conftest import (activated_repo, code_paths, enable_all_packs, git, git_repo, head_sha, hook_session, install_config,
-                      p9_marker, read_session, snapshot, stop_decision)
+from conftest import (activated_repo, code_paths, enable_all_packs, git, git_repo, head_sha, hook_session,
+                      install_config, p9_marker, passing_acceptance, read_session, snapshot, stop_decision)
 
 ROOT = Path(__file__).resolve().parents[2]
 GUARD = "pipeline_stop_guard.py"
@@ -37,6 +37,7 @@ def real_run(tmp_path: Path, *, marker: bool, work: bool = True) -> Path:
     if marker:
         p9_marker(repo).parent.mkdir(parents=True, exist_ok=True)
         p9_marker(repo).write_text(json.dumps({"task_id": read_session(repo)["task_id"]}) + "\n")
+        passing_acceptance(repo / ".context", repo, read_session(repo)["task_id"])  # what P9 pins
     if work:
         commit_work(repo)
     return repo

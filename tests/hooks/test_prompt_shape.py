@@ -23,6 +23,9 @@ from prompt_shape import (PromptShapeError, delegation_stage_for_prompt, hook_re
     pytest.param("de-adversarial-reviewer", "/de-adversarial-reviewer plan-gate .cursor/plans/foo.plan.md",
                  id="validate_lean_prompt_adversarial_plan_gate_path_returns_true"),
     pytest.param("vibe-test", "/vibe-test docs/spec.md", id="validate_lean_prompt_vibe_test_single_token_returns_true"),
+    # The E1 gate sent this prompt, and the lean hook denied it.
+    pytest.param("plan-update", "/plan-update .context/plans/x.plan.md --acceptance AC-5",
+                 id="validate_lean_prompt_plan_update_acceptance_returns_true"),
 ])
 def test_validate_lean_prompt_returns_true(command, prompt):
     assert validate_lean_prompt(command, prompt) is True
@@ -37,6 +40,8 @@ def test_validate_lean_prompt_returns_true(command, prompt):
                  "/de-adversarial-reviewer based on the parent's summary of what matters " + ("x" * 20), None,
                  id="validate_lean_prompt_based_on_essay_raises"),
     pytest.param("plan-review", "/plan-review " + ("a" * 400), "400", id="validate_lean_prompt_over_400_chars_raises"),
+    pytest.param("plan-update", "/plan-update x.plan.md --acceptance the CRLF one", None,
+                 id="validate_lean_prompt_plan_update_acceptance_needs_an_id_raises"),
 ])
 def test_validate_lean_prompt_raises(command, prompt, match):
     with pytest.raises(PromptShapeError, match=match):

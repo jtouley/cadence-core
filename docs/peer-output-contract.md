@@ -67,6 +67,7 @@ A5 checks the header of each marked report of the run, not only the newest. A NO
 |---|---|---|---|
 | `plans/*.plan.md` or `<worktree>/.cursor/plans/*.plan.md` | `RUN_BY_COMMAND: plan-create` or `RUN_BY_SKILL: plan-create`. P1 normalizes. E1 reads the raw text, so write it plain. | Yes | `scripts/artifact_requirements.py:check_plan_create_artifacts`, `scripts/gate_common.py:run_plan_create_gate`, `scripts/phase_ledger.py:select_plan` |
 | The plan | `### Phase N: <title>`: `^#{2,4}\s+Phase\s+(\d+)\b[ \t]*[:.\-–—]?[ \t]*(.*?)[ \t]*$`. These headings are the E1 task list. | Yes (E1 fails on a plan with none) | `scripts/phase_ledger.py:parse_phases`, `scripts/phase_ledger.py:open_work` |
+| `acceptance/<task_id>.json` | `{"RUN_BY_COMMAND": "plan-create", "task_id": ..., "checks": [{"id": "AC-1", "claim": ..., "run": ...}]}`: one check for each outcome that the request asks for. Each check runs its own committed script or test. P9 pins the checks; E1.5 and R5 run them. | Yes | `scripts/acceptance.py:problems`, `scripts/acceptance.py:pin`, `scripts/acceptance.py:verify` |
 
 P3 and P6 name their reports after the plan file (`plan_<basename>.md`, `adversarial_<slug>.md`).
 Put the ticket token in the plan file name, so those reports carry it too.
@@ -130,7 +131,7 @@ and names this peer. In review, R4 names it for a row under `## Review deferrals
 | Artifact path | Line or marker (exact form) | Required? | Read by |
 |---|---|---|---|
 | A commit since the base | A subject that names a phase: `^(?:\[[^\]]*\]\s*)?(?:(?:fixup\|squash)!\s*)?(?:\w+(?:\([^)]*\))?!?:\s*)?phase[\s_-]*(\d+)\b` (any case), for example `phase N: <title>`, `phase 2: wiring` or `feat(x): phase 2 wiring`. A later revert undoes the phase. | Yes, one for each `### Phase N:` of the plan | `scripts/phase_ledger.py:phase_of`, `scripts/phase_ledger.py:done_phases`, `scripts/implement_gate.py:run` |
-| The phase commits | No two phase commits with the same author time (to the second) | If the plan has three or more phases | `scripts/phase_ledger.py:one_shell` |
+| The phase commits | Each phase has a `phase N: red` commit at which its tests fail, then a commit at which they pass | If the plan has phases | `scripts/phase_evidence.py:problems` |
 | `implementation/<task>_stage4.md` | `RUN_BY_COMMAND: spec-driven`, and the final message `ARTIFACT: .context/implementation/<task>_stage4.md` | Yes | `scripts/peer_return.py:return_reason` (the return line) |
 
 The same peer runs each review fix round as `/spec-driven --fix <review>`, with the PR review

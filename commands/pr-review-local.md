@@ -35,6 +35,22 @@ After fix commits, `/pr-review-update` reviews the new commits and appends a lat
 Staff review: contracts, blast radius, `core:dry-extension`,
 `core:standalone-package`, test quality (no partial-success thresholds),
 adversarial scenarios with evidence. Verdict must-fix vs nits.
+
+Review the delivered files against the request, not only the diff. The packet pins the request
+(`.context/proposals/<task_id>.md`) and the acceptance checks (`.context/acceptance/<task_id>.json`).
+In `## End-to-end walk`, run `python3 "$CADENCE_HOME/scripts/acceptance.py" run` and each path that the
+request names. An outcome of the request that the delivered files do not give is a must-fix item,
+also when every check passes.
+
+The acceptance scripts that P9 pinned are the plan's checks, not the code of the change. Judge each one
+only on whether it proves its claim. A check that code which breaks the claim still passes is a must-fix
+item. Record it before you return, with a script that shows such code passing:
+`python3 "$CADENCE_HOME/scripts/acceptance.py" defect --id AC-n --repro "python3 acceptance/repro_AC-n.py" --why "<what the check lets through>"`.
+Then the plan peer changes the check with `/plan-update <plan> --acceptance AC-n`, which refuses an AC-n
+with no recorded defect. A check that changed after P9 is judged as `references/review-rigor.md` says,
+from its `repin` rows. Each check has its own script, so a setup that the scripts repeat is expected: it
+is not a DRY or style item, and R3 does not measure them.
+
 ## Must-fix items
 
 Put every must-fix item under one `## Must-fix items` heading. Give each item an id: `MF-1`, `MF-2`, and so on.

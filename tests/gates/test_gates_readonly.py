@@ -17,7 +17,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from conftest import activated_repo, clean_env, p9_marker, snapshot
+from conftest import activated_repo, clean_env, p9_marker, passing_acceptance, snapshot
 
 ROOT = Path(__file__).resolve().parents[2]
 READONLY = "CADENCE_GATES_READONLY"
@@ -73,6 +73,7 @@ def test_implement_gate_passes_readonly_without_recording(run):
     context = run / ".context"
     (context / "gates").mkdir(exist_ok=True)
     p9_marker(run).write_text('{"task_id": "cd-7"}\n')  # The run's own marker
+    passing_acceptance(context, run, "cd-7")  # P9 pins the checks, and E1 runs them
     (run / "work.py").write_text("X = 1\n", encoding="utf-8")
     subprocess.run(["git", "add", "work.py"], cwd=run, check=True)
     subprocess.run(["git", "commit", "-qm", "feat: work"], cwd=run, check=True)

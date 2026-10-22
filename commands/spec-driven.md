@@ -41,10 +41,18 @@ more for each `offenders` entry of a failing R3 record (`.context/gates/cognitiv
 4. Run it green.
 5. Next cycle. Do not add a helper with one caller.
 
+The acceptance checks (`.context/acceptance/<task_id>.json`, pinned in the packet) are the outcome.
+Before you finish the last phase, run `python3 "$CADENCE_HOME/scripts/acceptance.py" run`. The E1 gate fails
+while a check fails, and R5 runs the same checks at HEAD. Do not change the checks or their scripts: P9 pinned them.
+
+Sometimes no code can pass a check as it is written, for example a check that reads `\r\n` in text
+mode. Do not ask a person. Record the defect with a command that shows it:
+`python3 "$CADENCE_HOME/scripts/acceptance.py" defect --id AC-n --repro "python3 acceptance/repro_AC-n.py" --why "<reason>"`.
+The repro is a script: a check rule refuses inline `-c` code.
+Then the gate sends `/plan-update <plan> --acceptance AC-n` to the plan peer.
+
 Commit each plan phase with a subject that starts with `phase N:`, or with a conventional prefix and then
 `phase N` (`feat(x): phase 2 wiring`). The E1 gate reads the phase from the start of the subject.
-Commit each phase when it is done, not all phases at the end: with three or more phases, the E1 gate
-fails when two phase commits have the same author time.
 
 ## A fix round
 
@@ -60,6 +68,23 @@ For each finding of `--fix <review>`:
 A finding that you cannot fix in this PR gets `--status deferred --ticket <ticket>` after its
 register row. Do not set `verified`: `ledger_verify.py` does.
 
+A finding on a pinned acceptance check is not yours to change: the plan peer fixes it with
+`/plan-update <plan> --acceptance AC-n`. When `.context/acceptance/<task_id>.repair.jsonl` has a
+`repin` row for that AC-n after the finding, run the finding's `check`. When it passes, record the
+finding as fixed, with the commit that changed the check: `set-status --id <id> --status fixed
+--fixed-in <sha>`.
+
+Each phase has two commits: first the failing test (`test: phase N: red <what fails>`), then the code
+that makes it pass (`feat: phase N <title>`). Record the test command of the phase one time:
+
+```bash
+python3 "$CADENCE_HOME/scripts/phase_evidence.py" record --phase N --run "uv run pytest tests/test_x.py -q"
+```
+
+The E1 gate runs that command in a clean checkout of each commit. It must fail at the red commit and pass
+at the green commit. A phase with no code (docs only) records `--none "<reason>"`, and the gate prints it.
+Code that you wrote before its red commit makes the check pass at the red commit, and E1 fails.
+
 ## Rules
 
 1. Each callback or Protocol wired across modules gets a seam-contract test through the entry point of the caller, because unit tests miss the mismatch.
@@ -70,6 +95,13 @@ register row. Do not set `verified`: `ledger_verify.py` does.
 A plan step that waits on a person (accept a record, decide a gap) is not a stop. A run has no person in
 the loop (`references/plan-review-round.md`). Build the phase on the assumption row of the register,
 and name it in the implementation report.
+
+A phase of tests alone, whose tests need the code of a later phase, is not a stop either. Commit its tests as the phase and record it with
+`phase_evidence.py record --phase N --none "tests only: phases <M to K> add the code"`. Give each later
+phase the check of the tests that its code makes pass. Its red commit fails that check, and its green
+commit passes it. Name the change in the implementation report. Do not edit the plan.
+A phase that adds no code, such as a test that pins behavior that already works, cannot be red. Record it
+with `--none "pins <behavior>; no code"`.
 
 ## Options in a phase
 

@@ -8,7 +8,7 @@
 |-------|--------|
 | Recoverable (missing artifact, lean prompt, stale session) | Log → fix → retry same block |
 | Scope/test change before P9 | `/plan-update`, then `/plan-review` |
-| Scope/test change after P9 | The plan is frozen while the P9 marker exists. Log the change in `.context/issues/` as a follow-up and go on with the frozen plan. Do not stop to ask the user |
+| Scope/test change after P9 | The plan is frozen while the P9 marker exists. A failing acceptance check goes through `/plan-update <plan> --acceptance AC-n`. Log any other change in `.context/issues/` as a follow-up and go on with the frozen plan. Do not stop to ask the user |
 | Hard stop (destructive risk, missing credentials, security) | Stop. Set the session hard-stop flag |
 
 ## Failure table
@@ -75,7 +75,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | P3 | `plan-review: <review> verdict is READY WITH CHANGES (cycle N of M)` | The review asks for changes | `/plan-update <plan> --from-review <review>`, then `/plan-review <plan>` |
 | P3 | `plan-review: <plan> is newer than <review>` | The plan changed after the review | `/plan-review <plan>` |
 | P3 | `plan-review: <review> is NOT READY after N cycles` | The plan is wrong | `python3 "$C/activate_session.py" --hard-stop retries --reason "..."` |
-| P3 | `plan-review: review limit reached (N cycles)` | `plan_review_cycles` reviews ran (default 5) | `/plan-update <plan> --from-review <review>` with `## Carried review findings`. Do not review again |
+| P3 | `plan-review: review limit reached (N cycles)` | `plan_review_cycles` reviews ran (default 1) | `/plan-update <plan> --from-review <review>` with `## Carried review findings`. Do not review again |
 | P3 | `plan-review: no review from a plan-review peer` | The review has no plan-review writer | `/plan-review <plan>` |
 | P3, P4 | `plan-review: cannot read <file>` or `plan-update: cannot read <file>` | The plan or the review is not readable | `ls -l .context/plans .context/reviews`, then the block's slash command |
 | P3 to P7 | `plan-review-round: round <n> waits on <stages>` | A reviewer of the round has not recorded `done` | Send the peers that `plan_wave.py` names, in one message, then `python3 "$C/plan_wave.py"` |
@@ -91,7 +91,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | E3 | `  must-fix <rule>: <evidence>` (architecture review) | The change breaks a layer rule | Fix the code, then `python3 "$C/architecture_review.py" --phase impl --check` |
 | P6 | `adversarial-review: no plan-gate report of run <id>` | No P6 report for this run | `/de-adversarial-reviewer plan-gate <plan>` |
 | P6 | `adversarial-review: <report> verdict is REQUEST CHANGES (cycle N of M)` | The report asks for changes | `/plan-update <plan> --from-review <report>`, then `/de-adversarial-reviewer plan-gate <plan>` |
-| P6 | `adversarial-review: cycle limit reached` | `adversarial_cycles` P6 cycles ran (default 3) | `/plan-update <plan> --from-review <report>` with each open `B-n` carried. Do not run P6 again |
+| P6 | `adversarial-review: cycle limit reached` | `adversarial_cycles` P6 cycles ran (default 1) | `/plan-update <plan> --from-review <report>` with each open `B-n` carried. Do not run P6 again |
 | P6 | `adversarial-review: <report> does not name the plan` or `has no readable verdict` | The report is not complete | `/de-adversarial-reviewer plan-gate <plan>` |
 | P7 | `test-benchmark-plan: no artifact matching benchmarks/*_plan.json` | No plan scorecard | `/test-benchmark plan <plan>` |
 | P7 | `test-benchmark-plan: ... verdict is FAIL` or `must-fix dimensions below 7` | The plan scorecard does not pass | `/plan-update <plan>`, then `/test-benchmark plan <plan>`, then `/plan-review <plan>` |
@@ -114,7 +114,10 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | P3, P6, P7 | Stop hold `BLOCKED: record each finding of your report with plan_wave.py add` | A plan reviewer of an open round returned before `done` | The reviewer runs `plan_wave.py add` for each finding, then `plan_wave.py done --stage <stage>`. Do not resume it with SendMessage |
 | E1 | Stop hold `Continue E1: send the /spec-driven peer the plan again` | The E1 peer returned with a plan phase open | Send `/spec-driven <plan>` again |
 | E1 | Stop hold `Continue E1: phase N (<label>)` (the E1 peer, or a host with no peers) | A plan phase has no commit | Implement phase N with TDD, then `git commit -m "phase N: <subject>"` |
-| E1 | `implement-gate: the phase commits '<a>' and '<b>' have the same author time` | One shell wrote the phase commits, not phase by phase. A rebase keeps the author time, so it does not cause this | `git reset <base>`, then implement, test and commit each phase in its own step |
+| E1 | `implement-gate: phase N (<title>) has no check` | No test command is recorded for the phase | `python3 "$C/phase_evidence.py" record --phase N --run "<test command>"`, or `--none "<reason>"` for a phase with no code |
+| E1 | `implement-gate: phase N (<title>) has no red commit` | No `phase N: red` commit holds the failing test | `git reset <base>`, then commit the failing test of each phase before its code. A phase of tests alone records `--none` (commands/spec-driven.md) |
+| E1 | `implement-gate: phase N: <check> passes at its red commit` | The code was in the tree before its test failed | `git reset <base>`, then commit each phase red, then green |
+| E1 | `implement-gate: phase N: <check> fails at its green commit` | The code of the phase does not pass its test | Fix the code, commit it as `phase N`, then run the gate again |
 | E1 | `implement-gate: the plan <plan> has no ### Phase N: headers` | The plan has no task list, and P9 froze the plan | A plan change is a new run: `python3 "$C/activate_session.py" --from-branch --fresh --supersede`, then P1 to P9 again. Do not ask the user |
 | E1 | `implement-gate: <marker> missing` | P9 did not pass for this run | `python3 "$C/entry_invariant.py" --phase execution` |
 | E1 | `implement-gate: no Cadence run in this worktree` | E1 ran outside the run's worktree | `cd` to the run's worktree, then `python3 "$C/implement_gate.py" --check` |
@@ -156,6 +159,13 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | R4 | `final-consolidate: bad config: <error>` | A config layer is not valid, for example `review_fix_rounds` is not an integer of at least 1 | Fix the file and the key that the text names, then `python3 "$C/final_consolidate.py" --check` |
 | R4 | `final-consolidate: no review of this run's PR` or `has no RUN_BY marker` | No R1 review of the PR | `/pr-review-local <PR>` |
 | R4 | `final-consolidate: not peer-written (ignored)` | The orchestrator wrote the review | `/pr-review-update <PR>`. The peer saves with the Write or Edit tool |
+| P1 | `acceptance: no acceptance/<task>.json` or `acceptance: AC-n ...` | No acceptance checks, or a check that proves nothing | `/plan-create`: write `.context/acceptance/<task_id>.json` (`commands/plan-create.md`, step 8) |
+| E1 | `implement-gate: acceptance: AC-n failed (exit N). Claim: ...` | The delivered files do not meet the request | Fix the code in a new phase commit, then `python3 "$C/implement_gate.py" --check` |
+| R5 | `acceptance: AC-n failed (exit N). Claim: ...` | The delivered files do not meet the request | Fix the code, commit it, then `python3 "$C/acceptance.py" run` and `python3 "$C/closure.py" --check` |
+| R5 | `acceptance: <file> changed after P9` | A check or its script changed after P9 | Put the pinned check back with `git checkout`. A new check needs a new plan review. For a check with an open defect, `python3 "$C/acceptance.py" repin --id AC-n` |
+| E1, R5 | `acceptance: AC-n has an open defect` | E1 found that no code can pass AC-n | `/plan-update <plan> --acceptance AC-n` (`commands/plan-update.md`) |
+| P1 | `acceptance: <script> is not committed` | A check script is new or changed | The P1 peer runs the `git add ... && git commit` command that the error gives |
+| R5 | `acceptance: no pin of the checks for this run` | P9 did not run on this run | `python3 "$C/entry_invariant.py" --phase execution` |
 | R5 | `closure: <id>: must-fix status='fixed' not terminal` | The fix has no `verified` status | `python3 "$C/ledger_verify.py"` |
 | R5 | `closure: <id>: must-fix status='open' not terminal` | The finding is open | `/spec-driven --fix <review>`: the peer fixes it, or defers it with a register row and its ticket |
 | R6 | `guard-gh-pr-comment: N open must-fix finding(s) block PR comment` | A must-fix is open | Close each finding (R4, R5), then `python3 "$C/guard_gh_pr_comment.py"` |
@@ -176,7 +186,7 @@ A slash command goes to the block's peer through the Agent tool, as the lean pro
 | Edit gate | `BLOCKED: no active cadence session` | A gated write with no run | `python3 "$C/activate_session.py" --from-branch --fresh` |
 | Edit gate | `BLOCKED: <file> is pipeline state written only by <writer>` | A direct write to pipeline state | Run `<writer>` |
 | Edit gate | `BLOCKED: gated path <file> requires entry invariant` | A code edit before P9 | `python3 "$C/entry_invariant.py" --phase execution` |
-| Edit gate | `BLOCKED: the plan is frozen while the P9 marker exists` | A plan edit after P9 | Do not edit the plan. Log the change in `.context/issues/` and go on |
+| Edit gate | `BLOCKED: the plan is frozen while the P9 marker exists` | A plan edit after P9 | Do not edit the plan. The one plan change after P9 is `/plan-update <plan> --acceptance AC-n`. Log any other change in `.context/issues/` and go on |
 | Secret read | `BLOCKED: <path> matches a secret path` | A read of a secret file | Do not read the file. Ask the user for the value that the task needs |
 | Secret read | `BLOCKED: this read or shell call names no path or command` | The call names no target | Do the call again with its path or command |
 | Secret read | `BLOCKED: <error>; the secret paths are not known` | A config layer is not valid, for example `secret_paths` is not a list | Fix the file that the text names. `secret_paths` is a list of path patterns |
@@ -209,8 +219,8 @@ user when the run has no retries (see Self-healing in SKILL.md).
 
 | Loop | Cap | At the cap |
 |---|---|---|
-| P3 plan review | `plan_review_cycles` (default 5) | `## Carried review findings`, or a hard stop on `NOT READY` |
-| P6 adversarial review | `adversarial_cycles` (default 3) | `/plan-update` with each open `B-n` carried |
+| P3 plan review | `plan_review_cycles` (default 1) | `## Carried review findings`, or a hard stop on `NOT READY` |
+| P6 adversarial review | `adversarial_cycles` (default 1) | `/plan-update` with each open `B-n` carried |
 | R1 to R4 fix rounds | No cap, or `review_fix_rounds` when a config layer sets it | The loop goes on until R4 passes. R4 holds when a round changed nothing, or at the cap. A must-fix is not deferred because the rounds ran out |
 | Held stops at one block | 3 refusals | The stop goes through with a note to the user |
 

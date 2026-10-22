@@ -103,7 +103,8 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     ),
     "plan-review": re.compile(r"^/plan-review\s+\S+\s*$"),
     "plan-update": re.compile(
-        r"^/plan-update\s+\S+(\s+--from-review\s+\S+)?\s*$"
+        # `--acceptance AC-n`: the E1 or R5 gate sends the plan peer to fix one acceptance check.
+        r"^/plan-update\s+\S+(\s+--from-review\s+\S+|\s+--acceptance\s+AC-\d+)?\s*$"
     ),
     "de-adversarial-reviewer": re.compile(
         r"^/de-adversarial-reviewer\s+(plan-gate|spec-pressure)\s+\S+\s*$"

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import activated_repo, enable_all_packs, run_py, stage_packs
+from conftest import activated_repo, enable_all_packs, passing_acceptance, run_py, stage_packs
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -99,6 +99,8 @@ def test_the_deactivate_walk_through_r6_ends_at_r5_when_the_tracker_pack_is_off(
 def test_r5_passes_with_no_ledger_when_r4_is_off(tmp_path):
     """R5 reads the findings ledger only; R4 (deferrals pack) writes no file that R5 needs."""
     repo = activated_repo(tmp_path / "r")
+    session = json.loads(run_py("scripts/activate_session.py", "--status", cwd=repo).stdout)
+    passing_acceptance(repo / ".context", repo, session["task_id"])
     proc = run_py("scripts/closure.py", "--check", cwd=repo)
     assert proc.returncode == 0, proc.stderr
 

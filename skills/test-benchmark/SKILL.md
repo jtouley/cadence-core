@@ -122,6 +122,13 @@ run. Leave no file in the worktree: a mutant copy there fails R3 on duplication.
 
 Chat: C.O.R.E. with the scorecard path. When a Cadence run delegates this peer, replace the C.O.R.E. close with the one-line return in `peer-contract.md`.
 
+## The pinned acceptance checks
+
+The acceptance scripts that P9 pinned (`.context/acceptance/<task_id>.json` names them) are the plan's
+checks, not tests of the change. Do not score them, and raise no finding on them: each check has its own
+script, so they repeat a setup by design, and no fix round may change them. R1 judges whether each one
+proves its claim.
+
 ## A later card of the same PR
 
 In PR mode, write `"head": "<the HEAD sha you scored>"` on the card. After a fix round, the card of that
