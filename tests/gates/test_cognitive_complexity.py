@@ -782,7 +782,7 @@ def test_measure_exclude_skips_a_corpus_of_planted_faults_and_names_them(change,
                          layer={"measure_exclude": ["tests/fixtures/golden/"]})
     assert code == 0 and crumb["files"] == 0
     assert crumb["excluded"] == ["tests/fixtures/golden/bad/a.py"]
-    assert "1 changed file(s) under measure_exclude or run state not measured: tests/fixtures/golden/bad/a.py" in capsys.readouterr().out
+    assert "1 changed file(s) under measure_exclude, pinned by P9 or run state not measured: tests/fixtures/golden/bad/a.py" in capsys.readouterr().out
 
 
 def test_the_runs_own_state_is_not_measured_and_is_named(change, capsys):
@@ -791,7 +791,23 @@ def test_the_runs_own_state_is_not_measured_and_is_named(change, capsys):
                               ".cursor/plans/x.py": _branching(16), "src/a.py": "def f():\n    pass\n"})
     assert code == 0 and crumb["files"] == 1
     assert crumb["excluded"] == [".context/prs/reviews/repro_MF.py", ".cursor/plans/x.py"]
-    assert "or run state not measured" in capsys.readouterr().out
+    assert "pinned by P9 or run state not measured" in capsys.readouterr().out
+
+
+def test_a_check_script_that_p9_pinned_is_not_measured_and_is_named(change, monkeypatch, tmp_path, capsys):
+    """R3 failed on `acceptance/check_export.py`, the plan's pinned check: a fix round cannot edit it
+    without a repin, so R3 leaves it out and names it, and still measures the code."""
+    import acceptance
+
+    pin = tmp_path / "acceptance-run-1.json"
+    pin.write_text(json.dumps({"scripts": {"acceptance/check_export.py": "abc"}}), encoding="utf-8")
+    monkeypatch.setattr(acceptance, "pin_path", lambda _ctx, _session=None: pin)
+    code, crumb = change({}, {"acceptance/check_export.py": _branching(16) + COPY + RENAMED, "src/a.py": _branching(16)})
+    assert code == 1 and crumb["excluded"] == ["acceptance/check_export.py"]
+    assert "src/a.py:1 busy = 16 (new)" in capsys.readouterr().err
+    assert acceptance.pinned_scripts(tmp_path) == ("acceptance/check_export.py",)
+    pin.write_text("not json", encoding="utf-8")
+    assert acceptance.pinned_scripts(tmp_path) == ()
 
 
 @pytest.mark.parametrize(("arg", "key", "measure", "default"), [

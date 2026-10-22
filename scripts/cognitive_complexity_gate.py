@@ -328,8 +328,8 @@ STATE_DIRS = (".context/", ".cursor/")
 
 def change_under_review(context_dir: Path, given: str | None = None) -> tuple[Path, str, str, list[str], list[str]] | str:
     """(worktree, base, merge base, changed files outside `measure_exclude`, the changed files under it),
-    or why the change cannot be judged. The excluded files are named, never dropped in silence. The run's
-    state under STATE_DIRS is excluded too.
+    or why the change cannot be judged. The excluded files are named, never dropped in silence. The check
+    scripts that P9 pinned, and the run's state under STATE_DIRS, are excluded too.
 
     R2 (test_shape.py) reads the change the same way.
     """
@@ -341,7 +341,10 @@ def change_under_review(context_dir: Path, given: str | None = None) -> tuple[Pa
         exclude = cc.load_exclude(_SCRIPTS.parent, worktree)
         fork = merge_base(worktree, base)
         changed = changed_files(worktree, fork)
-        excluded = [rel for rel in changed if rel.startswith(exclude) or rel.startswith(STATE_DIRS)]
+        from acceptance import pinned_scripts
+
+        pinned = set(pinned_scripts(context_dir, worktree))
+        excluded = [rel for rel in changed if rel.startswith(exclude) or rel in pinned or rel.startswith(STATE_DIRS)]
         return worktree, base, fork, [rel for rel in changed if rel not in excluded], excluded
     except ValueError as exc:
         return f"bad config: {exc}"
@@ -394,7 +397,7 @@ def run(context_dir: Path, *, check: bool = False, base: str | None = None) -> i
     if report.unmeasured:
         note += f"; {len(report.unmeasured)} unmeasured: {'; '.join(report.unmeasured[:3])}"
     if excluded:
-        note += f"; {len(excluded)} changed file(s) under measure_exclude or run state not measured: {'; '.join(excluded[:3])}"
+        note += f"; {len(excluded)} changed file(s) under measure_exclude, pinned by P9 or run state not measured: {'; '.join(excluded[:3])}"
     if report.python_only:
         note += (f"; {len(report.python_only)} changed code file(s) measured for complexity only "
                  f"(duplication and code shape are Python only): {'; '.join(report.python_only[:3])}")
