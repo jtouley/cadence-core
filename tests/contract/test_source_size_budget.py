@@ -9,12 +9,10 @@ ROOT = Path(__file__).resolve().parents[2]
 RUNTIME_DIRS = ("scripts", "hooks", "shared")
 
 # Cadence core 0.1.0 has about 17,350 tracked Python lines under the runtime directories: the
-# private decision index left the tree, and the config loader came in. The orchestrator scope
-# check, the E1 peer hold and the fix round input raised it to 17,550. The block writers, the run
-# manifest and the A5 gap checks raised it to 17,800, and the P7 scorecard rules to 17,850. Lower
-# this number when a change removes code. Raise it only with the reason in the pull request and in
+# private decision index left the tree, and the config loader came in. Lower this
+# number when a change removes code. Raise it only with the reason in the pull request and in
 # this comment.
-BUDGET_LINES = 17_850
+BUDGET_LINES = 17_400
 
 
 def runtime_lines() -> int:

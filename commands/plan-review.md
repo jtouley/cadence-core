@@ -59,9 +59,7 @@ Write one row for each `MF-n` of the previous review:
 ## Review for
 
 - Missing or mis-ordered phases vs `stages.json`
-- Spec gaps and implicit assumptions. When the packet pins a vibe-test report, check the assumption that
-  the register logs for each `G-n` of its `## Blocking gaps`, and the phase that settles it. A missing or
-  weak assumption is a must-fix item.
+- Spec gaps and implicit assumptions
 - `core:dry-extension` (reuse, Rule of Three, R3 limit, extension point, cloned gates vs registry row)
 - The `## Reuse and extension` section of the plan
 - `core:standalone-package` (host path leaks)

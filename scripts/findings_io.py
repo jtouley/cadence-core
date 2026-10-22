@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -53,12 +52,6 @@ _SHA = re.compile(r"^[0-9a-fA-F]{7,40}$")
 HUMAN_FIELDS = ("human_confirmed", "confirmed_by", "confirmed_at")
 
 
-def _is_skill_script(word: str) -> bool:
-    """A relative `.py` path that the skill root holds and the repository does not: it runs only from the skill."""
-    return (word.endswith(".py") and not word.startswith(("/", "$", "~"))
-            and (Path(__file__).resolve().parents[1] / word).is_file() and not (Path.cwd() / word).is_file())
-
-
 def check_problem(check: object) -> str | None:
     """Why ``check`` cannot close a finding, else None: empty, a shell no-op in any segment, or no runner."""
     text = str(check or "").strip()
@@ -70,19 +63,7 @@ def check_problem(check: object) -> str | None:
         words = [w for w in segment.split() if not _ASSIGNMENT.match(w)]
         if words and words[0].rsplit("/", 1)[-1] in NO_OP_COMMANDS:
             return f"check {text!r} is a shell no-op ({words[0]}): name the test or the script that proves the fix"
-        skill_path = next((w for w in words if _is_skill_script(w)), None)
-        if skill_path:
-            return f"check {text!r} names {skill_path}, a Cadence script not in this repository: write $CADENCE_HOME/{skill_path}"
-    if not _RUNNER.search(text):
-        return f"check {text!r} names no test runner or script path ({RUNNERS})"
-    return _shell_problem(text)
-
-
-def _shell_problem(text: str) -> str | None:
-    """`sh -n`: a check that the shell cannot parse never runs, so its row can never be verified."""
-    proc = subprocess.run(["sh", "-n", "-c", text], capture_output=True, text=True)
-    return None if proc.returncode == 0 else (f"check {text!r} is not valid shell ({proc.stderr.strip() or 'sh -n'}): "
-                                              "write only the command; put the reason in evidence")
+    return None if _RUNNER.search(text) else f"check {text!r} names no test runner or script path ({RUNNERS})"
 
 
 def validate_write(record: dict[str, Any]) -> dict[str, Any]:

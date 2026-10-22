@@ -95,19 +95,13 @@ file. This applies to a mutation finding and to an adversarial input.
 Write each scorecard finding as
 `{"id": "cd-52-F01", "severity": "must-fix", "evidence": "..."}`. The R2 gate
 treats `severity` `must-fix`, `HIGH` or `critical`, or `"must_fix": true`, as a
-must-fix finding. In code mode, append a must-fix ledger row with the same `id` with
+must-fix finding. Append a must-fix ledger row with the same `id` with
 `findings_io.py` before the turn ends. A row that later becomes `fixed`,
 `verified` or `deferred` still counts. The index reads the findings ledger.
 A finding that exists only in the scorecard JSON is not registered, and the
 R2 gate rejects it. Use severity `must-fix` and include `check`. The scorecard
 word `HIGH` is not a ledger severity.
 
-In plan mode, write no ledger row. A ledger row closes with a fix commit, and the plan is not
-code. The P7 gate fails while the plan scorecard does not pass. The plan peer applies the
-findings, and a new plan scorecard closes them.
-
 If mutants were not run, say so. Do not invent a kill rate.
-Run each mutant in a copy outside the worktree, made with `mktemp -d`, and delete the copy after the
-run. Leave no file in the worktree: a mutant copy there fails R3 on duplication.
 
 Chat: C.O.R.E. with the scorecard path. When a Cadence run delegates this peer, replace the C.O.R.E. close with the one-line return in `peer-contract.md`.

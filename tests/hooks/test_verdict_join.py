@@ -34,6 +34,7 @@ def logs(repo: Path, kind: str, run: str = "run-1") -> list[dict]:
 # allowed or denied. The stage is the delegation stage of the peer command. A verdict
 # gate later joins its writer to this row (PostToolUse join row) to know the stage.
 
+PILOT_ALL_HAIKU = {"input_tokens": 2, "cache_read_input_tokens": 108867, "cache_creation_input_tokens": 2867}
 
 
 def call_rows(repo: Path, run: str = "run-1") -> list[dict]:
@@ -75,8 +76,18 @@ def _deny_by_lean(call, repo):
     return call("/plan-review plan.md and also the spec", tool_use_id="toolu_d")
 
 
-@pytest.mark.parametrize("deny", [_deny_by_model, _deny_by_fork, _deny_by_lean],
-                         ids=["model", "fork", "lean"])
+def _deny_by_budget(call, repo):
+    transcript = repo.parent / "orchestrator.jsonl"
+    message = {"role": "assistant", "content": [{"type": "text", "text": "ok"}], "usage": PILOT_ALL_HAIKU}
+    transcript.write_text(json.dumps({"type": "assistant", "message": message}) + "\n", encoding="utf-8")
+    body = {"hook_event_name": "PreToolUse", "tool_name": "Agent", "cwd": str(repo),
+            "tool_use_id": "toolu_d", "transcript_path": str(transcript),
+            "tool_input": {"prompt": "/plan-review plan.md", "subagent_type": "general-purpose", "model": "opus"}}
+    return call("", payload=body, context_budget={"mode": "enforce"})
+
+
+@pytest.mark.parametrize("deny", [_deny_by_model, _deny_by_fork, _deny_by_lean, _deny_by_budget],
+                         ids=["model", "fork", "lean", "budget"])
 def test_each_deny_path_writes_a_deny_call_row(call, repo, deny):
     code, out, err = deny(call, repo)
     assert code == 0, err
@@ -120,7 +131,7 @@ def test_the_stage_vocabulary_names_pr_review_update():
     assert prompt_shape.SLASH_TO_STAGE["/pr-review-update"] == "pr-review-update"
     assert "pr-review-update" in prompt_shape.LEAN_STAGES
     assert peer_models.SLUG_FOR_STAGE["pr-review-update"] is None
-    assert [r["command"] for r in prompt_shape.EXTRA_PEER_ROWS] == ["/pr-review-update", "/spec-driven --fix", "/session-summary"]
+    assert [r["command"] for r in prompt_shape.EXTRA_PEER_ROWS] == ["/pr-review-update"]
 
 
 # --- verdict_join_rows: The PostToolUse Agent hook joins each orchestrator peer call to its subagent.

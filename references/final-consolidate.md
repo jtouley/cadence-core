@@ -33,10 +33,6 @@ Promotion to `verified` happens only via `ledger_verify.py` after the finding's
   `make`, `tox`, `nox`, `uv run`, `npm`, `pnpm`, `yarn` or `bun` with `test` or `run`, `npx`,
   `cargo`, `go test` or `go vet`, `ruff`, `mypy`, `pyright`, `tsc`, `eslint`, `jest`, `vitest`,
   a `./` path or a `scripts/` path.
-- A command that the shell cannot parse (`sh -n`), such as a command with a note after it. Put the
-  reason in `evidence`, and write only the command in `check`.
-- A relative path to a Cadence script, such as `scripts/test_shape.py`, in a repository that has no
-  such file. Write `$CADENCE_HOME/scripts/test_shape.py`. `ledger_verify.py` sets `CADENCE_HOME`.
 
 The rule reads the text of the command. It does not prove that the command tests the fix.
 The reviewer names the test that proves the fix. A doc change, a kept line or a follow-up ticket

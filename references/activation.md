@@ -25,7 +25,7 @@ Read script output: `task_id`, `pipeline_run_id`, `resume_block` (a
    `Code paths:` line, `CATALOG_STALE`, `OPS_ONLY`, or `OPS HANDOFF`)
 4. A4 ticket gate (adapter regex from `adapters/*.json`)
 5. Load the registry row for the resume block. Run through R7
-6. On exit: `activate_session.py --deactivate`. It writes the manifest `.context/manifests/<task_id>.md` and closes the run only after the `/session-summary <manifest>` peer writes `.context/summaries/<task_id>.md`.
+6. On exit: `activate_session.py --deactivate` + summary under `.context/summaries/`
 
 ## Session file
 
@@ -62,12 +62,6 @@ The agent that runs activation is the orchestrator of the run. It does not write
 
 **Missing note:** when activation finds no fresh note, `orchestrator_source` is `missing`. On Claude Code, activation prints `WARNING: orchestrator unknown: activate through the Bash tool`. The attestation gates then fail closed with the same text. A command that you type with `!` does not go through the hook. To recover, run `--resume` again through the Bash tool.
 
-## Request
-
-`--request <file>` or `--request -` (stdin) gives activation the user's request as the user wrote
-it. A fresh run saves it as `.context/proposals/<task_id>.md`, the input of A5, with a `Ticket:`
-line. A resumed run keeps the file that exists. An empty request fails activation.
-
 ## Resume
 
 `--resume` keeps the run of this worktree when the run has the same `task_id` and is active or hard-stopped:
@@ -76,13 +70,7 @@ line. A resumed run keeps the file that exists. An empty request fails activatio
 - It adds the new agent id to `orchestrator_agent_ids` and sets `resumed_at`.
 - It deletes `hard_stop`.
 
-`--resume` reopens a completed run of this worktree with the same `task_id` when the run opened its
-draft PR (`.context/prs/draft-pr-<pipeline_run_id>.md`). It keeps `pipeline_run_id`, sets
-`reopened_at`, and resumes at P9: deactivation deletes the P9 marker, and P9 writes it again. The
-gates then walk to the first open block. A commit after R7 holds R1 until the PR review covers
-HEAD, so the next block is `/pr-review-update`.
-
-When no run can resume (no session, a completed run with no draft PR, or another task), `--resume` starts a fresh run. It prints `--resume: no resumable run for <task_id> in this worktree; started a fresh run` and sets `resume_fallback: "fresh"`. `--fresh` always starts a new run id and a new orchestrator list.
+When no run can resume (no session, a completed run, or another task), `--resume` starts a fresh run. It prints `--resume: no resumable run for <task_id> in this worktree; started a fresh run` and sets `resume_fallback: "fresh"`. `--fresh` always starts a new run id and a new orchestrator list.
 
 ## PR guard
 

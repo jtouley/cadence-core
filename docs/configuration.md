@@ -21,7 +21,7 @@ The project is the nearest directory at or above the workspace that holds `.cade
 `.cadence.local.json` or `.git`.
 
 An env var name is the key path in upper case, with `_` for each `.`:
-`CADENCE_ORCHESTRATOR_SCOPE_MODE=off`, `CADENCE_REVIEW_FIX_ROUNDS=1`, `CADENCE_PACKS='["tracker"]'`.
+`CADENCE_CONTEXT_BUDGET_MODE=enforce`, `CADENCE_REVIEW_FIX_ROUNDS=1`, `CADENCE_PACKS='["tracker"]'`.
 The value is JSON when it parses as JSON, else a string.
 
 ## Merge rules
@@ -80,8 +80,7 @@ values). A resumed run keeps the config of its first activation.
 | `decision_frontmatter_required` | `true` | `true`: decision coverage needs an ADR or a proposal with decision frontmatter |
 | `peer_models` | `{}` | Claude Code only: a peer stage slug, or `default`, to a model alias |
 | `subagent_hygiene.*` | `mode: enforce` | The handoff packet checks ([subagent-hygiene.md](subagent-hygiene.md)) |
-| `orchestrator_scope.mode` | `enforce` | Claude Code only: deny an orchestrator read of a run artifact, the code or the diff, and an orchestrator write to the code. `off` turns it off |
-| `context_budget.*` | `mode: shadow` | The orchestrator context size: a row and a notice above `warn_tokens`. It never denies |
+| `context_budget.*` | `mode: shadow` | The orchestrator context budget |
 | `cognitive_complexity.*`, `duplication.*`, `code_shape.*`, `test_shape.*`, `bugs.*`, `types.*` | see the defaults | The measured R2 and R3 limits ([tool-gates.md](tool-gates.md)). `unsupported` is `warn` or `fail` |
 | `measure_exclude` | `[]` | Path prefixes that R2 and R3 do not measure |
 | `plan_review_cycles` | `5` | The most P3 review cycles |
@@ -95,7 +94,7 @@ values). A resumed run keeps the config of its first activation.
 |---|---|
 | `minimal` | `subagent_hygiene.mode: shadow`, `context_budget.mode: off` |
 | `standard` | None. The twelve core blocks |
-| `strict` | Every stage pack on (25 blocks), and each measure `unsupported: fail` |
+| `strict` | Every stage pack on (25 blocks), and each measure `unsupported: fail`. The context budget stays in `shadow`: it is a cost control, not evidence, and a 25-block run goes past 90,000 orchestrator tokens. Set `context_budget.mode: enforce` and a `max_tokens` that fits your runs to turn it on |
 
 A profile applies over the defaults and under every other layer. A higher layer changes a value of
 the profile like any other value.

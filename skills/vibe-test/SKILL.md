@@ -54,10 +54,6 @@ When the adapter name is `github-issues`, read the ticket with `gh`.
 1. Classify the target (disk spec, PR+SHA, or snapshot).
 2. Stub the report, then fill: scenarios, gaps, conflicts, risks for P1.
 3. Mark each gap blocking or non-blocking.
-4. List each blocking gap under `## Blocking gaps`, one line each, with an id: `G-1: <the gap>`.
-   End the report with `Verdict: READY FOR PLANNING` when it has no blocking gap, else
-   `Verdict: NOT READY FOR PLANNING`. A run does not stop on a gap: the plan peer logs an
-   assumption for each `G-n` in the register, and P9 fails while a `G-n` has no row.
 
 Cadence gate `scripts/validate_gate.py` looks for this marker under
 `vibetest/*.md` or `.context/vibetest/*.md`.

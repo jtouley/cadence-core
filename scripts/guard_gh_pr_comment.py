@@ -3,7 +3,6 @@
 
 The comment body holds a `## Fixes` table (finding, commit) and a `## Deferrals`
 table (finding, ticket). The gate checks each row against the ledger and fails closed.
-without --check, the script writes the body from the ledger itself, then checks it.
 """
 
 from __future__ import annotations
@@ -87,37 +86,6 @@ def body_problems(body: Path, rows: list[dict]) -> list[str]:
                               "a deferred or spec_gap must-fix"))
 
 
-def render_body(rows: list[dict], assumptions: dict[str, list[str]] | None = None) -> str:
-    """The closure comment of a run with no open must-fix, from its ledger rows and logged assumptions."""
-    must = [row for row in rows if row.get("severity") == "must-fix"]
-    fixes = [(row["id"], str(row["fixed_in"])[:12]) for row in must
-             if row.get("status") == "verified" and row.get("fixed_in")]
-    deferrals = [(row["id"], str(row.get("ticket") or "")) for row in must if row.get("status") in ("deferred", "spec_gap")]
-    others = [row["id"] for row in rows if row.get("severity") != "must-fix" and row.get("status") == "open"]
-    lines = ["## Closure summary", "", "The ledger is `.context/findings.jsonl`.",
-             f"{len(must)} must-fix findings are closed. No must-fix finding is open.",
-             f"{len(others)} other findings are open. They go to the tracker." if others else "No other finding is open.",
-             "The PR is ready for review by a person.", "",
-             f"## {FIXES}", "", "| Finding | Commit |", "|---|---|", *[f"| {i} | {c} |" for i, c in fixes], "",
-             f"## {DEFERRALS}", "", "| Finding | Ticket |", "|---|---|", *[f"| {i} | {t} |" for i, t in deferrals]]
-    if assumptions:
-        lines += ["", "## Assumptions", "", "| Gap | Assumption | Settled by |", "|---|---|---|",
-                  *[f"| {gap} | {' | '.join((cells + ['', ''])[1:3])} |" for gap, cells in sorted(assumptions.items())]]
-    if others:
-        lines += ["", "## Open findings for the tracker", "", *[f"- {i}" for i in others]]
-    return "\n".join(lines) + "\n"
-
-
-def _post_command(context_dir: Path, cwd: Path, body: Path) -> str:
-    from artifact_requirements import draft_pr_number, draft_pr_record
-    from gate_common import current_branch
-    from pipeline_run_binding import run_for
-
-    record = draft_pr_record(context_dir, run_for(context_dir, cwd=cwd) or {}, current_branch(cwd))
-    number = draft_pr_number(record) if record is not None else None
-    return f"gh pr comment {number if number is not None else '<N>'} --body-file {body}"
-
-
 def run(context_dir: Path, *, check: bool = False, cwd: Path | None = None, body: Path | None = None) -> int:
     """Judge the must-fix rows of the run of ``cwd``; with no run, every row."""
     cwd = cwd or Path.cwd()
@@ -131,14 +99,6 @@ def run(context_dir: Path, *, check: bool = False, cwd: Path | None = None, body
         errors = [f"guard-gh-pr-comment: {len(open_findings)} open must-fix finding(s) block PR comment"]
         errors += [f"  must-fix [{f.get('id', '?')}] at {f.get('location', '?')}" for f in open_findings]
     else:
-        if not check and body is None:
-            body = comment_body_path(context_dir, cwd)
-            body.parent.mkdir(parents=True, exist_ok=True)
-            from artifact_requirements import logged_assumptions
-            from pipeline_run_binding import run_for
-
-            assumptions = logged_assumptions(context_dir, run_for(context_dir, cwd=cwd))
-            body.write_text(render_body(scope["rows"], assumptions), encoding="utf-8")
         errors = body_problems(body or comment_body_path(context_dir, cwd), scope["rows"])
     if errors:
         code = fail(SLUG, errors)
@@ -147,8 +107,6 @@ def run(context_dir: Path, *, check: bool = False, cwd: Path | None = None, body
     if not check:
         write_gate_breadcrumb(SLUG, {"open_must_fix_count": 0, **summary}, context_dir=context_dir)
     print(json.dumps(summary))
-    if not check:
-        print(f"NEXT: {_post_command(context_dir, cwd, body or comment_body_path(context_dir, cwd))}")
     return ok(SLUG)
 
 

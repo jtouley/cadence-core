@@ -30,7 +30,7 @@ from findings_io import append_finding, load_findings  # noqa: E402
 
 RUN = str(uuid.UUID(int=0x1111_2222_3333_4444_5555_6666_7777_8888))
 RUN_1 = str(uuid.UUID(int=0x9999_aaaa_bbbb_cccc_dddd_eeee_ffff_0000))
-GATE = "python3 $CADENCE_HOME/scripts/architecture_review.py --phase impl --check"
+GATE = "python3 scripts/architecture_review.py --phase impl --check"
 STUB = "---\ndecision_id: D-47\nstatus: proposed\nquestion: q\nchoice: c\nrationale: r\n{links}---\n"
 LINKS = "links:\n  - rel: covers\n    target_type: task\n    target_id: cd-47\n"
 
@@ -245,7 +245,7 @@ def _foreign_rows(fx: Fixture) -> None:
             "check": "manual", "status": "open"}
     append_finding(ledger, {**base, "id": "cd-32-F1", "stage": "architecture-review-impl", "rule_ref": "core:plan-conformance"})
     append_finding(ledger, {**base, "id": "cd-47-F9", "stage": "architecture-review-plan", "rule_ref": "core:decision-coverage",
-                            "check": "python3 $CADENCE_HOME/scripts/architecture_review.py --phase plan --check"})
+                            "check": "python3 scripts/architecture_review.py --phase plan --check"})
 
 
 def _status(fx: Fixture, finding: str) -> str:
@@ -369,7 +369,7 @@ def test_a_p5_pass_names_p5_in_the_supersede_note(tmp_path):
     repo, context = _plain_repo(tmp_path)
     write_ledger(context / "findings.jsonl", ledger_row("cd-47-F1", **{
         **E3_DEFAULTS, "stage": "architecture-review-plan", "rule_ref": "core:decision-coverage",
-        "check": "python3 $CADENCE_HOME/scripts/architecture_review.py --phase plan --check"}))
+        "check": "python3 scripts/architecture_review.py --phase plan --check"}))
     _review("plan", repo, context, task_id="cd-47")
     [row] = load_findings(context / "findings.jsonl")
     assert row["note"].startswith("superseded by P5 pass at ")

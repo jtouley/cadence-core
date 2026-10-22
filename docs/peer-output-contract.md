@@ -53,13 +53,7 @@ These rules apply to each peer block. `references/peer-contract.md` tells the bu
 | `vibetest/*.md` | `**Ticket:** <ticket id>`, raw: `(?m)^\*\*Ticket:\*\*[ \t]*(.+?)\s*$`. The value matches the adapter `ticket_pattern`, or is `TICKET_SKIPPED (<reason>)` and the reason names the adapter. | Yes | `scripts/tracker_header.py:tracker_header_problems`, `scripts/tracker_header.py:_ticket_line_problems` |
 | `vibetest/*.md` | No `**Linear:**` line unless the adapter is `linear` | Yes | `scripts/tracker_header.py:tracker_header_problems` |
 
-A5 checks the header of each marked report of the run, not only the newest. A NOT READY report labels its blocking gaps:
-
-| Artifact path | Line or marker (exact form) | Required? | Read by |
-|---|---|---|---|
-| `vibetest/*.md` | `Verdict: READY FOR PLANNING` or `Verdict: NOT READY FOR PLANNING`, at the start of a line | Yes | `scripts/gate_common.py:_a5_gaps` |
-| Same | Under `## Blocking gaps`, one id `G-<n>` for each blocking gap: `G-1: <the gap>` | If the verdict is NOT READY | `scripts/artifact_requirements.py:spec_gap_ids`, `scripts/gate_common.py:_a5_gaps` |
-| `deferrals/<task>_deferral-register.md` (the plan peer writes it) | Under `## Assumptions`, a table row whose first cell is `G-<n>`, for each `G-n` of the newest report of the run | If the report names a `G-n` | `scripts/artifact_requirements.py:logged_assumptions`, `scripts/artifact_requirements.py:check_spec_gaps` (P9) |
+A5 checks the header of each marked report of the run, not only the newest.
 
 ## P1: /plan-create
 
@@ -109,10 +103,8 @@ A `READY WITH CHANGES` or `NOT READY` verdict blocks P9 until the loop ends
 | Artifact path | Line or marker (exact form) | Required? | Read by |
 |---|---|---|---|
 | `benchmarks/*_plan.json` (`benchmarks/<task_id>_plan.json`) | A JSON object with the top-level key `"RUN_BY_SKILL": "test-benchmark"` | Yes | `scripts/test_benchmark_gate.py:run`, `scripts/artifact_requirements.py:check_required_before_execution` |
-| Same | `scores`: an object of numbers. Each layer, DRY and assertion score is 7 or more, and so is the mean | Yes | `scripts/test_benchmark_gate.py:_score_problems` |
-| Same | `verdict`: `PASS`. While the newest one of the run is not `PASS`, the P4 packet pins it | Yes | `scripts/test_benchmark_gate.py:_plan_problems`, `scripts/handoff_inputs.py:_plan_benchmark` |
 
-A plan finding gets no findings ledger row. A new plan scorecard that passes closes it.
+The P7 gate reads no other key.
 
 ## E1: /spec-driven
 
@@ -120,12 +112,6 @@ A plan finding gets no findings ledger row. A new plan scorecard that passes clo
 |---|---|---|---|
 | A commit since the base | A subject that names a phase: `^(?:\[[^\]]*\]\s*)?(?:(?:fixup\|squash)!\s*)?(?:\w+(?:\([^)]*\))?!?:\s*)?phase[\s_-]*(\d+)\b` (any case), for example `phase N: <title>`, `phase 2: wiring` or `feat(x): phase 2 wiring`. A later revert undoes the phase. | Yes, one for each `### Phase N:` of the plan | `scripts/phase_ledger.py:phase_of`, `scripts/phase_ledger.py:done_phases`, `scripts/implement_gate.py:run` |
 | The phase commits | No two phase commits with the same author time (to the second) | If the plan has three or more phases | `scripts/phase_ledger.py:one_shell` |
-| `implementation/<task>_stage4.md` | `RUN_BY_COMMAND: spec-driven`, and the final message `ARTIFACT: .context/implementation/<task>_stage4.md` | Yes | `scripts/peer_return.py:return_reason` (the return line) |
-
-The same peer runs each review fix round as `/spec-driven --fix <review>`, with the PR review
-`.context/prs/reviews/PR_REVIEW_#<N>.md` as its input. For each open must-fix row of the run, it
-commits a red test and a fix, and sets the row to `fixed` with `fixed_in` through
-`scripts/findings_io.py`. R4 and R5 read the ledger ([Findings ledger rows](#findings-ledger-rows)).
 
 ## E4: /commit-push-pr --draft
 
@@ -170,16 +156,6 @@ R4 is a script block. `peers` does not bind it. Its peer `/pr-review-update` app
 | Same | `## Update <date>`: `^##[ \t]+Update\b`. Each section is one fix round. At `review_fix_rounds` (default 2), the gate holds an open loop. | No (counted) | `scripts/final_consolidate.py:fix_rounds`, `scripts/final_consolidate.py:review_rounds` |
 | Same | New must-fix items under a `Must-fix` heading, for example `### Must-fix items`, with the next free `MF-<n>` ids | If the update finds a new must-fix | `scripts/artifact_requirements.py:review_must_fix_ids`, `scripts/gate_common.py:_r1_ledger_problems` |
 | `findings.jsonl` | A must-fix row for each new `MF-<n>`. R4 fails while a must-fix row of the task is `open`. | If the update has a new `MF-<n>` | `scripts/gate_common.py:_r1_ledger_problems`, `scripts/findings_io.py:is_open_must_fix`, `scripts/final_consolidate.py:consolidate` |
-
-## R7: /session-summary (supporting command)
-
-R7 is a script block. `activate_session.py --deactivate` writes the manifest
-`manifests/<task_id>.md` and closes the run only after this peer writes the summary.
-
-| Artifact path | Line or marker (exact form) | Required? | Read by |
-|---|---|---|---|
-| `summaries/<task_id>.md` | The file, written by a peer with the Write or Edit tool. On Claude Code its current content is the newest content that a peer wrote (attested). | Yes | `scripts/activate_session.py:summary_missing` |
-| Same | `RUN_BY_COMMAND: session-summary` | No | None |
 
 ## Findings ledger rows
 

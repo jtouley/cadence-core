@@ -39,7 +39,6 @@ try:
     )
     from context_root import find_primary_checkout  # on sys.path via skill_gate
     import peer_attest  # shared/scripts, on sys.path via skill_gate
-    import orchestrator_scope  # shared/scripts, on sys.path via skill_gate
     from hook_protocol import (
         chat_id,
         extract_file_path,
@@ -281,8 +280,6 @@ def main(argv: list[str] | None = None) -> int:
     # Each candidate with a session is judged; one deny denies.
     for workspace in _session_workspaces(payload):
         message = _gate_message(workspace, checks, mention)
-        if message is None and host == "claude":  # a peer writes the code
-            message = orchestrator_scope.write_denial(payload, workspace, [p for _, p in checks])
         if message is not None:
             tool_deny(host, message)
             return 0

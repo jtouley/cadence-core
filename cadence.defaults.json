@@ -26,12 +26,10 @@
     "classifier_timeout": 10,
     "on_classifier_error": null
   },
-  "orchestrator_scope": {
-    "mode": "enforce"
-  },
   "context_budget": {
     "mode": "shadow",
-    "warn_tokens": 60000
+    "warn_tokens": 60000,
+    "max_tokens": 90000
   },
   "cognitive_complexity": {
     "max": 15,

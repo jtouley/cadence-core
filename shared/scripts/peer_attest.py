@@ -26,7 +26,6 @@ PEER_ARTIFACT_GLOBS = (
     "benchmarks/*.json",
     "prs/reviews/*.md",
     "reviews/pr_*.md",
-    "summaries/*.md",
 )
 
 

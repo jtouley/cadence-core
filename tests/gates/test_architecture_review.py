@@ -104,7 +104,7 @@ def test_supersede_closes_an_upper_case_own_row(tmp_path, monkeypatch):
     import architecture_review as ar
 
     ledger = tmp_path / ".context" / "findings.jsonl"
-    gate = "python3 $CADENCE_HOME/scripts/architecture_review.py --phase plan --check"
+    gate = "python3 scripts/architecture_review.py --phase plan --check"
     write_ledger(ledger, ledger_row("CD-63-F2", stage="architecture-review-plan", check=gate),
                  ledger_row("cd-64-F1", stage="architecture-review-plan", check=gate))
     ar._supersede(ledger, ar.task_row_pattern("cd-63"), "architecture-review-plan", "P5 pass at abc")

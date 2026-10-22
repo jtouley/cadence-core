@@ -49,8 +49,7 @@ An id in its `## Status of earlier items` table, or in a note, is not open.
 RUN_BY_COMMAND: plan-update
 ```
 
-- This update writes the plan, and the decision records and deferral rows that the review asks
-  for (below). Do not start E1.
+- This update writes the plan only. Do not start E1.
 - Do not create or edit `reviews/plan_*.md`. Only a plan-review run writes that file.
 - Do not run `/plan-review`. Do not call the `plan-review` skill. Do not review your own update.
   When a Cadence run delegates this peer, end after the plan write with the one-line return in `peer-contract.md`.
@@ -65,17 +64,6 @@ At the limit, the gate reads `## Carried review findings`, not the ledger. Write
 `NOT READY` after the fifth review: the orchestrator runs `activate_session.py --hard-stop retries --reason "..."`.
 Do not ask the user to allow another cycle.
 
-## Decisions and deferrals
-
-- When a review asks for a decision record, write it as step 5 of `commands/plan-create.md` says.
-- When a review proposes a deferral, take it only with a follow-up ticket and a ripeness
-  (`references/deferral-framework.md`). Add its row under `## Approved deferrals` in
-  `.context/deferrals/<task_id>_deferral-register.md`, and write the register with that heading
-  when it does not exist. Add a deferral that you reject under `## Deferrals rejected`.
-- P8 writes the register itself only when no deferral was proposed. The orchestrator writes none.
-- Keep the `## Assumptions` row of each `G-n` of the vibe-test report in the register. When a
-  review disputes an assumption, change its row and the phase that settles it.
-
 ## Adversarial review (P6)
 
 When the newest P6 report of the run (`.context/adversarial/adversarial_{slug}*.md`, `Mode: plan-gate`)
@@ -86,14 +74,6 @@ is `REQUEST CHANGES` or `APPROVE WITH CONDITIONS`, take in its blocking items an
   `python3 $CADENCE_HOME/scripts/adversarial_review_gate.py --heading <report>`.
   Add that heading and map each `B-n` and `C-n` of that report to the phase whose test settles it.
 - `APPROVE WITH CONDITIONS`: add the heading for that report and map each `C-n` under it before P9.
-
-## Test benchmark (P7)
-
-When the packet pins a plan scorecard (`.context/benchmarks/*_plan.json`), its verdict is not
-`PASS`. Apply each must-fix finding of its `findings` list to the test spec of the plan, and write one
-row for each finding id in the revision ledger. Write the ledger heading with the first 12 characters of
-the sha256 of the scorecard. Then the orchestrator sends `/test-benchmark plan <plan>` again. A plan
-finding has no row in the findings ledger, so do not write one.
 
 One budget: a P3 review that a P6 round causes counts in the P3 limit. At the P3 limit the P3 carry rule applies.
 A carry-only update (P3 or P6 at its limit) needs no new review. The gates check the carried ids.

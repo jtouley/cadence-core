@@ -207,7 +207,7 @@ def run_architecture_review(
     own = task_row_pattern(task_id)
     earlier = load_findings(ledger)
     seq = 1 + max((int(re.findall(r"\d+$", row["id"])[0]) for row in rows_of_task(earlier, task_id)), default=0)
-    gate = f"python3 $CADENCE_HOME/scripts/architecture_review.py --phase {phase} --check"
+    gate = f"python3 scripts/architecture_review.py --phase {phase} --check"
 
     def emit(
         rule_ref: str,

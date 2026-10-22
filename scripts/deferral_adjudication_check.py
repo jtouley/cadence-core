@@ -297,29 +297,6 @@ def register_row_problem(context_dir: Path, session: dict | None, ticket: str) -
             "in .context/deferrals/<task>_deferral-register.md (references/deferral-framework.md)")
 
 
-def write_zero_register(context_dir: Path) -> Path | None:
-    """The register of a run that approved no deferral, written by P8 itself.
-
-    A deferral is a judgment: the plan peer writes its row. With no register at all, nobody
-    proposed one, so the script writes the zero register. An existing register is never changed.
-    """
-    from pipeline_run_binding import current_session
-
-    session = current_session(context_dir)
-    task_id = str(session.get("task_id") or "")
-    if not task_id:
-        return None
-    path = context_dir / "deferrals" / f"{re.sub(r'[/\\]', '-', task_id)}_deferral-register.md"
-    if path.exists():
-        return None
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"# Deferral register: {task_id}\n\nTicket: {task_id}\n"
-                    f"Pipeline-Run: {session.get('pipeline_run_id') or ''}\n\n"
-                    "## Approved deferrals\n\nNo approved deferrals. All work ships in this PR.\n\n"
-                    "## Deferrals rejected\n\nNone proposed.\n", encoding="utf-8")
-    return path
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate deferral register adjudication")
     parser.add_argument(
@@ -338,8 +315,6 @@ def main() -> int:
 
         context = ctx()
         errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
-        if errors and not args.check and write_zero_register(context) is not None:
-            errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
         return fail("deferral-register", errors) if errors else ok("deferral-register")
     try:
         text = Path(args.path).read_text(encoding="utf-8")

@@ -539,27 +539,6 @@ def hook_session(repo: Path, layout: str = "single", **fields) -> Path:
     return session_store.save_session(payload, repo)
 
 
-def peer_summary(workspace: Path) -> Path:
-    """The /session-summary peer's write for the worktree's run, attested as the hook does."""
-    import re as _re
-
-    shared = str(_REPO_ROOT / "shared" / "scripts")
-    if shared not in sys.path:
-        sys.path.insert(0, shared)
-    import peer_attest
-    import session_store
-    from context_root import context_dir
-
-    session = session_store.load_worktree_session(workspace) or read_session(workspace)
-    ctx = context_dir(workspace)
-    rel = f"summaries/{_re.sub(r'[\\/]', '-', str(session['task_id']))}.md"
-    body = b"# Session summary\n\nRUN_BY_COMMAND: session-summary\n"
-    (ctx / rel).parent.mkdir(parents=True, exist_ok=True)
-    (ctx / rel).write_bytes(body)
-    peer_attest.record(ctx, str(session["pipeline_run_id"]), rel, "summary-peer", peer_attest.sha256(body))
-    return ctx / rel
-
-
 def read_session(repo: Path) -> dict:
     ctx = repo / ".context"
     data = json.loads((ctx / "cadence-session.json").read_text(encoding="utf-8"))

@@ -153,19 +153,6 @@
         }
       }
     },
-    "orchestrator_scope": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "mode": {
-          "type": "string",
-          "enum": [
-            "off",
-            "enforce"
-          ]
-        }
-      }
-    },
     "context_budget": {
       "type": "object",
       "additionalProperties": false,
@@ -174,10 +161,15 @@
           "type": "string",
           "enum": [
             "off",
-            "shadow"
+            "shadow",
+            "enforce"
           ]
         },
         "warn_tokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_tokens": {
           "type": "integer",
           "minimum": 1
         }

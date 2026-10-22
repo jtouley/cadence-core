@@ -257,23 +257,10 @@ def _r1_ledger_problems(context_dir: Path, review: Path) -> list[str]:
 
 
 # The gates that read a verdict after the artifact check, and R1 reads the reviewed commit.
-def _a5_gaps(context_dir: Path) -> list[str]:
-    """A NOT READY vibe-test report labels each blocking gap `G-n`, so the plan can answer it."""
-    from artifact_requirements import BLOCKING_GAPS_HEADER, newest_vibetest, spec_gap_ids
-
-    report = newest_vibetest(context_dir, run_for(context_dir, cwd=Path.cwd()))
-    text = report.read_text(encoding="utf-8") if report is not None else ""
-    if re.search(r"(?im)^\W*verdict\W*:\W*not ready", text) and not spec_gap_ids(text):
-        return [f"vibe-test: {report.name} is not ready for planning and lists no `G-n` under "
-                f"`{BLOCKING_GAPS_HEADER}`. Send /vibe-test again"]
-    return []
-
-
 _VERDICT_CHECKS = {
     "adversarial-review-gate": lambda ctx: check_adversarial_verdict(ctx, stage="p6"),
     "plan-review-gate": _p3_reopen,
     "pr-review-local-gate": _r1_problems,
-    "validate-gate": _a5_gaps,
 }
 
 
