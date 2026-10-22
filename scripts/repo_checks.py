@@ -70,7 +70,8 @@ def _python(worktree: Path) -> str:
 
 def _run(cmd: str, worktree: Path) -> tuple[int, str]:
     try:
-        proc = subprocess.run(cmd, shell=True, cwd=worktree, capture_output=True, text=True, timeout=TIMEOUT_SECONDS)
+        proc = subprocess.run(cmd, shell=True, cwd=worktree, capture_output=True, text=True,  # noqa: S602 - the repo's own check
+                              timeout=TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         return 124, f"timed out after {TIMEOUT_SECONDS} s"
     tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
@@ -127,7 +128,7 @@ def main(argv: list[str]) -> int:
     if argv[1] not in check_commands(Path.cwd()):
         print(f"`{argv[1]}` is not a repo check of this tree: {check_commands(Path.cwd())}", file=sys.stderr)
         return 2
-    return subprocess.run(argv[1], shell=True, timeout=TIMEOUT_SECONDS).returncode
+    return subprocess.run(argv[1], shell=True, timeout=TIMEOUT_SECONDS).returncode  # noqa: S602 - a repo check, named above
 
 
 if __name__ == "__main__":

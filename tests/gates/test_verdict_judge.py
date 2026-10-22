@@ -10,6 +10,7 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -45,7 +46,7 @@ class _Stub(BaseHTTPRequestHandler):
         if "waits" in question.get("criteria", {}):  # the person-wait question: the state is the one line
             p = WAITS.get(body["state"], 0.05)
             probabilities = {"waits": p, "records": (1 - p) / 2, "work": (1 - p) / 2}
-            choice = max(probabilities, key=probabilities.get)
+            choice = max(probabilities, key=lambda k: probabilities[k])
             answer = {"type": "choice", "choice": choice, "confidence": 0.9, "probabilities": probabilities}
         else:
             line = body["state"].split(": ", 1)[1]
@@ -153,7 +154,7 @@ def test_a_plan_line_that_waits_on_a_person_is_a_must_fix_of_the_round_once(jev,
             "### Phase 1: query\n\nAdd the query.\n\nRun `python3 acceptance/check_export.py AC-1`.\n\n### Phase 2: render\n\n"
             "Phase 2 does not start until the owner accepts the quoting record.\n\n"
             "## Revision ledger (review abc)\n\n| MF-1 | the owner accepts it later |\n")
-    rnd = SimpleNamespace(text=plan)
+    rnd: Any = SimpleNamespace(text=plan)
     [row] = _person_waits(rnd, [])
     assert (row["id"], row["phase"], row["severity"], row["stage"]) == ("W-1", "Phase 2", "must-fix", "person-wait")
     asked = [q["state"] for q in jev.asked]
@@ -167,7 +168,8 @@ def test_without_a_key_no_plan_line_is_judged(jev, monkeypatch):
     from plan_wave import _person_waits
 
     monkeypatch.delenv("TYPESAFE_API_KEY")
-    assert _person_waits(SimpleNamespace(text="### Phase 1: x\n\nThe owner accepts it first.\n"), []) == []
+    stub: Any = SimpleNamespace(text="### Phase 1: x\n\nThe owner accepts it first.\n")
+    assert _person_waits(stub, []) == []
     assert jev.asked == []
 
 

@@ -124,7 +124,7 @@ def read_denial(payload: dict[str, Any], workspace: Path, paths: list[str]) -> s
     command = tool_input.get("command") if isinstance(tool_input.get("command"), str) else ""
     grep = tool_input.get("path") if payload.get("tool_name") == "Grep" else None
     searched = [grep] if isinstance(grep, str) and grep.strip() else []
-    hits = [h for p in [*paths, *searched] if (h := out_of_scope(expand(p, command, workspace), workspace))]
+    hits = [h for p in [*paths, *searched] if (h := out_of_scope(expand(p, str(command), workspace), workspace))]
     if not hits and not GIT_DIFF.search(command):
         return None
     if not is_orchestrator(payload, workspace) or not enforced(workspace):

@@ -309,7 +309,7 @@ def _hard_stop(args: argparse.Namespace, context_dir: Path, workspace: Path) -> 
     if args.hard_stop == "retries":
         from final_consolidate import fix_loop_moves
 
-        early = fix_loop_moves(context_dir, str(session.get("pipeline_run_id") or ""), SKILL_ROOT)
+        early = fix_loop_moves(context_dir, str((session or {}).get("pipeline_run_id") or ""), SKILL_ROOT)
         if early:
             print(f"FAIL  --hard-stop retries: {early}", file=sys.stderr)
             return 1
@@ -629,6 +629,24 @@ def _start_run(args: argparse.Namespace, ctx: dict, resumed: dict | None, snapsh
     return 0
 
 
+def _read_request(args: argparse.Namespace) -> str:
+    """The text of `--request` (a file, or `-` for stdin); "" after it printed why the request cannot be read."""
+    try:
+        request = (sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")).strip()
+    except OSError as exc:
+        print(f"FAIL  --request: {exc}", file=sys.stderr)
+        return ""
+    if not request:
+        print("FAIL  --request: the request is empty", file=sys.stderr)
+    return request
+
+
+def _noted_agent(note: dict | None) -> str | None:
+    """The agent id of the orchestrator note, else None."""
+    agent = (note or {}).get("agent_id")
+    return agent if isinstance(agent, str) and agent else None
+
+
 def _activate(args: argparse.Namespace, workspace: Path, primary: Path, context_dir: Path) -> int:
     error = _flag_error(args)
     if error:
@@ -667,26 +685,19 @@ def _activate(args: argparse.Namespace, workspace: Path, primary: Path, context_
         if model_errors:
             return 2
 
-    request = None
-    if args.request and not already_active:
-        try:
-            request = (sys.stdin.read() if args.request == "-" else Path(args.request).read_text(encoding="utf-8")).strip()
-        except OSError as exc:
-            print(f"FAIL  --request: {exc}", file=sys.stderr)
-            return 2
-        if not request:
-            print("FAIL  --request: the request is empty", file=sys.stderr)
-            return 2
+    request = _read_request(args) if args.request and not already_active else None
+    if request == "":
+        return 2
 
     # Take the orchestrator note after the checks, so a failed activation keeps it for the next try.
     note = session_store.take_pending_note(context_dir) if session_store is not None else None
     noted = note is not None
-    orchestrator = note.get("agent_id") if noted and isinstance(note.get("agent_id"), str) and note["agent_id"] else None
+    orchestrator = _noted_agent(note)
     if already_active:
         return _rejoin_active_run(existing, noted, orchestrator, context_dir, workspace)
     ctx = {"workspace": workspace, "primary": primary, "context_dir": context_dir, "branch": branch,
            "task_id": task_id, "task_source": task_source, "host": host, "config": config_record,
-           "request": request, "join_hook": note.get("join_hook") if noted else None}
+           "request": request, "join_hook": (note or {}).get("join_hook")}
     return _start_run(args, ctx, resumed, snapshot, noted, orchestrator)
 
 

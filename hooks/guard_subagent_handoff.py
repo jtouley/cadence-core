@@ -349,7 +349,8 @@ def lean_check(
         return "deny"
     if reason is not None:
         rendered = rendered_command(scope["block"], scope["ctx"], scope["session"], scope["workspace"])
-        tool_deny(host, f"BLOCKED: lean peer prompt rejected: {reason}. {lean_hint(row, rendered)}")
+        hint = lean_hint(row, rendered) if row is not None else ""
+        tool_deny(host, f"BLOCKED: lean peer prompt rejected: {reason}. {hint}")
         return "deny"
     return "allow"
 

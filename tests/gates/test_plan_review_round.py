@@ -12,6 +12,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -220,7 +221,7 @@ def test_parallel_status_changes_keep_every_row(tmp_path):
     procs = [subprocess.Popen([sys.executable, str(ROOT / "scripts" / "findings_io.py"), "--ledger", str(ledger),
                                "set-status", "--id", i, "--status", "deferred", "--ticket", "#9"],
                               cwd=tmp_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for i in ids]
-    assert all(p.wait() == 0 for p in procs), [p.stderr.read() for p in procs]
+    assert all(p.wait() == 0 for p in procs), [p.communicate()[1] for p in procs]
     rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
     assert sorted(r["id"] for r in rows) == sorted(ids) and {r["status"] for r in rows} == {"deferred"}
 
@@ -276,8 +277,9 @@ def test_a_reviewer_of_an_open_round_is_held_until_it_records_done(repo):
 
     _wave(repo)
     context, session = repo / ".context", read_session(repo)
-    assert "plan_wave.py\" add --stage test-benchmark-plan" in _round_hold(context, session, "test-benchmark-plan")
-    assert "$CADENCE_HOME" not in _round_hold(context, session, "test-benchmark-plan")
+    hold = _round_hold(context, session, "test-benchmark-plan") or ""
+    assert "plan_wave.py\" add --stage test-benchmark-plan" in hold
+    assert "$CADENCE_HOME" not in hold
     _card(repo)
     _wave(repo, "done", "--stage", "test-benchmark-plan")
     assert _round_hold(context, session, "test-benchmark-plan") is None
@@ -298,11 +300,11 @@ def test_the_p4_marker_is_not_a_change_and_a_change_outside_the_round_is_shown(r
     assert proc.returncode == 1 and "changed global" in proc.stderr
     assert "The change: - Export the ledger as CSV. | + Export the ledger as CSV or JSON." in proc.stderr
     assert "RUN_BY_COMMAND" not in proc.stderr
-    assert p4_input(repo / ".context", read_session(repo)).name == "round-1.md"  # the retry answers the same round
+    assert str(p4_input(repo / ".context", read_session(repo))).endswith("round-1.md")  # the retry answers the same round
     _plan(repo).write_text(text.replace("Pipeline-Run:", "RUN_BY_COMMAND: plan-update\nPipeline-Run:"), encoding="utf-8")
     assert "round 2 waits on" in _wave(repo).stderr
     # y3: a round that opened after it with no rows does not hide it, so a repair P4 still gets the round file
-    assert p4_input(repo / ".context", read_session(repo)).name == "round-1.md"
+    assert str(p4_input(repo / ".context", read_session(repo))).endswith("round-1.md")
 
 
 def test_p7_is_done_only_with_a_scorecard_that_the_p7_gate_can_read(repo):
@@ -428,7 +430,7 @@ def test_a_round_that_ran_its_scripts_is_started_and_not_opened_again(tmp_path):
 
     from plan_wave import _started
 
-    rnd = SimpleNamespace(round_file=lambda n: tmp_path / f"round-{n}.md", rows=lambda stage, n: [])
+    rnd: Any = SimpleNamespace(round_file=lambda n: tmp_path / f"round-{n}.md", rows=lambda stage, n: [])
     assert _started(rnd, {"n": 2, "due": [], "done": {}, "p5": [{"id": "W-1"}]})
     assert not _started(rnd, {"n": 2, "due": [], "done": {}, "p5": []})
     (tmp_path / "round-2.md").write_text("x", encoding="utf-8")
@@ -448,9 +450,10 @@ def test_the_round_names_the_p6_carry_that_p9_checks(monkeypatch):
              'settles each.',
              "adversarial-review: adversarial_t.md has no readable verdict."]
     monkeypatch.setattr(artifact_requirements, "check_adversarial_verdict", lambda *_a, **_k: found)
-    [problem] = plan_wave._carry_problems(SimpleNamespace(ctx=Path("."), session={}))
+    stub: Any = SimpleNamespace(ctx=Path("."), session={})
+    [problem] = plan_wave._carry_problems(stub)
     assert problem.startswith("plan-review-round: cycle limit reached")
     assert "## Carried adversarial findings (adversarial_t.md @ abc123abc123)" in problem
     assert problem.endswith("Send /plan-update again with the round file")
     monkeypatch.setattr(artifact_requirements, "check_adversarial_verdict", lambda *_a, **_k: [])
-    assert plan_wave._carry_problems(SimpleNamespace(ctx=Path("."), session={})) == []
+    assert plan_wave._carry_problems(stub) == []

@@ -76,6 +76,15 @@ def supersede_finding(record: dict, passed: str) -> dict:
     return out
 
 
+def _set_check_hint(row: dict) -> str:
+    """The set-check step when the row's check names a script that is not a file, else ""."""
+    missing = missing_script(row.get("check"), Path.cwd())
+    if not missing:
+        return ""
+    return (f" The check names {missing}, which is not a file. The {row.get('stage') or 'review'} peer that wrote "
+            f"the row replaces it: findings_io.py set-check --id {row.get('id')} --check \"<a command that runs>\"")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Verify fixed findings → verified")
     parser.add_argument("--ledger", required=True, help="Path to findings jsonl")
@@ -95,11 +104,7 @@ def main(argv: list[str] | None = None) -> int:
             new_rows.append(verify_finding(row, dry_run=args.dry_run))
             selected += 1
         except (ValueError, RuntimeError) as exc:
-            missing = missing_script(row.get("check"), Path.cwd())
-            hint = (f" The check names {missing}, which is not a file. The {row.get('stage') or 'review'} peer that wrote "
-                    f"the row replaces it: findings_io.py set-check --id {row.get('id')} --check \"<a command that runs>\""
-                    if missing else "")
-            errors.append(f"error: {row.get('id')}: {exc}{hint}")
+            errors.append(f"error: {row.get('id')}: {exc}{_set_check_hint(row)}")
             new_rows.append(row)
     for line in errors:
         print(line, file=sys.stderr)

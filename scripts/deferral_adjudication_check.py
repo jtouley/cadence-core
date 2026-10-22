@@ -339,15 +339,47 @@ def _carried(context: Path, keys: list[str]) -> list[str]:
     return [k for k in keys if k not in body]
 
 
-def ruling_problems(register: Path) -> list[str]:
-    """Why the deferrals of ``register`` lack a GREEN or a carried AMBER of /deferral-review, else [].
-
-    The ruling covers the register as it is now and comes from a peer write on Claude Code."""
+def _ruling_file_problem(register: Path, data: bytes, review: Path, send: str, rows: int) -> str | None:
+    """Why ``review`` is not a ruling of ``register`` as it is now, by a peer on Claude Code, else None."""
     import hashlib
 
     import peer_attest
     from pipeline_run_binding import current_session
 
+    if not review.is_file():
+        return f"deferral-review: no ruling of the {rows} deferral rows of {register.name}: {send}"
+    ruling = review.read_text(encoding="utf-8", errors="replace")
+    pinned = re.search(r"(?im)^\s*Register sha256:\s*([0-9a-f]{12,64})\s*$", ruling)
+    if "RUN_BY_COMMAND: deferral-review" not in ruling or not pinned \
+            or not hashlib.sha256(data).hexdigest().startswith(pinned.group(1).lower()):
+        return f"deferral-review: {review.name} does not rule on {register.name} as it is now: {send}"
+    context, session = register.parent.parent, current_session(register.parent.parent)
+    if session.get("host") == "claude" and not peer_attest.attested(
+            context, str(session.get("pipeline_run_id") or ""), review, peer_attest.orchestrator_ids(context)):
+        return f"deferral-review: {review.name} is not the latest write of a peer: {send}"
+    return None
+
+
+def _row_problem(key: str, item: str, cells: list[str], review: str, send: str) -> str | None:
+    """Why the ruling ``cells`` (row, ruling, reason, condition) does not defer row ``key``, else None.
+    A carried AMBER is checked by the caller."""
+    verdict, reason, condition = cells[1].strip().upper(), cells[2], cells[3].strip()
+    if verdict not in RULINGS or (verdict == "AMBER" and key.startswith("review")):
+        return (f"deferral-review: {review} has no RAG ruling for {key} "
+                f"(GREEN, AMBER or RED; a review row is GREEN or RED): {send}")
+    if verdict == "RED":
+        return (f"deferral-red: {key} ({item[:60]}): {reason}. It is built in this PR: before E1 "
+                "send /plan-update, which moves it under `## Deferrals rejected` and plans it; in review "
+                "it stays a must-fix of the fix round")
+    if verdict == "AMBER" and condition.lower() in ("", "none"):
+        return f"deferral-review: {key} is AMBER with no condition: {send}"
+    return None
+
+
+def ruling_problems(register: Path) -> list[str]:
+    """Why the deferrals of ``register`` lack a GREEN or a carried AMBER of /deferral-review, else [].
+
+    The ruling covers the register as it is now and comes from a peer write on Claude Code."""
     data = register.read_bytes()
     rows = _rows(data.decode("utf-8", errors="replace"))
     if not rows:
@@ -355,37 +387,22 @@ def ruling_problems(register: Path) -> list[str]:
     review = review_path(register)
     send = (f"run `deferral_adjudication_check.py` (it writes .context/manifests/{manifest_path(register).name}), "
             f"then send the peer `/deferral-review .context/manifests/{manifest_path(register).name}`")
-    if not review.is_file():
-        return [f"deferral-review: no ruling of the {len(rows)} deferral rows of {register.name}: {send}"]
-    ruling = review.read_text(encoding="utf-8", errors="replace")
-    pinned = re.search(r"(?im)^\s*Register sha256:\s*([0-9a-f]{12,64})\s*$", ruling)
-    if "RUN_BY_COMMAND: deferral-review" not in ruling or not pinned \
-            or not hashlib.sha256(data).hexdigest().startswith(pinned.group(1).lower()):
-        return [f"deferral-review: {review.name} does not rule on {register.name} as it is now: {send}"]
-    context, session = register.parent.parent, current_session(register.parent.parent)
-    if session.get("host") == "claude" and not peer_attest.attested(
-            context, str(session.get("pipeline_run_id") or ""), review, peer_attest.orchestrator_ids(context)):
-        return [f"deferral-review: {review.name} is not the latest write of a peer: {send}"]
-    _, table = _parse_table(ruling)
+    problem = _ruling_file_problem(register, data, review, send, len(rows))
+    if problem:
+        return [problem]
+    _, table = _parse_table(review.read_text(encoding="utf-8", errors="replace"))
     given = {re.sub(r"\s*#\s*", " ", c[0]).strip().lower(): c + ["", ""] for c in table if c and len(c) >= 2}
     problems, amber = [], []
     for key, row in rows.items():
-        verdict, reason, condition = (given[key][1].strip().upper(), given[key][2], given[key][3].strip()) \
-            if key in given else ("", "", "")
-        if verdict not in RULINGS or (verdict == "AMBER" and key.startswith("review")):
-            problems.append(f"deferral-review: {review.name} has no RAG ruling for {key} "
-                            f"(GREEN, AMBER or RED; a review row is GREEN or RED): {send}")
-        elif verdict == "RED":
-            problems.append(f"deferral-red: {key} ({row.item[:60]}): {reason}. It is built in this PR: before E1 "
-                            "send /plan-update, which moves it under `## Deferrals rejected` and plans it; in review "
-                            "it stays a must-fix of the fix round")
-        elif verdict == "AMBER" and condition.lower() in ("", "none"):
-            problems.append(f"deferral-review: {key} is AMBER with no condition: {send}")
-        elif verdict == "AMBER":
+        cells = given.get(key, ["", "", "", ""])
+        problem = _row_problem(key, row.item, cells, review.name, send)
+        if problem:
+            problems.append(problem)
+        elif cells[1].strip().upper() == "AMBER":
             amber.append(key)
     problems += [f"deferral-amber: the plan does not carry the condition of {key} ({given[key][3].strip()[:80]}). "
                  f"Send /plan-update: map {key} under `{CONDITIONS_HEADER}` to the phase that builds it"
-                 for key in _carried(context, amber)]
+                 for key in _carried(register.parent.parent, amber)]
     return problems
 
 
@@ -444,6 +461,23 @@ def write_zero_register(context_dir: Path) -> Path | None:
     return path
 
 
+def _gate(*, check: bool) -> int:
+    """stages.json P8: find this ticket's register exactly as P9 does. Without --check, write the zero
+    register when nobody proposed a deferral, and name the /deferral-review peer when a row needs a ruling."""
+    from artifact_requirements import DEFERRAL_REGISTER, require_artifact, ticket_scope
+    from gate_common import ctx, fail, ok
+
+    context = ctx()
+    errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
+    if errors and not check and write_zero_register(context) is not None:
+        errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
+    register = _task_register(context)
+    if not check and register is not None and any("deferral-review:" in e for e in errors):
+        print(f"NEXT: send the peer `/deferral-review .context/manifests/"
+              f"{write_review_manifest(register, Path.cwd()).name}`")
+    return fail("deferral-register", errors) if errors else ok("deferral-register")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate deferral register adjudication")
     parser.add_argument(
@@ -456,19 +490,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if not args.path:
-        # stages.json P8: find this ticket's register exactly as P9 does.
-        from artifact_requirements import DEFERRAL_REGISTER, require_artifact, ticket_scope
-        from gate_common import ctx, fail, ok
-
-        context = ctx()
-        errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
-        if errors and not args.check and write_zero_register(context) is not None:
-            errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
-        register = _task_register(context)
-        if not args.check and register is not None and any("deferral-review:" in e for e in errors):
-            print(f"NEXT: send the peer `/deferral-review .context/manifests/"
-                  f"{write_review_manifest(register, Path.cwd()).name}`")
-        return fail("deferral-register", errors) if errors else ok("deferral-register")
+        return _gate(check=args.check)
     try:
         text = Path(args.path).read_text(encoding="utf-8")
     except OSError as exc:

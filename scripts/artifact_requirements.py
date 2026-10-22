@@ -15,6 +15,7 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Any
 
 from pipeline_run_binding import (
     current_session,
@@ -867,13 +868,9 @@ def _sections(text: str) -> dict[str, list[str]]:
     """`## <title>` (lower case) to its body lines, outside fenced code blocks."""
     out: dict[str, list[str]] = {}
     current: list[str] | None = None
-    fenced = False
-    for raw in text.splitlines():  # fences are found before backticks are stripped
-        if _FENCE.match(raw):
-            fenced = not fenced
-            continue
-        if fenced:
-            continue
+    from labeled_lines import unfenced_lines
+
+    for raw in unfenced_lines(text):  # fences are found before backticks are stripped
         line = normalize_text_markers(raw)
         if line.startswith("## "):
             current = out.setdefault(line[3:].strip().lower(), [])
@@ -1539,7 +1536,7 @@ def _deferral_register_problems(path: Path) -> list[str]:
 
 
 # The register references/deferral-framework.md tells the agent to write; P8 and P9 share it.
-DEFERRAL_REGISTER = {
+DEFERRAL_REGISTER: dict[str, Any] = {
     "relative_globs": ("deferrals/*_deferral-register.md",),
     "label": "deferral-register",
     "validate": _deferral_register_problems,
