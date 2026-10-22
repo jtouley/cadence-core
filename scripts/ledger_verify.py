@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -41,8 +40,7 @@ def verify_finding(record: dict, *, dry_run: bool = False) -> dict:
     elif dry_run:
         return dict(record)
     else:
-        env = {**os.environ, "CADENCE_HOME": os.environ.get("CADENCE_HOME") or str(Path(__file__).resolve().parents[1])}
-        proc = subprocess.run(check, shell=True, capture_output=True, text=True, env=env)
+        proc = subprocess.run(check, shell=True, capture_output=True, text=True)
         exit_code = proc.returncode
         if exit_code != 0:
             raise RuntimeError(

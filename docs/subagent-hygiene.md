@@ -35,9 +35,9 @@ The settings are the `subagent_hygiene` key of the resolved config ([configurati
 - Claude Code gets the rewrite through `updatedInput`. Cursor parity is not checked. For Cursor, the hook denies the call and puts the rendered slash command in the message. The router sends that command, and the hook lets it pass.
 - Pi has no hooks. Run `python3 scripts/handoff.py write --block P3`, then `check` and `render` before the peer call. Each `--input <path>` adds one more pinned input (the manual override).
 
-## Lean returns, the orchestrator scope and the context budget
+## Lean returns and the context budget
 
-The checks above control what goes into a peer. These three checks control what goes into the orchestrator.
+The checks above control what goes into a peer. These two checks control what goes into the orchestrator.
 
 **Lean return.** A peer's final message goes into the orchestrator's context.
 The gates read the artifact on disk, so the orchestrator needs only a pointer.
@@ -52,36 +52,20 @@ On Claude Code, `hooks/pipeline_stop_guard.py` checks each `SubagentStop` of a d
 - `SubagentStart` adds the return rule to each subagent.
 - `PostToolUse` on `Agent|Task` writes one join row to `.context/attest/<run>.joins.jsonl`: the call's `tool_use_id` and the `agentId` of the subagent it started. The verdict gates use it to know the stage of the peer that wrote a file. It runs no other check and prints nothing.
 
-**Orchestrator scope.** The orchestrator routes: it runs the gates, sends each peer its command,
-and reads the one-line returns. On Claude Code, during an active run, the read guard
-(`hooks/guard_secret_read.py`) and the edit guard (`hooks/guard_skill_gate.py`) deny an orchestrator call that does a
-peer's work (`shared/scripts/orchestrator_scope.py`):
-
-- a `Read`, `Grep` or shell read of a run artifact: a plan, a proposal, a plan or PR review, an
-  adversarial report, a benchmark, a vibe-test report, or `.context/implementation/`.
-- a read of the code: a path under `gated_prefixes`, or a test file.
-- a `git diff` or `git show` that prints the change. `--stat` and the name forms pass.
-- a write to the code. E1 is the `/spec-driven <plan>` peer, and each review fix round is the
-  `/spec-driven --fix <review>` peer.
-
-The orchestrator is the top-level agent (no `agent_id`) or an agent that ran activation. A peer is
-never judged. Session state, gate records and the findings ledger stay readable: the scripts that
-the orchestrator runs read them. Set `orchestrator_scope.mode` to `off` to turn the check off.
-
 **Context budget.** Before each orchestrator `Agent` or `Task` call during an active run, `hooks/guard_subagent_handoff.py` reads the size of the orchestrator's last request.
 The size is input plus cache read plus cache write tokens from the host transcript.
 The hook writes one row to `.context/attest/<run>.context.jsonl`.
 
 | Key in `context_budget` | Values | Meaning |
 |---|---|---|
-| `mode` | `off`, `shadow` | `shadow` (the default) writes the row, and a notice above `warn_tokens`. |
+| `mode` | `off`, `shadow`, `enforce` | `shadow` (the default) writes the row and a notice. `enforce` also denies a call above `max_tokens`. |
 | `warn_tokens` | integer | Default 60000. Above this size, the hook writes a notice. |
+| `max_tokens` | integer | Default 90000. In `enforce` mode, the hook denies a call above this size. |
 
-The budget never denies a call. The call it would deny hands work to a peer, and handing work to
-peers is what keeps the orchestrator small. A routing orchestrator starts at the host's own prompt
-plus the skill, and each block adds a gate result and a one-line return. A notice means the
-orchestrator read files that a peer reads.
+After a deny, the orchestrator records `activate_session.py --hard-stop context`. A new session resumes the run with `activate_session.py --from-branch --resume`.
+The host can write the transcript after a request, so a deny can come one call late.
 A bad `context_budget` value makes the hook fail closed.
+Haiku 5.5 costs five times more per token above 100K prompt tokens, so the default limit stays below that size.
 
 ## Peer models
 
@@ -103,9 +87,8 @@ Example: `"peer_models": {"default": "haiku", "plan-review": "opus", "pr-review-
 
 - A sha256 proves that a file did not change. It does not prove that the file is safe. Only a classifier reads the text of an input, and a classifier can be attacked too.
 - The provenance trace matches exact words. It cannot see an attack that the router copied from an allowed source. It can flag a harmless paraphrase.
-- The hook controls what Cadence hands to a peer. It cannot clean the router's own context. The lean return check and the orchestrator scope limit what goes into it.
-- The lean return check, the orchestrator scope and the context budget work on Claude Code only. On Cursor the budget writes rows with no size. Pi has no hooks and no peers, so it writes no rows and its main agent does every block. Neither host checks returns.
-- The scope check judges the paths that a call names, as the secret read guard does. It does not expand a glob, and it does not look into a directory that `grep -r` searches.
+- The hook controls what Cadence hands to a peer. It cannot clean the router's own context. The lean return check and the context budget limit what goes back into it.
+- The lean return check and the context budget work on Claude Code only. On Cursor the budget writes rows with no size, so `enforce` never denies there. Pi has no hooks, so it writes no rows. Neither host checks returns.
 - A classifier adds a model call to each peer start. Set `classifier_timeout` to allow for it.
 
 ## Measurement

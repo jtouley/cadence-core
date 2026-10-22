@@ -57,11 +57,11 @@ def test_each_layer_wins_over_the_layer_below(project, user_home):
     write(user_home / "config.json", {"adapter": "none", "subagent_hygiene": {"mode": "shadow"}})
     write(project / ".cadence.json", {"subagent_hygiene": {"mode": "off"}})
     write(project / ".cadence.local.json", {"context_budget": {"mode": "off"}})
-    resolved = load(project, CADENCE_CONTEXT_BUDGET_MODE="shadow")
+    resolved = load(project, CADENCE_CONTEXT_BUDGET_MODE="enforce")
     assert resolved.get("adapter") == "none" and resolved.source("adapter") == "user"
     assert resolved.get("subagent_hygiene.mode") == "off" and resolved.source("subagent_hygiene.mode") == "project"
     assert resolved.get("subagent_hygiene.classifier") == "none"
-    assert resolved.get("context_budget.mode") == "shadow" and resolved.source("context_budget.mode") == "env"
+    assert resolved.get("context_budget.mode") == "enforce" and resolved.source("context_budget.mode") == "env"
     assert [layer.name for layer in resolved.layers] == ["default", "profile:standard", "user", "project", "local", "env"]
 
 
@@ -83,7 +83,6 @@ def test_a_profile_applies_over_the_defaults_and_under_the_project(project, user
 @pytest.mark.parametrize("data, where", [
     ({"no_such_key": 1}, "no_such_key"),
     ({"context_budget": {"modee": "off"}}, "context_budget.modee"),
-    ({"context_budget": {"max_tokens": 90000}}, "context_budget.max_tokens"),
     ({"test_shape": {"layout": {"tests": ["t/"]}}}, "test_shape.layout.tests"),
 ])
 def test_an_unknown_key_fails_with_the_file_and_the_key(project, user_home, data, where):
@@ -95,8 +94,6 @@ def test_an_unknown_key_fails_with_the_file_and_the_key(project, user_home, data
 
 @pytest.mark.parametrize("data", [
     {"context_budget": {"mode": "loud"}},
-    {"context_budget": {"mode": "enforce"}},
-    {"orchestrator_scope": {"mode": "shadow"}},
     {"cognitive_complexity": {"max": "15"}},
     {"cognitive_complexity": {"max": True}},
     {"packs": "architecture"},
@@ -201,6 +198,9 @@ def test_the_record_holds_the_sha256_of_each_layer_file(project, user_home):
     assert {"name": "project", "path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()} in record["layers"]
 
 
-def test_the_orchestrator_scope_is_on_by_default_and_a_layer_turns_it_off(project, user_home):
-    assert load(project).get("orchestrator_scope.mode") == "enforce"
-    assert load(project, CADENCE_ORCHESTRATOR_SCOPE_MODE="off").get("orchestrator_scope.mode") == "off"
+def test_the_strict_profile_does_not_enforce_the_context_budget(project, user_home):
+    """A 25-block run goes past the default 90,000 orchestrator tokens before R1 (an end-to-end run
+    stopped there). Strict tightens the evidence gates; the context budget is a cost control."""
+    write(project / ".cadence.json", {"profile": "strict"})
+    resolved = load(project)
+    assert resolved.get("context_budget.mode") == "shadow" and resolved.source("context_budget.mode") == "default"

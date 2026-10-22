@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import peer_summary, RUN_A, activate, save_worktree_session, stop_guard_module
+from conftest import RUN_A, activate, save_worktree_session, stop_guard_module
 
 ROOT = Path(__file__).resolve().parents[2]
 for _p in (ROOT / "scripts", ROOT / "shared", ROOT / "shared" / "scripts"):
@@ -197,7 +197,6 @@ def test_deactivate_removes_its_own_marker_and_breadcrumb_and_keeps_the_record(t
     record = w.ctx / "prs" / f"draft-pr-{w.run_b}.md"
     record.parent.mkdir(parents=True, exist_ok=True)
     record.write_text("PR: https://github.com/o/r/pull/1\n", encoding="utf-8")
-    peer_summary(w.b)
     activate(w.b, "--deactivate")
     assert not marker(w.ctx, w.run_b).exists() and not crumb.exists()
     assert record.is_file()

@@ -2,27 +2,9 @@
 
 ## Unreleased
 
-- A plan finding closes in the plan. P7 fails while the plan scorecard does not pass, as
-  R2 does, and names `/plan-update` and then `/test-benchmark plan`. The P4 packet pins the failing
-  plan scorecard. The plan benchmark writes no findings ledger row, because the plan freezes at P9
-  and no commit can close the row.
-- A5 gaps are carried into the plan. The vibe-test report labels each blocking gap `G-n`.
-  The plan peer logs an assumption for each one under `## Assumptions` in the register, next to the
-  deferrals. P9 fails while one has no row, and the R6 comment lists the assumptions.
-- A block writes its own markdown. `activate_session.py --request -` saves the user's
-  request as written for A5. P8 writes the zero deferral register, R6 writes the closure comment
-  from the ledger, and R7 writes the run's manifest for the new `/session-summary` peer. The plan
-  peer writes the decision records and the approved deferrals. On Claude Code the orchestrator may
-  not write the markdown of the run.
-- The orchestrator routes. A peer gets a markdown file and gives back a markdown file. E1 is
-  one `/spec-driven <plan>` peer call, and each review fix round is one `/spec-driven --fix <review>`
-  peer call on the PR review. On Claude Code a hook denies an orchestrator read
-  of a run artifact, the code or the diff, and an orchestrator write to the code
-  (`orchestrator_scope.mode`).
-- The context budget only records the size and writes a notice. `context_budget.mode: enforce`,
-  `context_budget.max_tokens` and the `context` hard stop are gone; a layer that sets them fails.
-- `activate_session.py --from-branch --resume` reopens a completed run that opened its draft PR, at
-  P9, instead of starting a fresh run. A fix after R7 goes through the review blocks of the same run.
+- Core goes back to the 0.1.0 pipeline until the design that the later changes came from is settled.
+  The orchestrator scope hook, the block writers, the A5 gap rows, the plan-finding rule and their
+  ledger-check fix are removed. The repository still holds no design records.
 
 ## 0.1.0
 

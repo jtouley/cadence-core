@@ -247,7 +247,7 @@ def test_dry_run_cli_leaves_the_ledger_bytes_unchanged(tmp_path, fix_repo, capsy
 
 def test_supersede_promotes_an_open_row_of_a_passed_gate(tmp_path):
     row = dict(FIXTURE)
-    row["check"] = "python3 $CADENCE_HOME/scripts/architecture_review.py --phase impl --check"
+    row["check"] = "python3 scripts/architecture_review.py --phase impl --check"
     out = supersede_finding(row, "E3 pass at abc123")
     assert out["status"] == "verified"
     assert out["note"] == "superseded by E3 pass at abc123"
@@ -260,14 +260,10 @@ def test_supersede_refuses_a_manual_check():
 
 
 def test_a_check_that_is_not_valid_shell_stays_fixed(tmp_path, fix_repo):
-    """A row written before the append rule: verify refuses its check, and the row stays fixed."""
-    from conftest import head_sha
-
     path = tmp_path / "f.jsonl"
-    row = {**FIXTURE, "status": "fixed", "check": "pytest assert_fn(", "fixed_in": head_sha(Path.cwd())}
-    path.write_text(json.dumps(row) + "\n", encoding="utf-8")
-    with pytest.raises(ValueError, match="not valid shell"):
-        verify_finding(load_findings(path)[0])
+    row = _fixed_row(path, "pytest assert_fn(")
+    with pytest.raises(RuntimeError, match="check failed"):
+        verify_finding(row)
     assert load_findings(path)[0]["status"] == "fixed"
 
 
@@ -466,35 +462,3 @@ def test_ledger_verify_reports_each_row_it_cannot_verify_and_verifies_the_rest(l
     assert "gh-1-F02" in err and "fixed_in" in err
     by_id = {r["id"]: r["status"] for r in load_findings(ledger)}
     assert by_id == {"gh-1-F01": "open", "gh-1-F02": "fixed", "gh-1-F03": "verified"}
-
-
-# --- A check that names a Cadence script runs from the skill: it names it under $CADENCE_HOME.
-
-def test_append_rejects_a_cadence_script_named_as_a_file_of_the_repository(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    with pytest.raises(FindingsValidationError, match=r"write \$CADENCE_HOME/scripts/test_shape.py"):
-        append_finding(tmp_path / "f.jsonl", {**ROW, "check": "python3 scripts/test_shape.py --change"})
-    append_finding(tmp_path / "f.jsonl", {**ROW, "check": "python3 $CADENCE_HOME/scripts/test_shape.py --change"})
-    assert load_findings(tmp_path / "f.jsonl")[0]["check"].startswith("python3 $CADENCE_HOME/")
-
-
-def test_a_script_of_the_repository_itself_is_not_a_cadence_script(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    (tmp_path / "scripts").mkdir()
-    (tmp_path / "scripts" / "test_shape.py").write_text("", encoding="utf-8")
-    append_finding(tmp_path / "f.jsonl", {**ROW, "check": "python3 scripts/test_shape.py --change"})
-
-
-def test_ledger_verify_runs_a_check_under_cadence_home(tmp_path, fix_repo, monkeypatch):
-    monkeypatch.delenv("CADENCE_HOME", raising=False)
-    row = _fixed_row(tmp_path / "f.jsonl", "python3 $CADENCE_HOME/scripts/ledger_verify.py --help")
-    assert verify_finding(row)["status"] == "verified"
-
-
-@pytest.mark.parametrize("check", [
-    "python3 -m pytest tests/test_recurring.py -q (cases are parametrize rows; one shared helper)",
-    "pytest -q 'tests/a.py",
-])
-def test_append_rejects_a_check_that_is_not_valid_shell(tmp_path, check):
-    with pytest.raises(FindingsValidationError, match="not valid shell"):
-        append_finding(tmp_path / "f.jsonl", {**ROW, "check": check})

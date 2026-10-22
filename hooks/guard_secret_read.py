@@ -3,8 +3,6 @@
 
 Registered for Claude Code (PreToolUse on Read, Bash and Grep, with `--host claude`) and for Cursor
 (preToolUse on Read, beforeReadFile, beforeShellExecution). Output format per host: hook_protocol.py.
-On Claude Code the same paths go to orchestrator_scope: the orchestrator reads no run
-artifact and no code.
 The hook judges a call while a workspace candidate has an active run, or a session file that
 does not read. Then a payload that does not parse is denied. With no run the hook allows.
 
@@ -38,7 +36,6 @@ os.environ.setdefault("CADENCE_HOME", str(_ROOT))
 try:
     from skill_gate import ProjectConfigError, gate_anchors, load_config, load_session, shell_reads, workspace_relative
     from context_root import find_primary_checkout  # on sys.path via skill_gate
-    import orchestrator_scope
     from hook_protocol import (
         extract_file_path,
         extract_tool_input,
@@ -269,12 +266,12 @@ def _in_run(workspace: Path) -> bool:
     return session is None or session.get("active_skill") == "cadence"
 
 
-def deny_message(payload: dict[str, Any], workspace: Path, host: str = "cursor") -> Optional[str]:
+def deny_message(payload: dict[str, Any], workspace: Path) -> Optional[str]:
     """The deny text for this call in one workspace that has a run, or None to allow."""
     paths = read_paths(payload, workspace)
     if paths is None:
         return NO_TARGET
-    if not paths and not (host == "claude" and extract_tool_name(payload) in (*SHELL_TOOLS, "Grep")):
+    if not paths:
         return None
     try:
         patterns = secret_patterns(workspace)
@@ -282,9 +279,7 @@ def deny_message(payload: dict[str, Any], workspace: Path, host: str = "cursor")
         return f"BLOCKED: {exc}; the secret paths are not known\nACTION: set {EXTRA_KEY} to a list of path patterns"
     hits = (secret_match(path, workspace, patterns) for path in paths)
     hit = next((h for h in hits if h is not None), None)
-    if hit is not None:
-        return DENY.format(*hit)
-    return orchestrator_scope.read_denial(payload, workspace, paths) if host == "claude" else None
+    return None if hit is None else DENY.format(*hit)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -292,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
     payload, error = load_payload()
     for workspace in [w for w in hook_candidates(payload) if _in_run(w)]:
         message = (f"BLOCKED: {error or 'tool payload is missing'}\nACTION: retry the tool call with a JSON object"
-                   if payload is None else deny_message(payload, workspace, host))
+                   if payload is None else deny_message(payload, workspace))
         if message is not None:
             tool_deny(host, message)
             return 0

@@ -48,7 +48,6 @@ LEAN_STAGES = frozenset(
         "vibe-test",
         "spec-driven",
         "commit-push-pr",
-        "session-summary",
     }
 )
 
@@ -63,22 +62,14 @@ SLASH_TO_STAGE = {
     "/vibe-test": "vibe-test",
     "/spec-driven": "spec-driven",
     "/commit-push-pr": "commit-push-pr",
-    "/session-summary": "session-summary",
 }
 
 # Peer commands with no stages.json row. R4 runs /pr-review-update as a
 # delegated peer, but its stages.json row is the final_consolidate.py gate.
 # handoff._peer_stages appends these rows to the stages.json peer rows, so the lean check,
 # the call row and the handoff packet cover the R4 peer call.
-# A review fix round runs /spec-driven --fix on the PR review between R1 and R4.
-# Its longer command wins over the E1 row, so the hook does not render it as E1.
-# At R7, /session-summary reads the run's manifest and writes the summary.
 EXTRA_PEER_ROWS = ({"slug": "pr-review-update", "block": "R4", "command": "/pr-review-update",
-                    "inputs": ["pr-number"]},
-                   {"slug": "review-fix", "block": "RF", "command": "/spec-driven --fix",
-                    "inputs": ["pr-review"]},
-                   {"slug": "session-summary", "block": "R7", "command": "/session-summary",
-                    "inputs": ["manifest"]})
+                    "inputs": ["pr-number"]},)
 
 # A Claude Code plugin install lists the peers as /cadence:<name>. Only Cadence's
 # own prefix is stripped: /other:plan-review is not a Cadence peer call.
@@ -106,9 +97,8 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     "pr-review-local": re.compile(r"^/pr-review-local(\s+\S+)?\s*$"),
     "pr-review-update": re.compile(r"^/pr-review-update(\s+\S+)?\s*$"),
     "vibe-test": re.compile(r"^/vibe-test(\s+\S+)?\s*$"),
-    "spec-driven": re.compile(r"^/spec-driven(\s+--fix)?(\s+\S+)?\s*$"),
+    "spec-driven": re.compile(r"^/spec-driven(\s+\S+)?\s*$"),
     "commit-push-pr": re.compile(r"^/commit-push-pr(\s+--draft)?\s*$"),
-    "session-summary": re.compile(r"^/session-summary\s+\S+\s*$"),
 }
 
 

@@ -183,12 +183,8 @@ def find_open_block(
     return next((r for r in rows if r.get("slug") == slug), first), False
 
 
-def with_next_phase(row: dict, context_dir: Path, workspace: Path, session: dict, *, worker: bool = False) -> dict:
-    """E1 row that names the next plan phase (the concrete task), else the E1 gate's open work.
-
-    The worker is the agent that writes the phase: the E1 peer, or the main agent on another
-    host. A Claude Code orchestrator is told to send the peer again.
-    """
+def with_next_phase(row: dict, context_dir: Path, workspace: Path, session: dict) -> dict:
+    """E1 row that names the next plan phase (the concrete task), else the E1 gate's open work."""
     try:
         from phase_ledger import assess, next_phase, open_work
 
@@ -201,9 +197,6 @@ def with_next_phase(row: dict, context_dir: Path, workspace: Path, session: dict
         return row
     if nxt is not None:  # The next phase, not the phase list
         n, label = nxt
-        if not worker and session.get("host") == "claude":
-            return {**row, "continue": f"Continue E1: send the `/spec-driven` peer the plan again. "
-                                       f"Its next open phase is phase {n} ({label})."}
         return {**row, "continue": f"Continue E1: phase {n} ({label}). "
                                    f"Commit it as 'phase {n}: <subject>' before the next phase."}
     return {**row, "detail": work} if work else row
@@ -757,24 +750,6 @@ def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corr
     return decision, message, here, session
 
 
-def e1_peer_hold(payload: dict, agent: str, repeat: bool) -> str | None:
-    """The E1 peer's stop is held once while a plan phase has no commit."""
-    try:
-        prompt = None if repeat else peer_return.first_prompt(payload.get("agent_transcript_path"))
-        if prompt is None or block_for_prompt(prompt, SKILL_ROOT) != "E1":
-            return None
-        started = {run_id for _ctx, run_id in _started_runs(payload, agent)}
-        project = _project_dir()
-        contexts = list(dict.fromkeys(canonical_context_dir(c) for c in (Path(payload.get("cwd") or project), project)))
-        for session, ctx, ws, _path in _by_worktree_runs(contexts):
-            if str(session.get("pipeline_run_id") or "") in started:
-                row = with_next_phase({}, ctx, ws, session, worker=True)
-                return f"BLOCKED: {row['continue']}" if row.get("continue") else None
-    except Exception:  # noqa: BLE001 - as for the lean return: a check that cannot run does not hold
-        return None
-    return None
-
-
 def _peer_stop(host: str, payload: dict, agent: str | None, repeat: bool) -> tuple[bool, str | None]:
     """(held, notice) for a subagent stop. A held peer keeps running, so its stop is not recorded.
 
@@ -788,10 +763,6 @@ def _peer_stop(host: str, payload: dict, agent: str | None, repeat: bool) -> tup
         checked = None
     if checked is not None and checked[0] == "hold":
         stop_block(host, checked[1])
-        return True, None
-    phase = e1_peer_hold(payload, agent, repeat) if host == "claude" else None
-    if phase is not None:
-        stop_block(host, phase)
         return True, None
     _record_peer_stop(payload, agent)
     return False, checked[1] if checked is not None else None

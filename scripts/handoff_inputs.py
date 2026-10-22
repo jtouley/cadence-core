@@ -8,8 +8,6 @@ cannot find gives one message that names the artifact and the block that writes 
 
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,11 +20,8 @@ from gate_common import current_branch
 from load_stages import load_registry
 from phase_ledger import select_plan
 
-KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review", "manifest",
-         "request", "vibetest", "plan-benchmark")
-# The request and the vibe-test report are pinned when they exist; A5 is in a pack.
-# A plan scorecard is pinned while it fails, so that P4 applies its findings.
-OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest", "plan-benchmark"})
+KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number")
+OPTIONAL = frozenset({"plan-review-previous"})
 
 # What a missing kind is, and the stages.json slug of the block that writes it.
 _MISSING = {
@@ -34,8 +29,6 @@ _MISSING = {
     "plan": ("plan of the run in .cursor/plans/ or .context/plans/ with RUN_BY_COMMAND: plan-create", "plan-create"),
     "plan-review": ("plan review of the run with a verdict in .context/reviews/plan_<slug>.md", "plan-review"),
     "pr-number": ("draft-PR record of the run with a PR URL in .context/prs/", "draft-pr"),
-    "pr-review": ("PR review of the run's PR in .context/prs/reviews/PR_REVIEW_#<N>.md", "pr-review-local"),
-    "manifest": ("session manifest in .context/manifests/<task_id>.md", "session-close"),
 }
 
 
@@ -90,54 +83,9 @@ def _pr_number(run: Run) -> Found | None:
     return ([str(number)], record) if number is not None else None
 
 
-def _pr_review(run: Run) -> Found | None:
-    """The R1 review of the run's PR, as the fix round's one input."""
-    record = artifact_requirements.draft_pr_record(run.ctx, run.session, current_branch(run.workspace))
-    number = artifact_requirements.draft_pr_number(record) if record is not None else None
-    review = run.ctx / "prs" / "reviews" / f"PR_REVIEW_#{number}.md" if number is not None else None
-    return ([_shown(review, run)], review) if review is not None and review.is_file() else None
-
-
-def _task_file(run: Run, folder: str, suffix: str) -> Path | None:
-    """`.context/<folder>/<task_id><suffix>` when the session names a task and the file exists."""
-    task = re.sub(r"[\\/]", "-", str(run.session.get("task_id") or ""))
-    path = run.ctx / folder / f"{task}{suffix}"
-    return path if task and path.is_file() else None
-
-
-def _request(run: Run) -> Found | None:
-    """The user's request that activation saved."""
-    path = _task_file(run, "proposals", ".md")
-    return ([], path) if path else None
-
-
-def _vibetest(run: Run) -> Found | None:
-    report = artifact_requirements.newest_vibetest(run.ctx, run.session)
-    return ([], report) if report is not None else None
-
-
-def _plan_benchmark(run: Run) -> Found | None:
-    """The newest P7 scorecard of the run, any name that the P7 gate reads, while its verdict is not PASS."""
-    accept = artifact_requirements.run_scope_accept(run.ctx, session=run.session)
-    cards = [p for p in run.ctx.glob("benchmarks/*_plan.json") if accept(p)]
-    path = max(cards, key=lambda p: p.stat().st_mtime) if cards else None
-    try:
-        verdict = json.loads(path.read_text(encoding="utf-8")).get("verdict") if path else "PASS"
-    except (ValueError, AttributeError):
-        verdict = None
-    return ([], path) if str(verdict).strip().upper() != "PASS" else None
-
-
-def _manifest(run: Run) -> Found | None:
-    """The run's session manifest, which `activate_session.py --deactivate` writes."""
-    path = _task_file(run, "manifests", ".md")
-    return ([_shown(path, run)], path) if path else None
-
-
 _RESOLVERS: dict[str, Callable[[Run], Found | None]] = {
     "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "plan-review-previous": _previous_review,
-    "pr-number": _pr_number, "pr-review": _pr_review, "manifest": _manifest,
-    "request": _request, "vibetest": _vibetest, "plan-benchmark": _plan_benchmark,
+    "pr-number": _pr_number,
 }
 
 
@@ -181,16 +129,10 @@ def resolve(row: dict[str, Any], run: Run) -> Resolved:
 
 
 def _covers(packet: dict[str, Any], command: str, inputs: list[str], run: Run) -> bool:
-    """True when a packet has this command, pins each input, and pins no file at an old sha256.
-
-    An optional input that the row no longer resolves, such as a plan scorecard that now passes,
-    must not keep a stale pin: the handoff check would refuse the packet."""
+    """True when a packet has this command and pins each input at its current sha256."""
     pinned = {(r.get("path"), r.get("sha256")) for r in packet["inputs"] if isinstance(r, dict)}
-    try:
-        current = {(rel, handoff.input_sha(run.workspace, str(rel), run.ctx)) for rel, _ in pinned}
-    except (handoff.HandoffError, OSError):
-        return False
-    return packet.get("command") == command and pinned == current and set(inputs) <= {rel for rel, _ in pinned}
+    want = {(rel, handoff.input_sha(run.workspace, rel, run.ctx)) for rel in inputs}
+    return packet.get("command") == command and want <= pinned
 
 
 def packet_for(block: str, run: Run, extra: list[str] | tuple[str, ...] = ()) -> tuple[dict[str, Any] | None, list[str]]:

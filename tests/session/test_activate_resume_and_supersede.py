@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import peer_summary, CLAUDE_CHAT, activate, branch_repo, code_paths, hook_denied, shell_call, write_call
+from conftest import CLAUDE_CHAT, activate, branch_repo, code_paths, hook_denied, shell_call, write_call
 
 ROOT = Path(__file__).resolve().parents[2]
 code_paths()
@@ -113,7 +113,6 @@ def test_resume_of_a_completed_run_starts_fresh(tmp_path):
     _activate(repo, "--task-id", "cd-7", "--fresh", agent="A")
     run = session_store.load_worktree_session(repo)["pipeline_run_id"]
     _activate(repo, "--hard-stop", "not-needed", "--reason", "done")
-    peer_summary(repo)
     _activate(repo, "--deactivate")
     _fallback(repo, run)
 

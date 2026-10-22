@@ -13,7 +13,7 @@ from typing import TypedDict, Unpack
 
 import pytest
 
-from conftest import (peer_summary, CLAUDE_CHAT, HostEnv, activate, activation_repo, branch_repo, code_paths, git_repo, project_config,
+from conftest import (CLAUDE_CHAT, HostEnv, activate, activation_repo, branch_repo, code_paths, git_repo, project_config,
                       read_session, run_py, skill_gate_hook, worktree_session)
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -92,7 +92,6 @@ def test_activate_session_main_deactivate_clears_active_skill(
     # An open run ends only after R6 or a recorded hard stop.
     code, _out, _err = _invoke(monkeypatch, tmp_path, "--hard-stop", "not-needed", "--reason", "test")
     assert code == 0
-    peer_summary(tmp_path)
     code, out, _err = _invoke(monkeypatch, tmp_path, "--deactivate")
     session = read_session(tmp_path)
     assert code == 0
@@ -297,7 +296,7 @@ def test_a_bad_config_layer_fails_activation(feature_branch_repo, make_root, lay
 
 def test_a_fresh_run_records_the_config_layers_and_their_sha256(feature_branch_repo, make_root):
     root = make_root()
-    layer = project_config(feature_branch_repo, {"context_budget": {"mode": "off"}})
+    layer = project_config(feature_branch_repo, {"context_budget": {"mode": "enforce"}})
     proc = _activate(feature_branch_repo, root, "--fresh")
     assert proc.returncode == 0, proc.stderr
     record = session_store.load_worktree_session(feature_branch_repo)["config"]
@@ -306,7 +305,7 @@ def test_a_fresh_run_records_the_config_layers_and_their_sha256(feature_branch_r
     for name, path in (("default", root / "cadence.defaults.json"), ("project", layer.resolve())):
         assert layers[name]["path"] == str(path)
         assert layers[name]["sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
-    assert record["values"]["context_budget"]["mode"] == "off"
+    assert record["values"]["context_budget"]["mode"] == "enforce"
     assert record["values"] == cadence_config.load(root, feature_branch_repo).values
 
 
@@ -674,41 +673,3 @@ def test_both_hooks_read_the_chat_id_in_one_order():
     assert chat_id({"conversation_id": "cursor-chat", "session_id": "other"}) == "cursor-chat"
     assert chat_id({"session_id": "claude-chat"}) == "claude-chat"
     assert chat_id({}) == ""
-
-
-# --- reopen: a closed run with a draft PR takes new commits through the review blocks ---------------
-
-def _close(repo: Path, root: Path, *, draft_pr: bool) -> str:
-    """Activate, give the run a draft-PR record when `draft_pr`, end it with a hard stop and deactivate."""
-    assert _activate(repo, root, "--fresh").returncode == 0
-    run = session_store.load_worktree_session(repo)["pipeline_run_id"]
-    if draft_pr:
-        record = repo / ".context" / "prs" / f"draft-pr-{run}.md"
-        record.parent.mkdir(parents=True, exist_ok=True)
-        record.write_text("RUN_BY_COMMAND: commit-push-pr\nhttps://github.com/o/r/pull/1\n", encoding="utf-8")
-    assert _activate(repo, root, "--hard-stop", "not-needed", "--reason", "test").returncode == 0
-    peer_summary(repo)
-    assert _activate(repo, root, "--deactivate").returncode == 0
-    assert session_store.load_worktree_session(repo)["status"] == "completed"
-    return run
-
-
-def test_resume_reopens_a_closed_run_with_a_draft_pr_at_p9(feature_branch_repo, make_root):
-    root = make_root()
-    run = _close(feature_branch_repo, root, draft_pr=True)
-    proc = _activate(feature_branch_repo, root, "--resume")
-    assert proc.returncode == 0, proc.stderr
-    session = session_store.load_worktree_session(feature_branch_repo)
-    assert session["pipeline_run_id"] == run and session["active_skill"] == "cadence"
-    assert (session["resume_block"], session["fresh_run"]) == ("P9", False)
-    assert "status" not in session and session.get("reopened_at")
-    assert "resume_fallback" not in session
-
-
-def test_resume_of_a_closed_run_with_no_draft_pr_starts_fresh(feature_branch_repo, make_root):
-    root = make_root()
-    run = _close(feature_branch_repo, root, draft_pr=False)
-    proc = _activate(feature_branch_repo, root, "--resume")
-    assert proc.returncode == 0, proc.stderr
-    session = session_store.load_worktree_session(feature_branch_repo)
-    assert session["pipeline_run_id"] != run and session["resume_fallback"] == "fresh"
