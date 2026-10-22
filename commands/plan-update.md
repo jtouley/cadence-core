@@ -63,12 +63,12 @@ The orchestrator owns the loop. After this update, the orchestrator runs `/plan-
 It repeats `/plan-update` and `/plan-review` until the newest review has `RUN_BY_COMMAND: plan-review` and `Verdict: READY TO EXECUTE`.
 That review must come from a plan-review run after this update.
 Each cycle writes the review's required contracts into the plan.
-The loop has at most five review cycles (`plan_review_cycles`, default 5; a config layer can only lower it). After the fifth blocking review, this update is the last one.
+The plan has one review cycle (`plan_review_cycles`, default 1; a config layer may raise it). After the last blocking review, this update is the last one.
 Add `## Carried review findings` and map each open `MF-n` to the phase whose test settles it. Do not request another review.
 At the limit, the gate reads `## Carried review findings`, not the ledger. Write the ledger of this update too.
 When the round file has adversarial rows, also add `## Carried adversarial findings (<report file> @ <first 12 characters
 of its sha256>)` and map each open `B-n` and `C-n` to its phase. `plan_wave.py` and P9 name the exact heading.
-`NOT READY` after the fifth review: the orchestrator runs `activate_session.py --hard-stop retries --reason "..."`.
+`NOT READY` after the last review cycle: the orchestrator runs `activate_session.py --hard-stop retries --reason "..."`.
 Do not ask the user to allow another cycle.
 
 ## Decisions and deferrals
@@ -93,7 +93,7 @@ Do not ask the user to allow another cycle.
 
 When the newest P6 report of the run (`.context/adversarial/adversarial_{slug}*.md`, `Mode: plan-gate`)
 is `REQUEST CHANGES` or `APPROVE WITH CONDITIONS`, take in its blocking items and conditions with their ids.
-- Below the limit (three P6 cycles): apply each `B-n`. Then the orchestrator runs `/plan-review` if P3 is below its limit.
+- Below the limit (`adversarial_cycles`, default one P6 cycle): apply each `B-n`. Then the orchestrator runs `/plan-review` if P3 is below its limit.
   Then the orchestrator runs `/de-adversarial-reviewer plan-gate`. Each review is a new Agent call.
 - At the limit: this update is the carry. Do not run P6 again. Get the heading with
   `python3 $CADENCE_HOME/scripts/adversarial_review_gate.py --heading <report>`.

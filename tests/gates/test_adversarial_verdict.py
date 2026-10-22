@@ -19,6 +19,10 @@ from artifact_requirements import (adversarial_ids, adversarial_verdict_in_text 
                                    carried_heading)
 
 
+# The loop mechanics in process run with five P3 and three P6 cycles (tests/conftest.py).
+pytestmark = pytest.mark.usefixtures("legacy_cycle_limits")
+
+
 # --- adversarial_verdict_read: the strict P6 verdict read (D3, R3-C-2).
 
 @pytest.mark.parametrize(("text", "expected"), [

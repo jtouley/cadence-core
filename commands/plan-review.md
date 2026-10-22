@@ -93,7 +93,7 @@ Then it runs `/plan-review` in a new Agent call.
 It repeats until the newest review has `RUN_BY_COMMAND: plan-review` and `Verdict: READY TO EXECUTE`.
 That review must come from a plan-review run after the last plan update.
 Only the plan-review run writes `reviews/plan_*.md`.
-The loop has at most five review cycles (`plan_review_cycles`, default 5; a config layer can only lower it). After the fifth blocking review, do not review again.
+The plan has one review cycle (`plan_review_cycles`, default 1; a config layer may raise it). After the last blocking review, do not review again: P4 carries each open item.
 `READY WITH CHANGES`: `/plan-update` maps each open `MF-n` to a phase under `## Carried review findings`.
 `NOT READY`: the orchestrator runs `activate_session.py --hard-stop retries --reason "..."`.
 Do not ask the user to allow another cycle. The orchestrator does not end the turn on a blocking verdict.

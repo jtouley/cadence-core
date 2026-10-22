@@ -239,6 +239,35 @@ def install_config(root: Path, **defaults: object) -> Path:
     return root
 
 
+def review_cycles(repo: Path, plan: int = 5, adversarial: int = 3) -> Path:
+    """Merge cycle limits into the project layer `.cadence.json` of `repo`, for the gate scripts that a test runs.
+
+    Each plan reviewer has one cycle by default. A test of the re-review mechanics asks for more, as a project can.
+    """
+    path = Path(repo) / ".cadence.json"
+    data = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    return project_config(repo, {**data, "plan_review_cycles": plan, "adversarial_cycles": adversarial})
+
+
+@pytest.fixture
+def legacy_cycle_limits(monkeypatch):
+    """Five P3 and three P6 cycles, for the tests of the loop mechanics in process.
+
+    The mechanics (P3, then P4, then P3 of the next cycle) do not depend on the limit, but a limit of 1
+    leaves no room below it. test_the_plan_is_reviewed_once pins the defaults. A gate script that a test
+    runs reads the project layer: use review_cycles(repo).
+    """
+    code_paths()
+    import artifact_requirements
+
+    limits = {"plan_review_cycles": 5, "adversarial_cycles": 3}
+    real_limit, real_cycle = artifact_requirements.config_limit, artifact_requirements.cycle_limit
+    monkeypatch.setattr(artifact_requirements, "config_limit", lambda key: limits.get(key) or real_limit(key))
+    monkeypatch.setattr(artifact_requirements, "cycle_limit",
+                        lambda spec, workspace=None: limits[spec] if spec in limits else real_cycle(spec, workspace))
+    return 5, 3
+
+
 def project_config(repo: Path, data: dict) -> Path:
     """Write `data` as the project layer `.cadence.json` of `repo`."""
     path = Path(repo) / ".cadence.json"

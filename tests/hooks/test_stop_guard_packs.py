@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import enable_all_packs, git_repo, stop_decision, stop_guard_module
+from conftest import enable_all_packs, git_repo, review_cycles, stop_decision, stop_guard_module
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -62,6 +62,7 @@ def test_a_p6_request_changes_holds_only_when_spec_review_is_on(tmp_path, monkey
     repo = git_repo(tmp_path / "r")
     if full:
         enable_all_packs(repo)
+    review_cycles(repo)  # below the P6 limit, a REQUEST CHANGES report holds for another round
     monkeypatch.chdir(repo)
     lp = Loop(repo)
     path = lp.ctx / "reviews" / f"plan_{lp.slug}.md"

@@ -354,14 +354,14 @@
     "plan_review_cycles": {
       "type": "integer",
       "minimum": 1,
-      "x-cadence-stricter": "lower",
-      "description": "The most /plan-review cycles before P4 carries the open findings or stops."
+      "x-cadence-stricter": "higher",
+      "description": "The most /plan-review cycles before P4 carries the open findings or stops. A layer may raise it: a raise only adds review."
     },
     "adversarial_cycles": {
       "type": "integer",
       "minimum": 1,
-      "x-cadence-stricter": "lower",
-      "description": "The most P6 adversarial review cycles."
+      "x-cadence-stricter": "higher",
+      "description": "The most P6 adversarial review cycles. A layer may raise it: a raise only adds review."
     },
     "review_fix_rounds": {
       "type": [

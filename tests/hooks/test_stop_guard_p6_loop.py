@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import enable_all_packs, git_repo, install_config, run_py, stop_guard_module
+from conftest import enable_all_packs, git_repo, install_config, review_cycles, run_py, stop_guard_module
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -28,6 +28,7 @@ def _guard():
 def lp(tmp_path, monkeypatch):
     repo = git_repo(tmp_path / "r")
     enable_all_packs(repo)  # P6 is in the spec-review pack
+    review_cycles(repo)  # the loop mechanics need more than the default one cycle of each reviewer
     monkeypatch.chdir(repo)
     return Loop(repo)
 

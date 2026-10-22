@@ -9,13 +9,13 @@ from pathlib import Path
 
 import pytest
 
-from conftest import code_paths, git_repo, make_session, run_py
+from conftest import code_paths, git_repo, make_session, review_cycles, run_py
 
 ROOT = Path(__file__).resolve().parents[2]
 code_paths()
 import artifact_requirements as ar  # noqa: E402
 from adversarial_loop import OTHER_RUN, RUN, Loop  # noqa: E402
-from artifact_requirements import check_plan_review_verdict, plan_review_cycle_limit  # noqa: E402
+from artifact_requirements import check_plan_review_verdict  # noqa: E402
 
 
 # --- review_loop_helper: one review-loop helper for P3 and P6 (cycles, newest verdict, carried section).
@@ -23,6 +23,7 @@ from artifact_requirements import check_plan_review_verdict, plan_review_cycle_l
 @pytest.fixture
 def loop(tmp_path, monkeypatch):
     repo = git_repo(tmp_path / "r")
+    review_cycles(repo)  # the loop mechanics run with five P3 and three P6 cycles, as a project may set
     monkeypatch.chdir(repo)
     return Loop(repo)
 
@@ -112,7 +113,7 @@ def test_carried_section_skips_fenced_headings(loop):
 # in E1 settles the edge instead of another prose review. NOT READY after the limit
 # means the plan is wrong: record a hard stop.
 
-PLAN_LIMIT = plan_review_cycle_limit()
+PLAN_LIMIT = 2  # these tests ask for a second plan cycle in the project config (review_cycles)
 
 PLAN = """RUN_BY_COMMAND: plan-create
 Pipeline-Run: run-1
@@ -126,6 +127,7 @@ CARRIED = "\n## Carried review findings\n\n- MF-4 -> Phase 2 (test: payload cwd 
 
 def _setup(tmp_path: Path, *, cycles: int, verdict: str, carried: bool) -> Path:
     repo = git_repo(tmp_path / "r")
+    review_cycles(repo, plan=PLAN_LIMIT)  # _setup runs the gate from the repo, which reads its project limits
     ctx = repo / ".context"
     make_session(ctx, workspace=str(repo))
     (ctx / "plans").mkdir(parents=True)
@@ -225,7 +227,7 @@ def test_four_blocking_reviews_still_allow_another(tmp_path, monkeypatch):
 # A pilot run ran P6 four times, each time with new edge cases, and stopped on `retries` before E1. Here each round is a REQUEST CHANGES with new B-n items. At
 # round 3 the plan carries them; P6 and P9 then pass with no new review.
 
-P6_LIMIT = ar.adversarial_cycle_limit()
+P6_LIMIT = 3  # the pilot ran three P6 rounds: its project asks for them (review_cycles)
 
 
 def _begin(repo: Path, stage: str, command: str) -> None:
@@ -290,6 +292,7 @@ class Pilot:
 @pytest.fixture(params=["claude", "history"])
 def pilot(request, tmp_path, monkeypatch):
     repo = git_repo(tmp_path / "r")
+    review_cycles(repo, adversarial=P6_LIMIT)
     monkeypatch.chdir(repo)
     history = request.param == "history"
     return Pilot(Loop(repo, host="other" if history else "claude"), history=history)

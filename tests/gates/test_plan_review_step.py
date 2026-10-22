@@ -23,11 +23,18 @@ import artifact_requirements as ar  # noqa: E402
 from p3_loop import NR, RTE, RWC, at, at_limit, ledger, p3_loop, p3_repo, p3_review, plan, review_sha, s1b, s2, s3  # noqa: E402
 
 OTHER_ERRORS = ("lean delegation", "peer-model", "no plan-review artifact")
+SHIPPED = 5  # a gate in a subprocess reads the project limit that p3_run_repo sets (review_cycles)
+# The rule in process runs with five cycles (legacy_cycle_limits), so cycles 2 to 4 stay below it.
+pytestmark = pytest.mark.usefixtures("legacy_cycle_limits")
 
 
 @pytest.fixture
 def p3_run_repo(tmp_path, monkeypatch):
-    return p3_repo(tmp_path / "r", monkeypatch)
+    from conftest import review_cycles
+
+    repo = p3_repo(tmp_path / "r", monkeypatch)
+    review_cycles(repo)  # the gate scripts read the project's limits
+    return repo
 
 
 def _gate(repo: Path, script: str, *args: str, readonly: bool = True):
@@ -184,7 +191,7 @@ def test_s2_p3_gate_fails_before_breadcrumb(p3_run_repo):
     proc = _gate(p3_run_repo, "plan_review_gate.py", readonly=False)
     out = proc.stdout + proc.stderr
     assert proc.returncode == 1, out
-    assert "cycle 2 of 5" in out
+    assert f"cycle 2 of {SHIPPED}" in out
     _no_other_error(out)
     assert not (lp.ctx / "gates" / "plan-review-gate.json").exists()
 
@@ -194,7 +201,7 @@ def test_s2_p3_gate_check_fails(p3_run_repo):
     proc = _gate(p3_run_repo, "plan_review_gate.py", "--check")
     out = proc.stdout + proc.stderr
     assert proc.returncode == 1, out
-    assert "cycle 2 of 5" in out
+    assert f"cycle 2 of {SHIPPED}" in out
     _no_other_error(out)
 
 

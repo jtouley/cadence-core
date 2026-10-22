@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The plan is reviewed once. `plan_review_cycles` and `adversarial_cycles` default to 1, and a config layer
+  may raise them (`x-cadence-stricter: higher`): a raise only adds review. Live runs of one request compared
+  no plan review, one plan round and up to four. The code after no plan review and after one round passed
+  and failed the same probes. The PR round found each real code bug, and each run that did not finish
+  stopped in a loop or at a gate.
 - The plan review round. After P1, `plan_wave.py` sends P3, P6 and P7 in one message, runs P5 itself,
   and joins their findings by plan section in `.context/plan-findings/round-<n>.md`. One `/plan-update`
   answers every reviewer and edits the plan in place, in the sections that the round names. In a later

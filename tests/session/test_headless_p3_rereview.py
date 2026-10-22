@@ -21,7 +21,11 @@ from p3_loop import NR, RWC, at_limit, p3_repo, s1b, s2, s3  # noqa: E402
 
 @pytest.fixture
 def p3_run_repo(tmp_path, monkeypatch):
-    return p3_repo(tmp_path / "r", monkeypatch, home=ROOT)
+    from conftest import review_cycles
+
+    repo = p3_repo(tmp_path / "r", monkeypatch, home=ROOT)
+    review_cycles(repo)  # the walk runs each gate in a subprocess, which reads the project limits (five here)
+    return repo
 
 
 def walk(repo: Path) -> dict:

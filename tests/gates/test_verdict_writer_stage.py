@@ -120,7 +120,9 @@ def test_a_newer_self_review_does_not_decide_the_p3_verdict(ctx, monkeypatch):
     monkeypatch.setenv("CADENCE_HOME", str(ROOT))
     monkeypatch.setattr(sys, "path", list(sys.path))
     import pipeline_stop_guard
+    from conftest import review_cycles
 
+    review_cycles(ctx.parent, plan=2)  # below the limit, the error names the verdict that decides
     plan_review_file(ctx, stage="plan-review", agent="a", verdict="READY WITH CHANGES")
     newer = plan_review_file(ctx, "reviews/plan_x_c2.md", stage="plan-update", agent="b")
     import os

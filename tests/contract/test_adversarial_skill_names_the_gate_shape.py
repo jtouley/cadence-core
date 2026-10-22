@@ -40,13 +40,13 @@ def test_the_example_item_headings_give_ids():
 
 
 def test_plan_update_names_the_p6_carry():
-    for needle in ("three P6 cycles", "--heading", "Do not run P6 again", "One budget", "`C-n`"):
+    for needle in ("default one P6 cycle", "--heading", "Do not run P6 again", "One budget", "`C-n`"):
         assert needle in UPDATE, needle
 
 
 def test_the_pipeline_section_names_the_p6_loop():
-    for needle in ("**P6:**", "at most three cycles", "new Agent call for each P3 and P6 review round",
+    for needle in ("**P6:**", "at most one cycle", "new Agent call for each P3 and P6 review round",
                    "send these peers in one message, in parallel",
                    "When the gate output names a step, do that step before the `NEXT` command."):
         assert needle in PIPELINE, needle
-    assert ar.adversarial_cycle_limit() == 3
+    assert ar.adversarial_cycle_limit() == 1

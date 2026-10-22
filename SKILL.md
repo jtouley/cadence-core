@@ -143,11 +143,11 @@ Run `plan_wave.py` again when each step returns, not while a peer runs, until it
 that had a must-fix reviews again, and its new must-fix items may target only the sections that the update changed.
 The pass of each other reviewer stands. A reviewer's stop is held until it records `done`: do not resume it with
 SendMessage. Do not end the turn while a round is open.
-A reviewer at its cycle limit does not review again. P3 has at most five review cycles (`plan_review_cycles`,
-default 5; a config layer can only lower it). **P6:** at most three cycles (`adversarial_cycles`, default 3; a
-config layer can only lower it). P5 and P7 have one cycle. `/plan-update` then carries the open items:
-- P3 `READY WITH CHANGES` after the fifth blocking review: `## Carried review findings` maps each open `MF-n` to the phase whose test settles it.
-- P3 `NOT READY` after the fifth blocking review: the plan is wrong. Run `activate_session.py --hard-stop retries --reason "..."`.
+A reviewer at its cycle limit does not review again. Each reviewer of the plan round has one review cycle.
+P3 has `plan_review_cycles` (default 1). **P6:** at most one cycle (`adversarial_cycles`, default 1). A config layer may raise
+either one. P5 and P7 have one cycle. `/plan-update` then carries the open items:
+- P3 `READY WITH CHANGES` after its last review cycle: `## Carried review findings` maps each open `MF-n` to the phase whose test settles it.
+- P3 `NOT READY` after its last review cycle: the plan is wrong. Run `activate_session.py --hard-stop retries --reason "..."`.
 - P6 at its limit: map each `B-n` and `C-n` under the report's heading (`adversarial_review_gate.py --heading <report>`).
 Do not ask the user to allow another cycle. Use a new Agent call for each P3 and P6 review round. Do not resume the peer of an earlier round.
 When the gate output names a step, do that step before the `NEXT` command.

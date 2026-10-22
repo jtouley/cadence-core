@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import (peer_summary, HOOKS_DIR, SESSION_LAYOUTS, activate, activated_repo, assert_decision, code_paths, enable_all_packs, fake_gh, git, git_repo, hook_session, host_shape, pushed_repo, read_session, run_py, stop_decision)
+from conftest import (peer_summary, HOOKS_DIR, SESSION_LAYOUTS, activate, activated_repo, assert_decision, code_paths, enable_all_packs, fake_gh, git, git_repo, hook_session, host_shape, pushed_repo, read_session, review_cycles, run_py, stop_decision)
 
 ROOT = Path(__file__).resolve().parents[2]
 code_paths()
@@ -282,6 +282,7 @@ RWC = "READY WITH CHANGES"
 
 def test_stop_guard_s2_blocking_review_older_than_plan_holds_with_plan_review(tmp_path, run_hook):
     repo = git_repo(tmp_path / "r")
+    review_cycles(repo)  # below the project limit, the guard holds for another review
     lp = p3_loop(repo, cycles=1)
     hook_session(repo, **lp.session)
     p3_review(lp, 50, RWC)
@@ -294,6 +295,7 @@ def test_stop_guard_s1b_resume_slug_plan_update_holds_with_plan_review(tmp_path,
     # The guard text says /plan-review here, while `next` gives P4 (/plan-update).
     # A known limit: the fix of the guard text is a follow-up.
     repo = git_repo(tmp_path / "r")
+    review_cycles(repo)  # below the project limit, the guard holds for another review
     lp = p3_loop(repo, cycles=2)
     hook_session(repo, **lp.session, resume_slug="plan-update")
     p3_review(lp, 50, RWC)
