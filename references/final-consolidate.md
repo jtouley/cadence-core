@@ -54,6 +54,8 @@ A `manual` check closes only on the word of a person who read the fix. The perso
 `set-status --human --by <name>`. The command writes `human_confirmed`, `confirmed_by` and
 `confirmed_at`. `append` refuses a row with these fields. `closure.py` writes one `MANUAL` line
 for each row with `human_confirmed`, so the user sees each one. The agent does not run `--human`.
+The shell hook denies it to the agent. The agent stops and asks the person to run the
+command in their own terminal.
 
 ## Changing the ledger
 

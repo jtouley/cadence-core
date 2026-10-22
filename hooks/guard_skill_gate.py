@@ -232,16 +232,36 @@ def note_activation_orchestrator(payload: dict[str, Any]) -> None:
         return
 
 
+def _shell_command(payload: dict[str, Any]) -> str | None:
+    if not (payload.get("hook_event_name") == "beforeShellExecution" or extract_tool_name(payload) in SHELL_TOOLS):
+        return None
+    command = payload.get("command") or extract_tool_input(payload).get("command")
+    return command if isinstance(command, str) else None
+
+
 def pr_guard_denied(host: str, payload: dict[str, Any]) -> bool:
     """`gh pr create` / `gh pr ready` before planned_checks: they write no file."""
-    if not (payload.get("hook_event_name") == "beforeShellExecution" or extract_tool_name(payload) in SHELL_TOOLS):
-        return False
-    command = payload.get("command") or extract_tool_input(payload).get("command")
-    if not isinstance(command, str):
+    command = _shell_command(payload)
+    if command is None:
         return False
     from pr_guard import pr_guard_decision
 
     message = pr_guard_decision(command, hook_workspace(payload), host)
+    if message is None:
+        return False
+    tool_deny(host, message)
+    return True
+
+
+def evidence_guard_denied(host: str, payload: dict[str, Any]) -> bool:
+    """Deny the human stamp, a forged commit time and two commits in one shell call (evidence_guard.py)."""
+    command = _shell_command(payload)
+    if command is None:
+        return False
+    from evidence_guard import evidence_guard_decision
+    from guard_secret_read import in_run  # one rule for an active run; an unreadable session counts
+
+    message = evidence_guard_decision(command, lambda: any(in_run(w) for w in hook_candidates(payload)))
     if message is None:
         return False
     tool_deny(host, message)
@@ -268,7 +288,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     note_activation_owner(payload)
     note_activation_orchestrator(payload)
-    if pr_guard_denied(host, payload):
+    if pr_guard_denied(host, payload) or evidence_guard_denied(host, payload):
         return 0
     checks, mention = planned_checks(payload)
     if not checks and not mention:

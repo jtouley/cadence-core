@@ -51,7 +51,7 @@ FAIL  E4  draft-pr
   The agent sets it to verified:               exit 1  error: status 'verified' not settable here (allowed: ['deferred', 'fixed', 'open', 'spec_gap']); verified comes only from ledger_verify.py
   The agent sets it to fixed, with no commit:  exit 1  error: status=fixed requires fixed_in, the sha of the commit that holds the fix (set-status --fixed-in <sha>)
   The agent sets it to fixed, with no fix:     exit 0  status: fixed
-  ledger_verify.py runs the check of the row:  exit 1  error: cd-12-F1: check failed (1): PYTHONPATH=src python3 -c "from tests.test_core import test_subtract_below_zero as t; t()"
+  ledger_verify.py runs the check of the row:  exit 1  error: cd-12-F1: check failed (1): PYTHONPATH=src python3 tests/run_one.py test_subtract_below_zero
   Closure:                                     exit 1  - cd-12-F1: must-fix status='fixed' not terminal
   The agent adds the missing test and commits it.
   The agent sets fixed_in to the fix commit:   exit 0  status: fixed

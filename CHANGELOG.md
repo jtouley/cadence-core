@@ -3,6 +3,12 @@
 ## Unreleased
 
 - The runtime line budget test is removed. A global line count blocked focused changes and was raised by hand at each feature, so it did not constrain growth. The complexity ratchet and the duplication and code-shape measures still judge each change.
+- The shell hook guards the evidence of a run. A hook sees only the agent's tool calls, so it denies
+  `findings_io.py set-status --human` to the agent: the person runs that stamp in their own terminal.
+  During a run, it also denies a forged commit time (`git commit --date`, `-C`, `-c`,
+  `GIT_AUTHOR_DATE`, `GIT_COMMITTER_DATE`, faketime) and two or more commits in one shell call,
+  because E1 reads one author time for each phase commit. A ledger check that is inline interpreter
+  code (`python3 -c pass`) no longer counts as a test.
 - A plan finding closes in the plan. P7 fails while the plan scorecard does not pass, as
   R2 does, and names `/plan-update` and then `/test-benchmark plan`. The P4 packet pins the failing
   plan scorecard. The plan benchmark writes no findings ledger row, because the plan freezes at P9

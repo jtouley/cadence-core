@@ -48,6 +48,13 @@ _RUNNER = re.compile(
     r"(?:^|[\s/])(?:pytest|python[0-9.]*|make|tox|nox|npx|ruff|mypy|pyright|tsc|eslint|jest|vitest)(?:\s|$)"
     r"|\b(?:uv\s+run|(?:npm|pnpm|yarn|bun)\s+(?:test|run)|cargo\s+\w+|go\s+(?:test|vet))\b"
     r"|(?:^|\s)\./\S|(?:^|[\s/])scripts/\S")
+# Inline interpreter code (`python3 -c pass`, `node -e 1`, `sh -c '...'`) is not a runner.
+# Per interpreter: the short flags that take inline code, the short flags that take a value, the short
+# flags that end the options (`python -m`), and the long flags of inline code.
+_INLINE_FLAGS = {"python": ("c", "WX", "m", ()), "node": ("ep", "r", "", ("--eval", "--print")),
+                 "perl": ("eE", "", "", ()), "ruby": ("e", "", "", ()), "sh": ("c", "", "", ()),
+                 "bash": ("c", "", "", ()), "zsh": ("c", "", "", ()), "npx": ("c", "p", "", ("--call",))}
+_WRAPPER = re.compile(r"^(?:uv run|npx|env|command|exec|time)(?:\s+-\S+)*\s+")
 _SHA = re.compile(r"^[0-9a-fA-F]{7,40}$")
 # Only `set-status --human --by <name>` writes these fields.
 HUMAN_FIELDS = ("human_confirmed", "confirmed_by", "confirmed_at")
@@ -66,16 +73,44 @@ def check_problem(check: object) -> str | None:
         return None
     if not text or text.split()[-1] == "--":
         return f"check {text!r} is empty: name the test or the script that proves the fix"
+    runs = False
     for segment in _SEGMENTS.split(text):
         words = [w for w in segment.split() if not _ASSIGNMENT.match(w)]
-        if words and words[0].rsplit("/", 1)[-1] in NO_OP_COMMANDS:
-            return f"check {text!r} is a shell no-op ({words[0]}): name the test or the script that proves the fix"
+        bare = _WRAPPER.sub("", " ".join(words)).split()  # `uv run true` is `true`
+        if bare and bare[0].rsplit("/", 1)[-1] in NO_OP_COMMANDS:
+            return f"check {text!r} is a shell no-op ({bare[0]}): name the test or the script that proves the fix"
         skill_path = next((w for w in words if _is_skill_script(w)), None)
         if skill_path:
             return f"check {text!r} names {skill_path}, a Cadence script not in this repository: write $CADENCE_HOME/{skill_path}"
-    if not _RUNNER.search(text):
-        return f"check {text!r} names no test runner or script path ({RUNNERS})"
+        runs = runs or bool(_RUNNER.search(segment) and not _inline(words))
+    if not runs:
+        return f"check {text!r} names no test runner or script path ({RUNNERS}; inline -c or -e code is not one)"
     return _shell_problem(text)
+
+
+def _inline(words: list[str]) -> bool:
+    """A word of ``words`` runs an interpreter on inline code: `-c`, `-Ic`, `-cpass`, `-X dev -c`, `--eval`."""
+    for i, word in enumerate(words):
+        flags = _INLINE_FLAGS.get(re.sub(r"[0-9.]+$", "", word.rsplit("/", 1)[-1]))
+        if flags is None:
+            continue
+        code, valued, ends, long = flags
+        rest = iter(words[i + 1:])
+        for opt in rest:
+            if not opt.startswith("-") or opt == "-" or opt[1:2] in tuple(ends):
+                break
+            if opt.split("=", 1)[0] in long:
+                return True
+            if opt.startswith("--"):
+                continue
+            for n, char in enumerate(opt[1:], 1):
+                if char in code:
+                    return True
+                if char in valued:
+                    if n == len(opt) - 1:
+                        next(rest, None)  # the value is the next word
+                    break
+    return False
 
 
 def _shell_problem(text: str) -> str | None:
@@ -404,12 +439,14 @@ def _append(ledger: Path, raw: str) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Append findings or change their status (never to verified)")
+    # No `--hum` for `--human`, so the shell hook matches the one spelling.
+    parser = argparse.ArgumentParser(description="Append findings or change their status (never to verified)",
+                                     allow_abbrev=False)
     parser.add_argument("--ledger", help="findings jsonl (default: findings.jsonl in the canonical .context)")
     sub = parser.add_subparsers(dest="command", required=True)
     add = sub.add_parser("append", help="append one finding record")
     add.add_argument("--json", required=True, help="the finding as a JSON object")
-    st = sub.add_parser("set-status", help="set a finding to open|fixed|deferred|spec_gap")
+    st = sub.add_parser("set-status", help="set a finding to open|fixed|deferred|spec_gap", allow_abbrev=False)
     st.add_argument("--id", required=True)
     st.add_argument("--status", required=True)
     st.add_argument("--ticket")

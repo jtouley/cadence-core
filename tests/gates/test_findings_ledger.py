@@ -19,7 +19,7 @@ from ledger_verify import main, supersede_finding, verify_finding  # noqa: E402
 
 ROW = {"id": "gh-1-F01", "stage": "pr-review-local", "rule_ref": "core:x", "class": "bug",
        "severity": "must-fix", "location": "src/a.py:1", "evidence": "off by one",
-       "status": "open", "check": "python3 -c pass"}
+       "status": "open", "check": "python3 check.py 0"}
 
 
 @pytest.fixture
@@ -34,6 +34,7 @@ def fix_repo(tmp_path, monkeypatch):
 
     path = git_repo(tmp_path / "repo")
     commit_file(path, "base")
+    (path / "check.py").write_text("import sys\nraise SystemExit(int(sys.argv[1]))\n", encoding="utf-8")
     monkeypatch.chdir(path)
     return path
 
@@ -223,7 +224,7 @@ def _fixed_row(path: Path, check: str) -> dict:
 def test_ledger_verify_promotes_fixed_to_verified(tmp_path, fix_repo):
     from conftest import head_sha
 
-    row = _fixed_row(tmp_path / "f.jsonl", "python3 -c pass")
+    row = _fixed_row(tmp_path / "f.jsonl", "python3 check.py 0")
     verified = verify_finding(row)
     assert verified["status"] == "verified"
     assert verified["verification_exit_code"] == 0
@@ -232,13 +233,13 @@ def test_ledger_verify_promotes_fixed_to_verified(tmp_path, fix_repo):
 
 
 def test_dry_run_returns_the_row_unverified(tmp_path, fix_repo):
-    row = _fixed_row(tmp_path / "f.jsonl", "python3 -c pass")
+    row = _fixed_row(tmp_path / "f.jsonl", "python3 check.py 0")
     assert verify_finding(row, dry_run=True)["status"] == "fixed"
 
 
 def test_dry_run_cli_leaves_the_ledger_bytes_unchanged(tmp_path, fix_repo, capsys):
     path = tmp_path / "f.jsonl"
-    _fixed_row(path, "python3 -c 'raise SystemExit(2)'")
+    _fixed_row(path, "python3 check.py 2")
     before = path.read_bytes()
     assert main(["--ledger", str(path), "--dry-run"]) == 0
     assert path.read_bytes() == before
@@ -273,13 +274,20 @@ def test_a_check_that_is_not_valid_shell_stays_fixed(tmp_path, fix_repo):
 
 # --- a finding closes only on a real check, a fix names its commit, and a person confirms the manual path.
 
-NO_OP_CHECKS = ["true", ":", "echo ok", "exit 0", "", "   ", "uv run --", "/bin/true", "FOO=1 true",
+NO_OP_CHECKS = ["true", ":", "echo ok", "exit 0", "", "   ", "uv run --", "/bin/true", "FOO=1 true", "uv run true", "npx -c true",
                 "pytest -q || true", "pytest -q; echo done"]
-NOT_A_RUNNER = ["ls -la", "bash -c ok", "cat README.md"]
+NOT_A_RUNNER = ["ls -la", "bash -c ok", "cat README.md",
+                # inline interpreter code is not a test
+                "python3 -c pass", "python -c 1", "uv run python -c pass", "PYTHONPATH=src python3 -u -c 'import a'",
+                "node -e 1", "perl -e 1", "ruby -e 1", "sh -c 'pytest -q'", "bash -c 'npm test'",
+                "python3 -cpass", "python3 -Ic pass", "python3 -X dev -c pass", "node --eval 1",
+                "/usr/bin/python3.12 -c pass"]
 REAL_CHECKS = ["pytest -q tests/test_a.py", "python3 -m pytest", "uv run pytest", "npm test", "cargo test",
                "go test ./...", "make test", "./run-tests.sh", "bash scripts/check.sh", "cd sub && pytest", "manual",
                "pnpm test", "yarn test -- a.spec.ts", "bun run check", "npx vitest run", "cargo clippy -- -D warnings",
-               "go vet ./...", "ruff check src", "mypy src", "tsc --noEmit", "tox -e py"]
+               "go vet ./...", "ruff check src", "mypy src", "tsc --noEmit", "tox -e py",
+               "python3 -m pytest -c pytest.ini tests", "python3 tests/check.py test_a", "python3 -c pass && pytest -q",
+               "python3 -W error -m pytest -q", "python3 -Wignore -m pytest", "npx -p vitest vitest run"]
 
 
 @pytest.mark.parametrize("check", NO_OP_CHECKS)
@@ -498,3 +506,15 @@ def test_ledger_verify_runs_a_check_under_cadence_home(tmp_path, fix_repo, monke
 def test_append_rejects_a_check_that_is_not_valid_shell(tmp_path, check):
     with pytest.raises(FindingsValidationError, match="not valid shell"):
         append_finding(tmp_path / "f.jsonl", {**ROW, "check": check})
+
+
+def test_set_status_takes_no_abbreviation_of_human(ledger, fix_repo, capsys):
+    """The shell hook matches `--human`, so argparse takes no `--hum` or `--hu`."""
+    from conftest import head_sha
+
+    assert _cli("--ledger", str(ledger), "append", "--json", json.dumps(MANUAL)) == 0
+    for flag in ("--hum", "--hu"):
+        with pytest.raises(SystemExit):
+            _cli("--ledger", str(ledger), "set-status", "--id", "gh-1-F01", "--status", "fixed",
+                 "--fixed-in", head_sha(fix_repo), flag, "--by", "Jo")
+    assert "human_confirmed" not in load_findings(ledger)[0]

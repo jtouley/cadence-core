@@ -261,7 +261,7 @@ def read_paths(payload: dict[str, Any], workspace: Path) -> Optional[list[str]]:
     return [path] if isinstance(path, str) and path.strip() else None
 
 
-def _in_run(workspace: Path) -> bool:
+def in_run(workspace: Path) -> bool:
     """A session file is there: the run is active, or the file does not read (fail closed)."""
     if not (find_primary_checkout(workspace) / ".context" / "cadence-session.json").is_file():
         return False
@@ -290,7 +290,7 @@ def deny_message(payload: dict[str, Any], workspace: Path, host: str = "cursor")
 def main(argv: list[str] | None = None) -> int:
     host = parse_host(argv)
     payload, error = load_payload()
-    for workspace in [w for w in hook_candidates(payload) if _in_run(w)]:
+    for workspace in [w for w in hook_candidates(payload) if in_run(w)]:
         message = (f"BLOCKED: {error or 'tool payload is missing'}\nACTION: retry the tool call with a JSON object"
                    if payload is None else deny_message(payload, workspace, host))
         if message is not None:
