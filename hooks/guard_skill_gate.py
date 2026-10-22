@@ -287,20 +287,7 @@ def main(argv: list[str] | None = None) -> int:
     host = parse_host(argv)
     payload, payload_error = load_payload()
     if payload_error or payload is None:
-        for workspace in _session_workspaces(None):
-            gate = CadenceGate(workspace)
-            # Fail closed while a run is active, or when the session cannot be read.
-            # A finished run (active_skill cleared by --deactivate) does not block.
-            if gate.session is None or gate.session.get("active_skill") == gate.skill_name:
-                tool_deny(
-                    host,
-                    "BLOCKED: "
-                    + (payload_error or "tool payload is missing")
-                    + "\nACTION: retry the tool call with a JSON object",
-                )
-                return 0
-        tool_allow(host)
-        return 0
+        return _no_payload(host, payload_error)
     note_activation_owner(payload)
     note_activation_orchestrator(payload)
     if pr_guard_denied(host, payload) or set_check_denied(host, payload):
@@ -320,6 +307,19 @@ def main(argv: list[str] | None = None) -> int:
             message = orchestrator_scope.write_denial(payload, workspace, [p for _, p in checks])
         if message is not None:
             tool_deny(host, message)
+            return 0
+    tool_allow(host)
+    return 0
+
+
+def _no_payload(host: str, payload_error: str | None) -> int:
+    """Fail closed while a run is active, or when the session cannot be read.
+    A finished run (active_skill cleared by --deactivate) does not block."""
+    for workspace in _session_workspaces(None):
+        gate = CadenceGate(workspace)
+        if gate.session is None or gate.session.get("active_skill") == gate.skill_name:
+            tool_deny(host, "BLOCKED: " + (payload_error or "tool payload is missing")
+                      + "\nACTION: retry the tool call with a JSON object")
             return 0
     tool_allow(host)
     return 0

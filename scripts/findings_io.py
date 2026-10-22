@@ -115,28 +115,41 @@ def _shell_problem(text: str) -> str | None:
                                               "write only the command; put the reason in evidence")
 
 
+def _short_runs_code(opt: str, code: str, valued: str) -> tuple[bool, bool]:
+    """(a short-flag cluster such as `-Ic` runs inline code, its last flag takes the next word as its value)."""
+    for n, char in enumerate(opt[1:], 1):
+        if char in code:
+            return True, False
+        if char in valued:
+            return False, n == len(opt) - 1
+    return False, False
+
+
+def _options_run_code(options: list[str], flags: tuple) -> bool:
+    """The options after an interpreter name hold an inline-code flag, before the first operand."""
+    code, valued, ends, long = flags
+    rest = iter(options)
+    for opt in rest:
+        if not opt.startswith("-") or opt == "-" or opt[1:2] in tuple(ends):
+            return False
+        if opt.split("=", 1)[0] in long:
+            return True
+        if opt.startswith("--"):
+            continue
+        runs, takes_value = _short_runs_code(opt, code, valued)
+        if runs:
+            return True
+        if takes_value:
+            next(rest, None)  # the value is the next word
+    return False
+
+
 def _inline(words: list[str]) -> bool:
     """A word of ``words`` runs an interpreter on inline code: `-c`, `-Ic`, `-cpass`, `-X dev -c`, `--eval`."""
     for i, word in enumerate(words):
         flags = _INLINE_FLAGS.get(re.sub(r"[0-9.]+$", "", word.rsplit("/", 1)[-1]))
-        if flags is None:
-            continue
-        code, valued, ends, long = flags
-        rest = iter(words[i + 1:])
-        for opt in rest:
-            if not opt.startswith("-") or opt == "-" or opt[1:2] in tuple(ends):
-                break
-            if opt.split("=", 1)[0] in long:
-                return True
-            if opt.startswith("--"):
-                continue
-            for n, char in enumerate(opt[1:], 1):
-                if char in code:
-                    return True
-                if char in valued:
-                    if n == len(opt) - 1:
-                        next(rest, None)  # the value is the next word
-                    break
+        if flags is not None and _options_run_code(words[i + 1:], flags):
+            return True
     return False
 
 
@@ -350,13 +363,8 @@ def set_status(path: Path, finding_id: str, status: str, *, ticket: str | None =
         )
     with ledger_lock(path):
         rows = load_findings(path)
-        hits = [r for r in rows if r["id"] == finding_id]
-        # Byte-identical duplicates are one finding appended twice; they change together.
-        if not hits or any(h != hits[0] for h in hits):
-            raise FindingsValidationError(f"{finding_id}: {len(hits)} matching findings in {path}")
+        hits = _open_hits(rows, finding_id, path, "it cannot be reopened or changed here")
         row = hits[0]
-        if row["status"] == "verified":
-            raise FindingsValidationError(f"{finding_id} is verified; it cannot be reopened or changed here")
         if status in ("deferred", "spec_gap") and not (ticket or row.get("ticket")):
             raise FindingsValidationError(f"status={status} requires --ticket")
         changes = {"status": status, **({"ticket": ticket} if ticket else {}), **({"note": note} if note else {})}
@@ -382,12 +390,8 @@ def set_check(path: Path, finding_id: str, check: str, *, cwd: Path) -> dict[str
         raise FindingsValidationError(problem)
     with ledger_lock(path):
         rows = load_findings(path)
-        hits = [r for r in rows if r["id"] == finding_id]
-        if not hits or any(h != hits[0] for h in hits):
-            raise FindingsValidationError(f"{finding_id}: {len(hits)} matching findings in {path}")
+        hits = _open_hits(rows, finding_id, path, "its check is not changed")
         row = hits[0]
-        if row["status"] == "verified":
-            raise FindingsValidationError(f"{finding_id} is verified; its check is not changed")
         old = row.get("check")
         broken = check_problem(old) or (f"it names {missing}, which is not a file" if (missing := missing_script(old, cwd))
                                         else None)
@@ -399,6 +403,18 @@ def set_check(path: Path, finding_id: str, check: str, *, cwd: Path) -> dict[str
             validate_finding(hit, allow_verified=False)
         rewrite_findings(path, rows)
     return row
+
+
+def _open_hits(rows: list[dict[str, Any]], finding_id: str, path: Path, verified: str) -> list[dict[str, Any]]:
+    """The rows of ``finding_id``, which a write changes together; raise when there is none, or when it is verified.
+
+    Byte-identical duplicates are one finding appended twice."""
+    hits = [r for r in rows if r["id"] == finding_id]
+    if not hits or any(h != hits[0] for h in hits):
+        raise FindingsValidationError(f"{finding_id}: {len(hits)} matching findings in {path}")
+    if hits[0]["status"] == "verified":
+        raise FindingsValidationError(f"{finding_id} is verified; {verified}")
+    return hits
 
 
 def _human_stamp(row: dict[str, Any], confirmed_by: str) -> dict[str, Any]:

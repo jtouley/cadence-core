@@ -738,6 +738,20 @@ def _p6_route(context_dir: Path, session: dict, open_block: dict | None,
     return open_block, plan_verdict
 
 
+def _plan_route(context_dir: Path, session: dict, workspace: Path, open_block: dict | None,
+                plan_verdict: str | None, *, judged: bool) -> tuple[dict | None, str | None]:
+    """(open block, plan verdict) after the plan review: an open round names its next step, else the P3 loop
+    limit and then the P6 route. With the spec-review pack off, a P6 report does not hold a stop."""
+    wave = _plan_round(context_dir, session, open_block) if judged else None
+    if wave is not None:
+        return wave, None
+    open_block, plan_verdict = _plan_loop_limit(context_dir, session, open_block, plan_verdict)
+    p3_holds = plan_verdict in BLOCKING_PLAN_VERDICTS or (open_block or {}).get("slug") == "plan-update"
+    if judged and not p3_holds and "adversarial-review" in stage_slugs(SKILL_ROOT, workspace):
+        open_block, plan_verdict = _p6_route(context_dir, session, open_block, plan_verdict)
+    return open_block, plan_verdict
+
+
 def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corrupt: bool,
                budget: float) -> tuple[str, str, str, dict | None]:
     """(decision, message, open-block slug, session after the refusal-count reset) for one run."""
@@ -751,16 +765,9 @@ def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corr
         session = {**session, "stop_refusals": 0}
     # Every evidence read uses the judged run.
     plan_verdict = latest_plan_verdict(context_dir, session) if session and not corrupt else None
-    wave = _plan_round(context_dir, session, open_block) if live and not unknown else None
-    if wave is not None:  # an open plan review round names its next step
-        open_block, plan_verdict = wave, None
-    if wave is None:
-        open_block, plan_verdict = _plan_loop_limit(context_dir, session, open_block, plan_verdict)
-    p3_holds = plan_verdict in BLOCKING_PLAN_VERDICTS or (open_block or {}).get("slug") == "plan-update"
-    # With the spec-review pack off, a P6 report does not hold a stop.
-    p6_on = "adversarial-review" in stage_slugs(SKILL_ROOT, workspace)
-    if live and not unknown and not p3_holds and wave is None and p6_on:
-        open_block, plan_verdict = _p6_route(context_dir, session, open_block, plan_verdict)
+    if session is not None:
+        open_block, plan_verdict = _plan_route(context_dir, session, workspace, open_block, plan_verdict,
+                                               judged=live and not unknown)
     decision, message = decide(
         session,
         corrupt=corrupt,
@@ -778,6 +785,21 @@ def round_stages(skill_root: Path, workspace: Path | None) -> dict[str, str]:
     return {row["block"]: row["slug"] for row in round_members("plan", skill_root, workspace) if is_peer(row)}
 
 
+def _hold_for_run(payload: dict, agent: str, round_stage: str | None) -> str | None:
+    """The hold text for the run that this peer started: its open round stage, else the E1 next phase."""
+    started = {run_id for _ctx, run_id in _started_runs(payload, agent)}
+    project = _project_dir()
+    contexts = list(dict.fromkeys(canonical_context_dir(c) for c in (Path(payload.get("cwd") or project), project)))
+    for session, ctx, ws, _path in _by_worktree_runs(contexts):
+        if str(session.get("pipeline_run_id") or "") not in started:
+            continue
+        if round_stage is not None:
+            return _round_hold(ctx, session, round_stage)
+        row = with_next_phase({}, ctx, ws, session, worker=True)
+        return f"BLOCKED: {row['continue']}" if row.get("continue") else None
+    return None
+
+
 def e1_peer_hold(payload: dict, agent: str, repeat: bool) -> str | None:
     """A peer's stop is held once while its work is open: the E1 peer while a plan phase has no commit, a plan reviewer of an open round until it records `done`."""
     try:
@@ -786,16 +808,7 @@ def e1_peer_hold(payload: dict, agent: str, repeat: bool) -> str | None:
         stages = round_stages(SKILL_ROOT, Path(payload.get("cwd") or _project_dir())) if block != "E1" else {}
         if block != "E1" and block not in stages:
             return None
-        started = {run_id for _ctx, run_id in _started_runs(payload, agent)}
-        project = _project_dir()
-        contexts = list(dict.fromkeys(canonical_context_dir(c) for c in (Path(payload.get("cwd") or project), project)))
-        for session, ctx, ws, _path in _by_worktree_runs(contexts):
-            if str(session.get("pipeline_run_id") or "") not in started:
-                continue
-            if block in stages:
-                return _round_hold(ctx, session, stages[block])
-            row = with_next_phase({}, ctx, ws, session, worker=True)
-            return f"BLOCKED: {row['continue']}" if row.get("continue") else None
+        return _hold_for_run(payload, agent, stages.get(str(block)))
     except Exception:  # noqa: BLE001 - as for the lean return: a check that cannot run does not hold
         return None
     return None

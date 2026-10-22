@@ -138,7 +138,7 @@ def _ask(state: str, meanings: dict[str, str]) -> dict | None:
     answer = answers.get("verdict") if isinstance(answers, dict) else None
     if not isinstance(answer, dict):
         return None
-    return {"choice": answer.get("choice"), "confidence": answer.get("confidence"), "model": data.get("model")}
+    return {"choice": answer.get("choice"), "confidence": answer.get("confidence"), "model": (data or {}).get("model")}
 
 
 def _post(body: dict) -> dict | None:
@@ -146,11 +146,12 @@ def _post(body: dict) -> dict | None:
     api_key = os.environ.get("TYPESAFE_API_KEY")
     if not api_key:
         return None
-    request = urllib.request.Request(os.environ.get("TYPESAFE_API_URL", API_URL), data=json.dumps(body).encode(),
+    # https by default; TYPESAFE_API_URL is the operator's own endpoint.
+    request = urllib.request.Request(os.environ.get("TYPESAFE_API_URL", API_URL), data=json.dumps(body).encode(),  # noqa: S310
                                      headers={"Authorization": f"Bearer {api_key}",
                                               "Content-Type": "application/json"}, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:  # noqa: S310 - the URL above
             data = json.loads(response.read().decode("utf-8"))
     except (OSError, ValueError):
         return None

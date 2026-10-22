@@ -113,7 +113,7 @@ class Round:
     def shown_plan(self) -> str:
         from activate_session import _shown
 
-        return _shown(self.plan, self.ctx, self.workspace)
+        return _shown(self.plan, self.ctx, self.workspace) if self.plan else ""
 
     def round_file(self, number: int) -> Path:
         return self.dir / f"round-{number}.md"
@@ -129,7 +129,8 @@ def _limit_of(stage: str) -> int | None:
     from artifact_requirements import cycle_limit
 
     registry = load_stages.load_registry(_SCRIPTS.parent)
-    member = next((r for r in registry["stages"] if r.get("slug") == stage), {}).get("review_round") or {}
+    row: dict = next((r for r in registry["stages"] if r.get("slug") == stage), {})
+    member = row.get("review_round") or {}
     spec = member.get("cycle_limit", (registry.get("review_rounds") or {}).get(member.get("round"), {}).get("cycle_limit"))
     return None if spec is None else cycle_limit(spec)
 
@@ -274,21 +275,30 @@ def _person_waits(rnd: Round, rounds: list[dict]) -> list[dict]:
         return []
     raised = {r.get("line") for r in (row for past in rounds for row in past.get("p5", [])) if r.get("stage") == "person-wait"}
     rows: list[dict] = []
-    for section, text in phase_sections(rnd.text).items():
-        lines = text.splitlines()
+    for section, line in _wait_candidates(rnd.text, raised):
+        p = option_probability(line, _WAIT_QUESTION, _WAIT_OPTIONS, "waits", kind="person-wait", threshold=WAIT_THRESHOLD)
+        if p is not None and p >= WAIT_THRESHOLD:
+            rows.append({"id": f"W-{len(rows) + 1}", "stage": "person-wait", "phase": section, "location": line[:120],
+                         "severity": "must-fix", "line": line,
+                         "evidence": f"this line waits on a person (Jev {p:.2f}). A run has no person in the loop: "
+                                     "settle it with an assumption row (references/plan-review-round.md)"})
+    return rows
+
+
+def _wait_candidates(text: str, raised: set) -> list[tuple[str, str]]:
+    """(section, line) for each plan line that names a person and is not a heading, a table head, a record
+    line or a line already raised: code finds the candidates, and Jev judges them."""
+    out = []
+    for section, body in phase_sections(text).items():
+        lines = body.splitlines()
         for i, raw in enumerate(lines):
             line = raw.strip()
             table_head = line.startswith("|") and i + 1 < len(lines) and re.fullmatch(r"\s*\|[\s:|-]+\|\s*", lines[i + 1])
             if section == "record" or len(line) <= 12 or line.startswith("#") or table_head or line in raised:
                 continue
-            p = (option_probability(line, _WAIT_QUESTION, _WAIT_OPTIONS, "waits", kind="person-wait",
-                                    threshold=WAIT_THRESHOLD) if _PERSON_WORDS.search(line) else None)
-            if p is not None and p >= WAIT_THRESHOLD:
-                rows.append({"id": f"W-{len(rows) + 1}", "stage": "person-wait", "phase": section, "location": line[:120],
-                             "severity": "must-fix", "line": line,
-                             "evidence": f"this line waits on a person (Jev {p:.2f}). A run has no person in the loop: "
-                                         "settle it with an assumption row (references/plan-review-round.md)"})
-    return rows
+            if _PERSON_WORDS.search(line):
+                out.append((section, line))
+    return out
 
 
 def write_round_file(rnd: Round, current: dict) -> Path:
@@ -318,25 +328,42 @@ def write_round_file(rnd: Round, current: dict) -> Path:
     return path
 
 
-def state(rnd: Round, *, check: bool) -> tuple[list[str], str | None]:
-    """(problems, the NEXT line). No problem and no NEXT: the plan review is done for this plan."""
-    rounds = rnd.rounds()
-    if rnd.plan is None and rounds:
+def _no_plan(rnd: Round, rounds: list[dict]) -> list[str]:
+    """Why the round cannot find the run's plan, else []."""
+    if rnd.plan is not None:
+        return []
+    if rounds:
         return ["plan-review-round: the plan lost its header lines (`RUN_BY_COMMAND: plan-create`, `Ticket:`, "
-                "`Pipeline-Run:`), so the run cannot find it. Send /plan-update again: restore them as P1 wrote them"], None
-    if rnd.plan is None:
-        return ["plan-review-round: the run has no plan. Run P1 (/plan-create) first"], None
+                "`Pipeline-Run:`), so the run cannot find it. Send /plan-update again: restore them as P1 wrote them"]
+    return ["plan-review-round: the run has no plan. Run P1 (/plan-create) first"]
+
+
+def _writes(check: bool) -> bool:
+    return not check and os.environ.get("CADENCE_GATES_READONLY") != "1"
+
+
+def _open_round(rnd: Round, rounds: list[dict], *, check: bool) -> list[str]:
+    """Make `rounds[-1]` the round of the plan as it is now: why P4 must answer the last round first, else []."""
     if rounds and rounds[-1]["plan_sha256"] != rnd.sha and not _started(rnd, rounds[-1]):
         rounds.pop()  # a round that no reviewer started reviews nothing; it opens again on this plan
     if rounds and rounds[-1]["plan_sha256"] != rnd.sha:
         answered = p4_problems(rnd, rounds[-1]) if must_fix(rnd, rounds[-1]) else []
         if answered:
-            return answered, None
+            return answered
     if not rounds or rounds[-1]["plan_sha256"] != rnd.sha:
         rounds.append(_next_round(rnd, rounds))
-        if not check and os.environ.get("CADENCE_GATES_READONLY") != "1":
+        if _writes(check):
             rnd.save(rounds)
             rnd.round_plan(rounds[-1]["n"]).write_text(rnd.text, encoding="utf-8")
+    return []
+
+
+def state(rnd: Round, *, check: bool) -> tuple[list[str], str | None]:
+    """(problems, the NEXT line). No problem and no NEXT: the plan review is done for this plan."""
+    rounds = rnd.rounds()
+    problems = _no_plan(rnd, rounds) or _open_round(rnd, rounds, check=check)
+    if problems:
+        return problems, None
     current = rounds[-1]
     pending = [s for s in current["due"] if s not in current["done"]]
     plan = rnd.shown_plan()
@@ -345,7 +372,7 @@ def state(rnd: Round, *, check: bool) -> tuple[list[str], str | None]:
         sends = " | ".join(commands[s] for s in pending if s in commands)
         return [f"plan-review-round: round {current['n']} waits on {', '.join(pending)}"], \
             f"NEXT: send these peers in one message, in parallel: {sends}"
-    if not check and os.environ.get("CADENCE_GATES_READONLY") != "1":
+    if _writes(check):
         _complete(rnd, current)
         rnd.save(rounds)
     open_rows = must_fix(rnd, current)
@@ -368,7 +395,7 @@ def _open_to(rnd: Round, rounds: list[dict], stage: str) -> set[str] | None:
     return (changed | still) - {"record"}
 
 
-def add(rnd: Round, stage: str, record: dict) -> dict:
+def add(rnd: Round, stage: str, record: dict) -> list[dict]:
     """A finding of `stage` on the plan as it is now. The script pins the plan sha and the round."""
     rounds = rnd.rounds()
     if stage not in rnd.enabled():
@@ -386,7 +413,7 @@ def add(rnd: Round, stage: str, record: dict) -> dict:
     outside = [p for p in phases if allowed is not None and p not in allowed]
     if severity == "must-fix" and outside:
         raise ValueError(f"in round {rounds[-1]['n']} a must-fix may target only a section that the update changed, "
-                         f"or one where {stage} still had a must-fix: {', '.join(sorted(allowed)) or 'none'}. "
+                         f"or one where {stage} still had a must-fix: {', '.join(sorted(allowed or ())) or 'none'}. "
                          f"Record a finding in {', '.join(outside)} as a nit")
     rows = [{"id": ident, "stage": stage, "round": rounds[-1]["n"], "plan_sha256": rnd.sha, "phase": phase,
              "location": str(record.get("location", "")), "severity": severity,

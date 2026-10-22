@@ -56,16 +56,22 @@ def verdict(text: str, options: tuple[str, ...]) -> str | None:
     return None
 
 
-def verdict_values(text: str) -> list[str]:
-    """The text of each `Verdict:` line and of the first line under each `Verdict` heading, in file order."""
-    values: list[str] = []
-    fenced, heading = False, False
+def unfenced_lines(text: str) -> list[str]:
+    """The lines of ``text`` outside fenced code blocks; a fence line itself is left out too."""
+    out, fenced = [], False
     for raw in text.splitlines():
         if _FENCE.match(raw):
             fenced = not fenced
-            continue
-        if fenced:
-            continue
+        elif not fenced:
+            out.append(raw)
+    return out
+
+
+def verdict_values(text: str) -> list[str]:
+    """The text of each `Verdict:` line and of the first line under each `Verdict` heading, in file order."""
+    values: list[str] = []
+    heading = False
+    for raw in unfenced_lines(text):
         if _VERDICT_HEADING.match(raw):
             heading = True
             continue
