@@ -45,6 +45,7 @@ def test_the_map_is_named_by_the_tree_and_written_once(tmp_path):
     repo = _repo(tmp_path)
     ctx = repo / ".context"
     first = repo_map.ensure(ctx, repo)
+    assert first is not None
     assert first.parent == ctx / "repo-map" and first.name == f"{repo_map.tree_sha(repo)[:12]}.md"
     stamp = first.stat().st_mtime_ns
     assert repo_map.ensure(ctx, repo) == first and first.stat().st_mtime_ns == stamp

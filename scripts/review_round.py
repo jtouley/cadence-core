@@ -86,6 +86,36 @@ def _record_sent(name: str, workspace: Path, slugs: set[str]) -> None:
         path.write_text(json.dumps({"head": _head(workspace), "sent": sorted(slugs)}, indent=2) + "\n", encoding="utf-8")
 
 
+def _run_scripts(rows: list[dict], workspace: Path) -> None:
+    """Run each script member of the round; its gate is read after."""
+    for row in rows:
+        if not is_peer(row):
+            subprocess.run(script_argv(str(row["command"]), ROOT), cwd=workspace, capture_output=True, text=True)
+
+
+def _walk(rows: list[dict], workspace: Path, sent: set[str]) -> tuple[list[str], list[str], list[dict]]:
+    """(passed lines, failed lines, the peers that are due): a failing peer not yet sent at this HEAD is due."""
+    passed: list[str] = []
+    failed: list[str] = []
+    due: list[dict] = []
+    for row in rows:
+        ok, reason = _gate(row, workspace)
+        label = f"{row['block']} ({row['slug']})"
+        (passed if ok else failed).append(label if ok else f"{label}: {reason}")
+        if not ok and is_peer(row) and row["slug"] not in sent:
+            due.append(row)
+    return passed, failed, due
+
+
+def _after_review(workspace: Path) -> str:
+    """The NEXT line when no peer is due and a member still fails."""
+    repair = _acceptance_repair(workspace)
+    if repair:
+        return (f"NEXT: send `{repair}` first: a pinned acceptance check has a defect, and no fix round may change "
+                "it. Then one fix round answers the other must-fix rows, then run this round again")
+    return "NEXT: one fix round answers the must-fix rows of each member (SKILL.md, review phase), then run this round again"
+
+
 def run_round(name: str, workspace: Path, *, check: bool) -> tuple[list[str], list[str], str | None]:
     """(passed lines, failed lines, the NEXT line) of round `name`."""
     driver = str(review_rounds(ROOT)[name].get("driver", "")) if name in review_rounds(ROOT) else ""
@@ -93,32 +123,16 @@ def run_round(name: str, workspace: Path, *, check: bool) -> tuple[list[str], li
         return [], [f"review round {name!r} runs with `{driver}`"], f"NEXT: run {driver}"
     rows = round_members(name, ROOT, workspace)
     if not check:
-        for row in rows:
-            if not is_peer(row):
-                subprocess.run(script_argv(str(row["command"]), ROOT), cwd=workspace, capture_output=True, text=True)
-    passed, failed, due = [], [], []
+        _run_scripts(rows, workspace)
     sent = _sent(name, workspace)
-    for row in rows:
-        ok, reason = _gate(row, workspace)
-        label = f"{row['block']} ({row['slug']})"
-        (passed if ok else failed).append(label if ok else f"{label}: {reason}")
-        if not ok and is_peer(row) and row["slug"] not in sent:
-            due.append(row)
+    passed, failed, due = _walk(rows, workspace, sent)
     if due:
         if not check:
             _record_sent(name, workspace, sent | {row["slug"] for row in due})
         commands = _commands(due, workspace)
         return passed, failed, "NEXT: send these peers in one message, in parallel: " + " | ".join(
             commands[row["slug"]] for row in due)
-    repair = _acceptance_repair(workspace) if failed else None
-    if repair:
-        return passed, failed, (f"NEXT: send `{repair}` first: a pinned acceptance check has a defect, and no fix "
-                                "round may change it. Then one fix round answers the other must-fix rows, then run "
-                                "this round again")
-    if failed:
-        return passed, failed, ("NEXT: one fix round answers the must-fix rows of each member "
-                                "(SKILL.md, review phase), then run this round again")
-    return passed, failed, None
+    return passed, failed, _after_review(workspace) if failed else None
 
 
 def _acceptance_repair(workspace: Path) -> str | None:
@@ -155,14 +169,10 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as exc:
         print(f"FAIL  review-round: {exc}", file=sys.stderr)
         return 1
-    for line in passed:
-        print(f"OK    {line}")
-    for line in failed:
-        print(f"FAIL  {line}")
-    if nxt:
-        print(nxt)
+    report = [f"OK    {line}" for line in passed] + [f"FAIL  {line}" for line in failed] + ([nxt] if nxt else [])
     if not failed:
-        print(f"OK  review-round {args.round}: each member passed this HEAD")
+        report.append(f"OK  review-round {args.round}: each member passed this HEAD")
+    print("\n".join(report))
     return 1 if failed else 0
 
 

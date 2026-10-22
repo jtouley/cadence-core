@@ -101,7 +101,9 @@ def test_repin_pins_the_fixed_check_closes_the_defect_and_logs_the_change(tmp_pa
     (repo / "acceptance" / "check_one.py").write_text(FIXED, encoding="utf-8")
     assert acceptance.repin(ctx, repo, "AC-1") == []
     assert acceptance.verify(ctx, repo) == [] and acceptance.open_defects(ctx) == {}
-    rows = [json.loads(line) for line in acceptance.repair_path(ctx).read_text(encoding="utf-8").splitlines()]
+    log = acceptance.repair_path(ctx)
+    assert log is not None
+    rows = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
     assert [r["kind"] for r in rows] == ["defect", "repin"]
     assert rows[1]["id"] == "AC-1" and rows[1]["why"] == WHY
     assert rows[1]["old"]["acceptance/check_one.py"] != rows[1]["new"]["acceptance/check_one.py"]

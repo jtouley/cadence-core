@@ -134,7 +134,7 @@ def test_a_phase_with_no_red_commit_fails(run_repo):
 
 def test_a_red_commit_from_a_finished_tree_fails(run_repo):
     """The shape of the benchmark run: the code was written first, then split into phase commits."""
-    for n, name in NAMES:
+    for n, _name in NAMES:
         (run_repo / f"p{n}.py").write_text("", encoding="utf-8")
     for n, name in NAMES:
         (run_repo / f"check_p{n}.py").write_text(f"import p{n}\n", encoding="utf-8")

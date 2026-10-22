@@ -117,6 +117,8 @@ def open_defects(context_dir: Path, session: dict | None = None) -> dict[str, di
 
 def _append_repair(context_dir: Path, session: dict, row: dict) -> None:
     path = repair_path(context_dir, session)
+    if path is None:
+        raise ValueError("the session has no task_id")
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(row) + "\n")
@@ -350,7 +352,7 @@ def _run(check: dict, worktree: Path, defects: dict[str, dict]) -> str | None:
                 f"Send /plan-update <plan> --acceptance {ident}: the plan peer fixes the check, keeps its claim, and "
                 f"runs `{_CLI} repin --id {ident}`")
     try:
-        done = subprocess.run(str(check["run"]), shell=True, cwd=worktree, capture_output=True, text=True,
+        done = subprocess.run(str(check["run"]), shell=True, cwd=worktree, capture_output=True, text=True,  # noqa: S602 - the pinned check
                               timeout=TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         return f"acceptance: {ident} timed out after {TIMEOUT_SECONDS} s ({check['claim']})"

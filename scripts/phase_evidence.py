@@ -33,7 +33,7 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 TIMEOUT_SECONDS = 600
-_RED = re.compile(r"phase[\s_-]*\d+\s*[:.\-–—]?\s*red\b", re.I)
+_RED = re.compile(r"(?i)phase[\s_-]*\d+\s*[:.\-–—]?\s*red\b")
 
 
 def is_red(subject: str) -> bool:
@@ -68,7 +68,7 @@ def record(context_dir: Path, phase: int, *, run: str | None = None, none: str |
     if path is None:
         return ["phase-evidence: the session has no task_id"]
     path.parent.mkdir(parents=True, exist_ok=True)
-    row = {"phase": phase, "check": run.strip()} if run is not None else {"phase": phase, "none": none.strip()}
+    row = {"phase": phase, "check": run.strip()} if run is not None else {"phase": phase, "none": (none or "").strip()}
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(row) + "\n")
     return []
@@ -124,7 +124,7 @@ def _run_at(worktree: Path, sha: str, check: str) -> int:
         if added.returncode != 0:
             return -1
         try:
-            return subprocess.run(check, shell=True, cwd=tree, capture_output=True, text=True,
+            return subprocess.run(check, shell=True, cwd=tree, capture_output=True, text=True,  # noqa: S602 - the phase check
                                   timeout=TIMEOUT_SECONDS).returncode
         except subprocess.TimeoutExpired:
             return -2
