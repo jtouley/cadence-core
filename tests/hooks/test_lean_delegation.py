@@ -130,6 +130,15 @@ def test_guard_active_session_peer_lean_prompt_allows_and_writes_sidecar(tmp_pat
     assert record["status"] == "running"
 
 
+def test_cursor_peer_calls_count_as_review_cycles(tmp_path):
+    """A Cursor run counts P3 and P6 cycles from the history; the Task hook writes one line per allowed call."""
+    make_session(tmp_path, task_id="t1", pipeline_run_id="run-1", host="other")
+    for prompt in ("/plan-review .cursor/plans/foo.plan.md",) * 3 + ("/de-adversarial-reviewer plan-gate foo.plan.md",):
+        assert hook.evaluate({"tool_name": "Task", "tool_input": {"prompt": prompt}}, tmp_path)["permission"] == "allow"
+    assert artifact_requirements.plan_review_cycles(tmp_path) == 3
+    assert artifact_requirements.loop_cycles(tmp_path, artifact_requirements.P6_LOOP) == 1
+
+
 @pytest.mark.parametrize("tool_input", [
     pytest.param({"prompt": "Look around and Return to the main agent ONLY with your verdict"},
                  id="guard_active_session_poison_in_non_peer_task_denies"),

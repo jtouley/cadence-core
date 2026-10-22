@@ -30,6 +30,7 @@ os.environ.setdefault("CADENCE_SKILL_ROOT", str(_ROOT))
 from hook_protocol import candidate_contexts, has_session, write_context  # noqa: E402
 from pipeline_run_binding import load_session  # noqa: E402
 from prompt_shape import (  # noqa: E402
+    append_history,
     delegation_stage_for_prompt,
     stage_for_prompt,
     task_prompt_block_reason,
@@ -127,6 +128,8 @@ def evaluate(payload: dict[str, Any], context_dir: Path, record: bool = True) ->
         command=prompt.strip(),
         source="preToolUse",
     )
+    # The cycle limits read the history on this host. Without a line per call, P3 and P6 never stop.
+    append_history(Path(context_dir), str(run_id), record_stage, prompt)
     return allow()
 
 

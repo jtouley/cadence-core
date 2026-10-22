@@ -206,9 +206,9 @@ def cmd_begin(stage: str, command: str, subagent_id: str | None) -> int:
     path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     # The record above is overwritten by each begin. The history keeps one line per
     # begin, so a gate can count cycles (the plan-review limit reads it).
-    with (path.parent / "history.jsonl").open("a", encoding="utf-8") as history:
-        # The command tells a plan-gate P6 round from a spec-pressure one.
-        history.write(json.dumps({"stage": stage, "started_at": now, "command": command}) + "\n")
+    from prompt_shape import append_history
+
+    append_history(ctx_root(), run_id, stage, command)
     print(f"OK  subagent run started: stage={stage} run_id={run_id}")
     return 0
 

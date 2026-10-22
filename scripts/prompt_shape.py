@@ -275,6 +275,18 @@ def hook_records_only(session: object) -> bool:
     )
 
 
+def append_history(context_dir: Path, run_id: str, stage: str, command: str) -> Path:
+    """One line per peer call in `subagent-runs/<run>/history.jsonl`. On a host that is not Claude Code,
+    the P3 and P6 cycle limits count these lines (artifact_requirements.loop_cycles)."""
+    path = delegation_record_path(context_dir, run_id, stage).parent / "history.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(timezone.utc).isoformat()
+    with path.open("a", encoding="utf-8") as history:
+        # The command tells a plan-gate P6 round from a spec-pressure one.
+        history.write(json.dumps({"stage": stage, "started_at": now, "command": command.strip()}) + "\n")
+    return path
+
+
 def delegation_record_path(context_dir: Path, run_id: str, stage: str) -> Path:
     """Sidecar that stores the Task prompt the hook actually allowed."""
     safe_stage = re.sub(r"[^a-z0-9._-]+", "-", stage.lower()).strip("-")
