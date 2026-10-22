@@ -27,6 +27,7 @@ PEER_ARTIFACT_GLOBS = (
     "prs/reviews/*.md",
     "reviews/pr_*.md",
     "summaries/*.md",
+    "deferrals/*_deferral-review.md",
 )
 
 
@@ -90,7 +91,7 @@ def _entries(context_dir: Path, run_id: str) -> list[dict]:
 
 
 def orchestrator_ids(context_dir: Path) -> frozenset[str]:
-    """Agent ids that ran activation in any run of this .context (G-D5).
+    """Agent ids that ran activation in any run of this .context.
 
     Their rows never count as a peer's: an orchestrator does not review its own work.
     A Claude agent_id belongs to one subagent, so the union excludes no real peer.
@@ -355,3 +356,19 @@ def running_agents(context_dir: Path, run_id: str) -> list[str]:
             started.pop(agent, None)
     now = time.time()
     return [a for a, at in started.items() if now - at <= AGENT_WINDOW_SECONDS]
+
+
+def has_join_group(path: Path) -> bool:
+    """A PostToolUse group whose matcher names Agent and whose hook runs guard_subagent_handoff.py."""
+    try:
+        groups = json.loads(path.read_text(encoding="utf-8"))["hooks"]["PostToolUse"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+    if not isinstance(groups, list):
+        return False
+    return any(
+        isinstance(g, dict) and "Agent" in str(g.get("matcher") or "") and isinstance(g.get("hooks"), list)
+        and any(isinstance(h, dict) and "guard_subagent_handoff.py" in str(h.get("command") or "")
+                for h in g["hooks"])
+        for g in groups
+    )

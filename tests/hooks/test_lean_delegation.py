@@ -301,7 +301,10 @@ def test_denied(call, repo, prompt):
     assert permission(out) == "deny"
     text = permission_reason(out)
     assert text.startswith(REJECTED)
-    assert f"lean slash command only: {row['command']} <arguments>" in text
+    # The packet's command when the registry can build it, else the slash command and `<arguments>`.
+    again = text.split("Call the peer again with ", 1)[1]
+    assert again.startswith((f"this prompt only: {row['command']} ",
+                             f"the lean slash command only: {row['command']} <arguments>"))
     assert "without the leading slash" in text
     assert records(repo / ".context") == []
     assert log_count(repo / ".context") == 0

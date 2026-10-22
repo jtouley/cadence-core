@@ -114,6 +114,17 @@ A `READY WITH CHANGES` or `NOT READY` verdict blocks P9 until the loop ends
 
 A plan finding gets no findings ledger row. A new plan scorecard that passes closes it.
 
+## P8: /deferral-review (supporting command)
+
+P8 is a script block. `deferral_adjudication_check.py` writes the manifest `manifests/<task_id>_deferrals.md`
+and names this peer. In review, R4 names it for a row under `## Review deferrals`.
+
+| Artifact path | Line or marker (exact form) | Required? | Read by |
+|---|---|---|---|
+| `deferrals/<task_id>_deferral-review.md` | `RUN_BY_COMMAND: deferral-review` | Yes | `scripts/deferral_adjudication_check.py:ruling_problems` |
+| Same | `Register sha256: <sha256>`: a prefix of at least 12 characters of the register as it is now | Yes | `scripts/deferral_adjudication_check.py:ruling_problems` |
+| Same | A `\| Row \| Ruling \| Reason \| Condition \|` table with one row for each row of the register: `GREEN`, `AMBER` or `RED` (a review row is `GREEN` or `RED`). An `AMBER` row names its condition | Yes | `scripts/deferral_adjudication_check.py:ruling_problems` |
+
 ## E1: /spec-driven
 
 | Artifact path | Line or marker (exact form) | Required? | Read by |
@@ -167,7 +178,7 @@ R4 is a script block. `peers` does not bind it. Its peer `/pr-review-update` app
 |---|---|---|---|
 | `prs/reviews/PR_REVIEW_#<n>.md` (the R1 review of the run's PR); with no E4 record, any `prs/reviews/*.md` or `reviews/pr_*.md` | One of `RUN_BY_COMMAND: pr-review-local`, `RUN_BY_COMMAND: pr-review-update`, `RUN_BY_SKILL: pr-review`, raw | Yes (the R1 marker of the file counts) | `scripts/final_consolidate.py:marked_reviews` |
 | Same | `Last reviewed commit: <sha>` as the last such line, a prefix of HEAD | Yes | `scripts/final_consolidate.py:head_review_problems`, `scripts/final_consolidate.py:head_coverage`, `hooks/pr_guard.py:_head_reviews` |
-| Same | `## Update <date>`: `^##[ \t]+Update\b`. Each section is one fix round. At `review_fix_rounds` (default 2), the gate holds an open loop. | No (counted) | `scripts/final_consolidate.py:fix_rounds`, `scripts/final_consolidate.py:review_rounds` |
+| Same | `## Update <date>`: `^##[ \t]+Update\b`. Each section is one fix round. The loop has no cap unless a config layer sets `review_fix_rounds`; at the cap, the gate holds an open loop. | No (counted) | `scripts/final_consolidate.py:fix_rounds`, `scripts/final_consolidate.py:review_rounds` |
 | Same | New must-fix items under a `Must-fix` heading, for example `### Must-fix items`, with the next free `MF-<n>` ids | If the update finds a new must-fix | `scripts/artifact_requirements.py:review_must_fix_ids`, `scripts/gate_common.py:_r1_ledger_problems` |
 | `findings.jsonl` | A must-fix row for each new `MF-<n>`. R4 fails while a must-fix row of the task is `open`. | If the update has a new `MF-<n>` | `scripts/gate_common.py:_r1_ledger_problems`, `scripts/findings_io.py:is_open_must_fix`, `scripts/final_consolidate.py:consolidate` |
 

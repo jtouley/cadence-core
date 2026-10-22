@@ -49,7 +49,8 @@ A recoverable gate failure is not a stop condition. Do these steps:
 
 1. Classify the failure.
 2. Log it in the ticket or in `.context/issues/`.
-3. If the scope or the tests change before P9, run `/plan-update`. After P9 the plan is frozen: stop and tell the user. A plan change is a new run (`--fresh`).
+3. If the scope or the tests change before P9, run `/plan-update`. After P9 the plan is frozen. Log a change of
+   scope after P9 in `.context/issues/` as a follow-up, and go on with the frozen plan. Do not stop to ask the user.
 4. Run the gate again.
 
 Stop only for destructive risk, missing credentials with no fallback, a security or data-safety risk, or no retries left.
@@ -59,6 +60,10 @@ Record each one with `activate_session.py --hard-stop {destructive,credentials,s
 A peer can set a hard stop by mistake, for example a user-level copy of a peer with an old rule (a peer shadow).
 To clear it: Remove the cause, and run `scripts/preflight.py` until it passes. Start a new host session. Then run `activate_session.py --from-branch --resume`.
 Fix the review findings with one `/spec-driven --fix <review>` peer call for each round, or open a ticket under the parent issue. Do not leave a must-fix finding without an owner.
+
+The last message of a run, a hard stop too, says what blocked, what exists and the resume command. It asks the
+user no question and offers no choice. A deferral of work that the request asks for is settled by the deferral
+framework: the work stays in scope, and the register says so.
 
 ## Hard preflight
 
@@ -79,7 +84,7 @@ python3 "$SKILL_ROOT/scripts/entry_invariant.py" --phase execution
 ```
 
 If the exit code is not 0, you cannot start **E1**. To recover, activate again from **A1** with `--fresh`.
-If artifacts went missing during the work, stop and ask the user.
+If artifacts went missing during the work, record `--hard-stop retries` with the missing paths. Do not ask the user.
 **Forbidden:** backfill. After the code edits start, do not write a missing P1–P9 artifact (a plan or a plan review) to clear the entry invariant.
 
 ## Pi CLI gate protocol
@@ -126,20 +131,25 @@ Do not wait when a background task finishes during that loop.
 
 `stages.json` sets the order. A conditional trigger (`on_review_changes`) can do nothing when it does not apply.
 Record the gate in that case too. Do not ask whether to continue.
-**P3 and P4:** repeat `/plan-review` and `/plan-update` until the newest review has `RUN_BY_COMMAND: plan-review` and `Verdict: READY TO EXECUTE`.
-That review is from a plan-review run after the last plan update. Plan update does not create or edit `reviews/plan_*.md`.
-Each cycle writes the review's required contracts into the plan.
-A blocking verdict means the P4 trigger applies. Do not record a no-op for that trigger.
-The loop has at most five review cycles (`plan_review_cycles`, default 5; a config layer can only lower it). After the fifth blocking review, do not review again:
-- `READY WITH CHANGES`: run `/plan-update` once more. It adds `## Carried review findings` and maps each open `MF-n` to the phase whose test settles it. P9 then clears.
-- `NOT READY`: the plan is wrong. Run `activate_session.py --hard-stop retries --reason "..."`.
-Do not ask the user to allow another cycle. Do not end the turn on a blocking verdict.
-**P6:** the adversarial loop has at most three cycles (`adversarial_cycles`, default 3; a config layer can only lower it). Below the limit, `REQUEST CHANGES` means:
-`/plan-update`, then `/plan-review` (when P3 is below its limit), then `/de-adversarial-reviewer plan-gate`.
-At the limit, do not run P6 again. Run `/plan-update` once more to carry each `B-n` and `C-n` under the report's heading.
-P3 and P6 share one budget: a P3 review that a P6 round causes counts in the P3 limit.
-Do not run P3 and P6 on the same plan revision at the same time. Run P6 after the P3 verdict for that revision.
-Use a new Agent call for each P3 and P6 review round. Do not resume the peer of the prior round.
+**The plan review round:** its members are the rows of `stages.json` whose `review_round.round` is `plan` (P3, P5,
+P6 and P7 with all packs on). After P1, run `python3 "$SKILL_ROOT/scripts/plan_wave.py"`. It opens a round for the
+plan as it is now and prints the next step:
+- `NEXT: send these peers in one message, in parallel: ...`: send each command as its own Agent call, all in one message.
+  Each reviewer records its findings by section (`references/plan-review-round.md`). The round runs P5 itself.
+- `NEXT: send the peer /plan-update <plan> --from-review .context/plan-findings/round-<n>.md`: one update answers
+  every reviewer. It changes only the sections that the round names.
+
+Run `plan_wave.py` again when each step returns, not while a peer runs, until it prints `OK  plan-review-round`. In a later round, only a reviewer
+that had a must-fix reviews again, and its new must-fix items may target only the sections that the update changed.
+The pass of each other reviewer stands. A reviewer's stop is held until it records `done`: do not resume it with
+SendMessage. Do not end the turn while a round is open.
+A reviewer at its cycle limit does not review again. P3 has at most five review cycles (`plan_review_cycles`,
+default 5; a config layer can only lower it). **P6:** at most three cycles (`adversarial_cycles`, default 3; a
+config layer can only lower it). P5 and P7 have one cycle. `/plan-update` then carries the open items:
+- P3 `READY WITH CHANGES` after the fifth blocking review: `## Carried review findings` maps each open `MF-n` to the phase whose test settles it.
+- P3 `NOT READY` after the fifth blocking review: the plan is wrong. Run `activate_session.py --hard-stop retries --reason "..."`.
+- P6 at its limit: map each `B-n` and `C-n` under the report's heading (`adversarial_review_gate.py --heading <report>`).
+Do not ask the user to allow another cycle. Use a new Agent call for each P3 and P6 review round. Do not resume the peer of an earlier round.
 When the gate output names a step, do that step before the `NEXT` command.
 Post the GitHub comment only after **R5** closure and **R6**.
 Skip a row whose pack is off: its pack is not `core` and not in `packs` of the resolved config.
@@ -160,7 +170,7 @@ The table is the core order. A pack or `stages.overlays` can insert, replace or 
 | P5 | architecture-review-plan | `architecture` | `python3 scripts/architecture_review.py --phase plan` | Core architecture review: dependency direction, boundaries, decision coverage |
 | P6 | adversarial-review | `spec-review` | `/de-adversarial-reviewer` | Adversarial review of edge cases and assumptions |
 | P7 | test-benchmark-plan | `test-plan` | `/test-benchmark plan` | Audit the proposed test plan for rigor, layers, and mutation awareness |
-| P8 | deferral-register | `deferrals` | `python3 scripts/deferral_adjudication_check.py` | Register and adjudicate each approved deferral with a ticket link |
+| P8 | deferral-register | `deferrals` | `python3 scripts/deferral_adjudication_check.py` | Check each deferral against the criteria and the `/deferral-review` ruling |
 | P9 | entry-invariant | `core` | `python3 scripts/entry_invariant.py --phase execution` | Check that every alignment and planning artifact exists and passes before code edits |
 | E1 | implement | `core` | `/spec-driven` | TDD implementation with a red-green-refactor loop |
 | E2 | impl-artifact | `deferrals` | `python3 scripts/impl_artifact.py` | Collect the implementation diff and the commit manifest |
@@ -170,15 +180,17 @@ The table is the core order. A pack or `stages.overlays` can insert, replace or 
 | R2 | test-benchmark-pr | `core` | `/test-benchmark` | Score test quality and mutation kill rate on the changed code |
 | R3 | cognitive-complexity | `core` | `python3 scripts/cognitive_complexity_gate.py` | Fail a changed function over the cognitive complexity limit that is new or got worse |
 | R4 | final-consolidate | `deferrals` | `python3 scripts/final_consolidate.py` | Two-pass review consolidation (close pass, then delta pass) through the findings ledger |
-| R5 | closure | `core` | `python3 scripts/closure.py` | Check that each must-fix finding is `verified`, `deferred`, or `spec_gap` |
+| R5 | closure | `core` | `python3 scripts/closure.py` | Check that each must-fix finding is `verified`, `deferred`, or `spec_gap`, and that the repository's checks pass |
 | R6 | pr-comment | `tracker` | `python3 scripts/guard_gh_pr_comment.py` | Post the structured closure ledger comment on the GitHub PR |
 | R7 | session-close | `core` | `python3 scripts/activate_session.py --deactivate` | Close the session after the PR is ready |
 
 **Provenance:** each artifact must carry its `RUN_BY_*` marker. A peer skill runs
 the named command. A peer skill does not make up verdict files.
 
-**Deferral:** use a deferral only as the last option. Each one needs ticket IDs and a ripeness value.
+**Deferral:** use a deferral only as the last option. Work that the request asks for is never deferred.
+Each row needs a `Request trace` of `none`, a ripeness with its evidence and a ticket (`references/deferral-framework.md`).
 **P8** writes the zero register when nobody proposed a deferral. The plan peer writes each approved deferral.
+Run P8 `deferral_adjudication_check.py`. When it prints `NEXT: send the peer /deferral-review <manifest>`, send that peer. A `RED` or `AMBER` ruling goes to `/plan-update` before E1.
 
 ## When to use / not
 
@@ -251,7 +263,11 @@ adversarial inputs, and tests each design choice three ways with strict TDD.
 3. Run **R2** `/test-benchmark --code`. Resolve each HIGH item. Record `adversarial_inputs`.
 4. Run **R3** cognitive complexity. When it fails, do the fix step that it names, or send `/spec-driven --fix <review>`. That peer fixes each `offenders` entry of the R3 record, with the `bugs` (ruff) and `types` (mypy) findings.
 5. After fix commits, run `/pr-review-update` on the new head. **R1** `pr_review_local_gate.py --check` fails while the newest PR review does not cite HEAD. When the deferrals pack is on, **R4** `final_consolidate.py --check` also fails while a must-fix is open.
-6. Run **R5** `closure.py`. Then run **R6** `guard_gh_pr_comment.py`: it writes the comment from the ledger and prints the `gh pr comment` command. Run that command. Then run **R7** deactivate: it names the `/session-summary <manifest>` peer to send first.
+   Repeat the fix round and `/pr-review-update` until R4 passes. R4 holds only when a round changes nothing. The
+   fix loop has no retry count: a round that closes one row is progress. Record `--hard-stop retries` only when
+   R4 or `review_fix_rounds` says so. When `/pr-review-update` adds a row under `## Review deferrals`, run P8 and
+   send the `/deferral-review <manifest>` that it names.
+6. Run **R5** `closure.py`. It runs the repository's own checks, and a failing check becomes a must-fix: send the fix round again. Then run **R6** `guard_gh_pr_comment.py`: it writes the comment from the ledger and prints the `gh pr comment` command. Run that command. Then run **R7** deactivate: it names the `/session-summary <manifest>` peer to send first.
 
 ## Anti-patterns (pointers)
 

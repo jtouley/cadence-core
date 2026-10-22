@@ -222,7 +222,8 @@ def _r1_head_problems(context_dir: Path, review: Path) -> list[str]:
     ]
 
 
-_NO_MERGE = re.compile(r"no[ -]merge\b")
+# The R1 verdicts (commands/pr-review-local.md). The longest option wins, so MERGE-READY is not NO MERGE.
+R1_VERDICTS = ("NO MERGE", "NO-MERGE", "MERGE-READY", "MERGE READY")
 
 
 def _r1_ledger_problems(context_dir: Path, review: Path) -> list[str]:
@@ -230,7 +231,7 @@ def _r1_ledger_problems(context_dir: Path, review: Path) -> list[str]:
     row for each must-fix (test_benchmark_gate). R4 and R5 read only the ledger. A NO MERGE verdict with no
     such row fails too."""
     from findings_io import FindingsValidationError, ledger_must_fix_ids, r1_row_id
-    from labeled_lines import labeled_values
+    from verdict_judge import judged_verdict
 
     run = run_for(context_dir) or {}
     task, run_id = str(run.get("task_id") or ""), run.get("pipeline_run_id")
@@ -249,8 +250,7 @@ def _r1_ledger_problems(context_dir: Path, review: Path) -> list[str]:
         for mf in sorted(review_must_fix_ids(text), key=lambda i: int(i.split("-")[1]))
         if want(mf.split("-")[1]).lower() not in rows
     ]
-    verdicts = labeled_values(text, ("verdict",), r"\S.*?")
-    if verdicts and _NO_MERGE.match(verdicts[-1]) and not any(r.startswith(want("").lower()) for r in rows):
+    if judged_verdict(text, "pr-review", R1_VERDICTS) in ("NO MERGE", "NO-MERGE") and not any(r.startswith(want("").lower()) for r in rows):
         problems.append(f"pr-review-local: the verdict of {rel} is NO MERGE and the findings ledger has no ledger row "
                         f"{want('<n>')}. Append one must-fix row for each must-fix item (findings_io.py append)")
     return problems
@@ -263,7 +263,9 @@ def _a5_gaps(context_dir: Path) -> list[str]:
 
     report = newest_vibetest(context_dir, run_for(context_dir, cwd=Path.cwd()))
     text = report.read_text(encoding="utf-8") if report is not None else ""
-    if re.search(r"(?im)^\W*verdict\W*:\W*not ready", text) and not spec_gap_ids(text):
+    from verdict_judge import judged_verdict
+
+    if judged_verdict(text, "vibe-test") == "NOT READY" and not spec_gap_ids(text):
         return [f"vibe-test: {report.name} is not ready for planning and lists no `G-n` under "
                 f"`{BLOCKING_GAPS_HEADER}`. Send /vibe-test again"]
     return []

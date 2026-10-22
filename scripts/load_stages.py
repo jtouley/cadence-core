@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -165,6 +166,53 @@ def resolve_stages(skill_root: Path | None = None, workspace: Path | None = None
 def load_stages(skill_root: Path | None = None, workspace: Path | None = None) -> list[dict[str, Any]]:
     """The stage order of a run for `workspace` (the cwd when None). See resolve_stages."""
     return resolve_stages(skill_root, workspace)[0]
+
+
+def review_rounds(skill_root: Path | None = None) -> dict[str, dict[str, Any]]:
+    """The rounds that `review_rounds` of stages.json declares: {name: {"driver", "description"}}."""
+    rounds = load_registry(skill_root).get("review_rounds") or {}
+    if not isinstance(rounds, dict):
+        raise ValueError("review_rounds of stages.json must be an object of round names")
+    return rounds
+
+
+def round_members(name: str, skill_root: Path | None = None, workspace: Path | None = None) -> list[dict[str, Any]]:
+    """The enabled rows that join round `name` with `review_round`, in registry order.
+
+    A pack row joins a round when its pack is on, and leaves it when the pack is off. An undeclared
+    round fails closed, so a typo in a row or a caller does not empty a round.
+    """
+    declared = review_rounds(skill_root)
+    if name not in declared:
+        raise ValueError(f"review round {name!r} is not declared in stages.json review_rounds "
+                         f"(declared: {', '.join(sorted(declared))})")
+    rows = []
+    for row in load_stages(skill_root, workspace):
+        member = row.get("review_round") if isinstance(row, dict) else None
+        if not isinstance(member, dict):
+            continue
+        if member.get("round") not in declared:
+            raise ValueError(f"the row of {row.get('block')} names review round {member.get('round')!r}, "
+                             "which stages.json review_rounds does not declare")
+        if member["round"] == name:
+            rows.append(row)
+    return rows
+
+
+def is_peer(row: dict[str, Any]) -> bool:
+    """A row whose command is a slash command is a peer that the orchestrator sends; any other row is a script."""
+    return str(row.get("command", "")).startswith("/")
+
+
+def script_argv(command: str, skill_root: Path | None = None) -> list[str]:
+    """The argv of a row's script command or gate: `python3` is this interpreter, a skill path is absolute."""
+    root = Path(skill_root) if skill_root is not None else SKILL_ROOT
+    words = str(command).split()
+    if words and words[0] in ("python3", "python"):
+        words[0] = sys.executable
+    elif words and words[0].endswith(".py"):
+        words.insert(0, sys.executable)
+    return [str(root / w) if w.startswith(("scripts/", "hooks/", "shared/")) else w for w in words]
 
 
 def stages_by_phase(skill_root: Path | None = None) -> dict[str, list[dict[str, Any]]]:

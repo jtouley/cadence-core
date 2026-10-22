@@ -11,7 +11,7 @@ The hook renders this. The orchestrator types the slash command with its argumen
 | A5 | `/vibe-test <ticket>` | none | `.context/vibetest/{slug}_{YYYY-MM-DD}.md` |
 | P1 | `/plan-create <ticket>` | the request `.context/proposals/{task}.md` and the newest vibe-test report, when they exist | `.cursor/plans/{slug}_{short_id}.plan.md` |
 | P3 | `/plan-review <plan>` | the plan and the newest vibe-test report. From cycle two, also the newest plan review | `.context/reviews/plan_{basename}.md` |
-| P4 | `/plan-update <plan> --from-review <review>` | the plan, the newest plan review and the newest vibe-test report | the plan, with a dated update section |
+| P4 | `/plan-update <plan> --from-review <review>` | the plan, the plan review round file `.context/plan-findings/round-<n>.md` (else the newest plan review), and the newest vibe-test report | the plan, edited in place in the sections that the round names, with a `## Revision ledger` |
 | P6 | `/de-adversarial-reviewer plan-gate <plan>` | the plan | `.context/adversarial/adversarial_{slug}.md` (`_r{n}` from round two) |
 | P7 | `/test-benchmark plan <plan>` | the plan | `.context/benchmarks/{task_id}_plan.json` |
 | E1 | `/spec-driven <plan>` | the plan | the code and the tests, one commit for each phase, and `.context/implementation/{task}_stage4.md` |
@@ -20,6 +20,7 @@ The hook renders this. The orchestrator types the slash command with its argumen
 | R2 | `/test-benchmark <N>` | the draft-PR record | `.context/benchmarks/{task_id}_code.json` |
 | R1 to R4 | `/spec-driven --fix <review>` | the PR review `.context/prs/reviews/PR_REVIEW_#{N}.md` | a red test and a fix commit for each open must-fix, its ledger row `fixed`, and a `## Fix round` section in `.context/implementation/{task}_stage4.md` |
 | R4 | `/pr-review-update <N>` | the draft-PR record | a `## Update <date>` section in `PR_REVIEW_#{N}.md` |
+| P8, R4 | `/deferral-review <manifest>` | the manifest `.context/manifests/{task}_deferrals.md`, which P8 writes | `.context/deferrals/{task}_deferral-review.md`: a `GREEN`, `AMBER` or `RED` ruling for each row |
 | R7 | `/session-summary <manifest>` | the manifest `.context/manifests/{task}.md` | `.context/summaries/{task}.md` |
 
 - `<ticket>` is the `task_id` of the session.

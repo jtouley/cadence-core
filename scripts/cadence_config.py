@@ -245,6 +245,9 @@ def _is_patch(value: Any) -> bool:
 
 
 def _stricter(rule: str, new: Any, old: Any) -> bool:
+    """`new` is at least as strict as `old`. For a `lower` limit, null is no limit: the loosest value."""
+    if rule == "lower" and (new is None or old is None):
+        return old is None
     return new <= old if rule == "lower" else new >= old
 
 

@@ -1,0 +1,83 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "feat-local-4-csv-export",
+  "mode": "plan",
+  "plan": ".context/plans/feat-local-4-csv-export.plan.md",
+  "plan_input_sha256": "3e4e2ea83e30467abee1e5bd8e0b3ee936947778a4186d858ddd63e54dae4728",
+  "packet_sha256": "16df53868fd7cc983d6ef7ecda344870019e67e78d8129d4f45603a535633ad8",
+  "supersedes": "plan_input_sha256 6d67dc4e55d8738f6c4d8fa4e28968e6f3eaf7bd04fdf6db11cfd5433f8d3cf3 (scorecard verdict FAIL, findings F05 to F08)",
+  "scores": {
+    "coverage_of_behavior": 9,
+    "assertion_strength": 7,
+    "dry_no_clone_setups": 8,
+    "layer_correctness": 8,
+    "failure_paths": 8,
+    "mutation_resilience": 7,
+    "mean": 7.83
+  },
+  "previous_findings_status": {
+    "feat-local-4-csv-export-P7-F05": "closed: tests/conftest.py holds ledger_file and run_cli; bad-month cases are one parametrized table",
+    "feat-local-4-csv-export-P7-F06": "closed: overwrite test asserts exact bytes; --file test asserts exact stdout",
+    "feat-local-4-csv-export-P7-F07": "closed: mutants (i) to (m) added with killing tests; the prefix mutant (g) is killed by test_expenses_rejects_short_month",
+    "feat-local-4-csv-export-P7-F08": "closed: test_corrupt_ledger_json_exits_2 and test_add_and_totals_unchanged added"
+  },
+  "reuse_section_check": {
+    "named_symbols_checked": [
+      "src/budgetcli/ledger.py: Expense (class, line 12)",
+      "src/budgetcli/ledger.py: Ledger.load (line 23)",
+      "src/budgetcli/ledger.py: Ledger.total_by_category (line 35)",
+      "src/budgetcli/cli.py: main (line 17)",
+      "src/budgetcli/cli.py: add and totals subparsers (lines 21, 26)",
+      "src/budgetcli/cli.py: add-branch error print (line 34)"
+    ],
+    "result": "all named symbols exist in the repo. The Reuse section names no test fixture or test helper. The shared fixtures appear only in Phase 1 (see F12)."
+  },
+  "acceptance_map": {
+    "1_2_month_and_full_export": "covered by Phase 3 test_export_month_exact_output and the no-month export test (expected output not stated, see F09)",
+    "3_amount_two_decimals": "covered by Phase 2 test_amount_two_decimals (0, 5, 905, 1250, 900000)",
+    "4_rfc4180_quoting": "covered by Phase 2 test_text_field_quoting (six cases)",
+    "5_crlf_records": "covered by Phase 2 test_row_ends_with_crlf",
+    "6_out_and_row_count": "covered by Phase 3 test_out_row_count_excludes_header and the --out write test",
+    "7_bad_month_exit_2_no_file": "covered by Phase 1 and Phase 3 test_bad_month_exits_2",
+    "8_empty_ledger_header_only": "covered by Phase 3 empty or missing ledger test",
+    "9_out_overwrites": "covered by Phase 3 test_out_overwrites_existing_file (exact bytes)",
+    "10_export_reads_file": "covered by Phase 3 test_file_option_selects_ledger (exact stdout)",
+    "11_pytest_passes": "covered by Phase 4"
+  },
+  "mutants": {
+    "run": false,
+    "reason": "plan mode: no code exists, so no mutant was run. No kill rate is stated.",
+    "named_in_plan": "a to m (Phase 4 table)",
+    "real_kills_on_paper": 13,
+    "equivalent_on_paper": 0,
+    "unnamed_behavior": "stable tie order on the same date has no mutant row (see F11)"
+  },
+  "verdict": "PASS",
+  "verdict_reason": "Mean 7.83 is at or above the floor of 7. Layer, DRY and assertion scores are at or above 7. No must-fix finding remains.",
+  "findings": [
+    {
+      "id": "feat-local-4-csv-export-P7-F09",
+      "severity": "should-fix",
+      "check": "assertions",
+      "evidence": "The no-month export test and the --out row-count test name no exact expected output. Name the exact stdout or file text from the known fixture, as the month test does."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F10",
+      "severity": "should-fix",
+      "check": "mutation",
+      "evidence": "The change log says mutant (g) was replaced by a validation-bypass mutant. The Phase 4 table still describes the prefix mutant. Align the table text with the change log, or correct the log."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F11",
+      "severity": "should-fix",
+      "check": "mutation",
+      "evidence": "The same-date insertion-order test has no row in the Phase 4 mutation table. Add a mutant that reverses ties, and name its killing test."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F12",
+      "severity": "should-fix",
+      "check": "dry",
+      "evidence": "The Reuse and extension section names no test fixture. Add tests/conftest.py ledger_file and run_cli to the Reuse list, so the shared setup is named in one place."
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "feat-local-4-csv-export",
+  "mode": "plan",
+  "plan": ".context/plans/feat-local-4-csv-export.plan.md",
+  "plan_sha256": "040c257afc9adb7d17e6284fd15e8efb7e03f1d8b63a33b6836a3c56d684a886",
+  "packet_sha256": "860e53936c3efc158fc4de5493785f6647087c7d273514a5e94e11cd8ec2e2ec",
+  "input_sha256": "040c257afc9adb7d17e6284fd15e8efb7e03f1d8b63a33b6836a3c56d684a886",
+  "plan_revision": "round 5 (after review ce4b4ee2f4a1 and review baff1332b43e)",
+  "verdict": "FAIL",
+  "scores": {
+    "coverage_of_behavior": 8,
+    "assertion_strength": 7,
+    "dry_no_clone_setups": 6,
+    "layer_correctness": 8,
+    "failure_paths": 8,
+    "mutation_resilience": 7,
+    "mean": 7.33,
+    "floor": 7,
+    "must_fix_dimensions": ["dry_no_clone_setups"]
+  },
+  "mutants": "Not run. Plan mode has no code, so no kill rate is given. Mutation resilience is scored from the test spec text only. Named mutants with a named test: sort removal (test_expenses_keep_file_order_within_a_day); startswith removal (test_expenses_month_filter_keeps_only_that_month); sign after divide (test_export_amounts_have_two_decimals, case -150); LF instead of CRLF (test_export_quotes_fields_per_rfc4180); dollar anchor instead of fullmatch (test_export_rejects_bad_month, case 2026-10 with newline); FileExistsError after OSError (test_export_out_refuses_existing_file); write before load (test_export_corrupt_ledger_with_out_leaves_no_file); no removal after failed write (test_export_write_failure_removes_created_file); fall-through to totals (test_export_month_lists_only_that_month_oldest_first); count line off by one (test_export_out_writes_file_and_prints_count). Not caught by the spec: a mutant that writes ledger.json during export (tb-F08).",
+  "prior_findings": [
+    {"id": "tb-F01", "round": 1, "status": "resolved", "by": "test_export_month_lists_only_that_month_oldest_first (Phase 3)"},
+    {"id": "tb-F02", "round": 1, "status": "resolved", "by": "test_export_without_month_prints_all (Phase 3)"},
+    {"id": "tb-F03", "round": 1, "status": "resolved", "by": "test_expenses_keep_file_order_within_a_day, test_expenses_month_filter_keeps_only_that_month (Phase 1)"},
+    {"id": "tb-F04", "round": 1, "status": "partly resolved", "by": "ledger_file and run_export in tests/test_export.py (Phase 2). The Phase 1 tests in tests/test_ledger.py have no named fixture. See tb-F06."},
+    {"id": "tb-A02", "round": 2, "status": "resolved", "by": "test_export_month_without_rows_writes_header_only (Phase 3)"},
+    {"id": "tb-A04", "round": 2, "status": "resolved", "by": "test_export_missing_ledger_is_an_error_line (Phase 3, step 2)"},
+    {"id": "tb-F05", "round": 3, "status": "resolved", "by": "test_export_unencodable_note_to_stdout_is_an_error_line (Phase 3, step 3)"},
+    {"id": "tb-A01", "round": 2, "status": "open", "by": "no ledger-bytes-unchanged assertion. Carried as tb-F08."},
+    {"id": "tb-A03", "round": 2, "status": "open", "by": "the Phase 3 error-test shape is still repeated, and the Phase 1 fixture location is still unnamed. Carried as tb-F06."}
+  ],
+  "findings": [
+    {
+      "id": "tb-F06",
+      "severity": "must-fix",
+      "check": "dry",
+      "phase": "Phase 1 and Phase 3",
+      "evidence": "The four Phase 1 tests in tests/test_ledger.py each need a ledger file with shuffled or multi-month rows. The plan names no shared location for that setup. The ledger_file fixture is defined in tests/test_export.py (Phase 2), so tests/test_ledger.py cannot use it cleanly. The four tests would clone the setup. Name one shared location (for example tests/conftest.py) and move ledger_file there. Also fold the nine Phase 3 error tests that repeat the assertion shape (return 2, one error: line, no Traceback, out path absent) into one parametrize table with an input column. The bad-month test already uses this pattern. This is the carried tb-A03. It leaves DRY at 6, below the floor of 7."
+    },
+    {
+      "id": "tb-F07",
+      "severity": "nit",
+      "check": "assertions",
+      "phase": "Phase 3",
+      "evidence": "test_export_out_writes_file_and_prints_count says assert the file content, but the plan gives no expected bytes. State the exact file text, with CRLF, so the test pins acceptance 4. Carried from tb-A05."
+    },
+    {
+      "id": "tb-F08",
+      "severity": "nit",
+      "check": "coverage",
+      "phase": "Phase 3",
+      "evidence": "The non-goal 'The export only reads ledger.json. It does not write to it' has no test. A mutant that writes the ledger during export survives. Add to test_export_month_lists_only_that_month_oldest_first an assertion that the ledger file bytes are unchanged after the run. Carried from tb-A01."
+    }
+  ],
+  "findings_note": "Verdict FAIL. DRY scores 6, below the floor of 7, so tb-F06 is a must-fix. Assertion strength (7) and mutation resilience (7) are at the floor. Coverage, layer and failure paths are at or above it. The mean is 7.33. Plan mode writes no ledger row. The plan peer applies tb-F06, and a new plan scorecard closes it. The plan revision of round 5 added the fixes for tb-F05 and the N-series notes. It did not add the fixture location or the parametrized error table. This scorecard replaces the earlier scorecard for this sha256, which recorded FAIL with the same must-fix."
+}

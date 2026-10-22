@@ -67,6 +67,10 @@ register row. Do not set `verified`: `ledger_verify.py` does.
 3. Mock at the process or network edge, never the module under test, because a test of a mock does not test the code.
 4. A test name names the behavior, never a connector, a customer or a ticket, because the name tells the reader what broke.
 
+A plan step that waits on a person (accept a record, decide a gap) is not a stop. A run has no person in
+the loop (`references/plan-review-round.md`). Build the phase on the assumption row of the register,
+and name it in the implementation report.
+
 ## Options in a phase
 
 A phase can have more than one way to pass. Try up to three options, one at a time:

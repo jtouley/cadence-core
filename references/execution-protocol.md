@@ -12,8 +12,8 @@ python3 "$CADENCE_HOME/shared/skill_gate.py" check --skill cadence \
   --action strreplace --file "<target>"
 ```
 
-Non-zero exit → not cleared for E1. Recovery: fresh A1 activation, or stop and
-ask the user if artifacts were lost. **Forbidden:** backfilling plan/review
+Non-zero exit → not cleared for E1. Recovery: fresh A1 activation, or
+`--hard-stop retries` with the missing paths if artifacts were lost. **Forbidden:** backfilling plan/review
 artifacts after code edits began.
 
 ## Run gates from the worktree

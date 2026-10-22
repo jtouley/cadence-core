@@ -1,0 +1,174 @@
+{
+ "adversarial/k-adversarial_feat-local-3-recurring-expenses_local-3_r2.md": {
+  "verdict": "APPROVE WITH CONDITIONS"
+ },
+ "adversarial/k3-adversarial_feat-local-3-recurring-expenses_dbc23a1d_r3.md": {
+  "verdict": "REQUEST CHANGES"
+ },
+ "adversarial/r5-adversarial_feat-local-4-csv-export_r3.md": {
+  "verdict": "REQUEST CHANGES"
+ },
+ "deferral-register/c-feat-local-3-recurring-expenses_deferral-register.md": {
+  "issues": []
+ },
+ "deferral-register/r1-feat-local-4-csv-export_deferral-register.md": {
+  "issues": [
+   "deferral-blocker-unnamed",
+   "deferral-core-of-request",
+   "deferral-missing-ticket"
+  ]
+ },
+ "deferral-register/r3-feat-local-4-csv-export_deferral-register.md": {
+  "issues": [
+   "deferral-blocker-unnamed",
+   "deferral-missing-ticket"
+  ]
+ },
+ "plan-review/armA-plan_feat-local-4-csv-export.round-2.md": {
+  "verdict": "REQUEST CHANGES"
+ },
+ "plan-review/k-plan_feat-local-3-recurring-expenses_local-3.md": {
+  "verdict": "READY TO EXECUTE"
+ },
+ "plan-review/r2-plan_feat-local-4-csv-export_1e242ee8.md": {
+  "verdict": "READY WITH CHANGES"
+ },
+ "pr-review/c-PR_REVIEW_1.md": {
+  "must_fix": [],
+  "verdict": "MERGE-READY"
+ },
+ "pr-review/c3-PR_REVIEW_1.md": {
+  "must_fix": [],
+  "verdict": "MERGE-READY"
+ },
+ "pr-review/d1-PR_REVIEW_1.md": {
+  "must_fix": [],
+  "verdict": "MERGE-READY"
+ },
+ "pr-review/d2-PR_REVIEW_1.md": {
+  "must_fix": [
+   "MF-1"
+  ],
+  "verdict": "NO MERGE"
+ },
+ "pr-review/r2-PR_REVIEW_1.md": {
+  "must_fix": [
+   "MF-1"
+  ],
+  "verdict": "NO MERGE"
+ },
+ "pr-review/r5-PR_REVIEW_1.md": {
+  "must_fix": [
+   "MF-1"
+  ],
+  "verdict": "NO MERGE"
+ },
+ "scorecard/armC-89618664-b234-4552-ba3e-208d3bda5e7d_code.json": {
+  "dimensions": [
+   "assertion_strength",
+   "coverage_of_behavior",
+   "dry_no_clone_setups",
+   "failure_paths",
+   "layer_correctness",
+   "mutation_resilience"
+  ],
+  "extra_keys": [
+   "mean"
+  ],
+  "verdict": "PASS"
+ },
+ "scorecard/d2-feat-local-4-csv-export_plan.json": {
+  "dimensions": [
+   "assertion_strength",
+   "coverage_of_behavior",
+   "dry_no_clone_setups",
+   "failure_paths",
+   "layer_correctness",
+   "mutation_resilience"
+  ],
+  "extra_keys": [
+   "mean"
+  ],
+  "verdict": "PASS"
+ },
+ "scorecard/d3-feat-local-4-csv-export_plan.json": {
+  "dimensions": [
+   "assertion_strength",
+   "coverage_of_behavior",
+   "dry",
+   "failure_paths",
+   "layer",
+   "mutation_resilience"
+  ],
+  "extra_keys": [
+   "mean"
+  ],
+  "verdict": "FAIL"
+ },
+ "scorecard/r1-feat-local-4-csv-export_plan.json": {
+  "dimensions": [
+   "assertions",
+   "coverage",
+   "dry",
+   "failure_paths",
+   "layer",
+   "mutation_resilience"
+  ],
+  "extra_keys": [],
+  "verdict": "PASS"
+ },
+ "scorecard/r4-feat-local-4-csv-export_plan.json": {
+  "dimensions": [
+   "assertion_strength",
+   "coverage_of_behavior",
+   "dry_no_clone_setups",
+   "failure_paths",
+   "layer_correctness",
+   "mutation_resilience"
+  ],
+  "extra_keys": [
+   "floor",
+   "mean",
+   "must_fix_dimensions"
+  ],
+  "verdict": "FAIL"
+ },
+ "scorecard/r5-feat-local-4-csv-export_plan.json": {
+  "dimensions": [
+   "assertions",
+   "coverage",
+   "dry",
+   "failure_paths",
+   "layer",
+   "mutation_resilience"
+  ],
+  "extra_keys": [],
+  "verdict": "FAIL"
+ },
+ "vibe-test/budgetcli-feat-local-1-monthly-budgets_2026-10-20-rev3.md": {
+  "gaps": [],
+  "verdict": "READY"
+ },
+ "vibe-test/c2-feat-local-3-recurring-expenses_2026-10-21.md": {
+  "gaps": [],
+  "verdict": "NOT READY"
+ },
+ "vibe-test/d1-feat-local-4-csv-export_2026-10-21.md": {
+  "gaps": [],
+  "verdict": "READY"
+ },
+ "vibe-test/jh-feat-local-5-probe_2026-10-21.md": {
+  "gaps": [
+   "G-1"
+  ],
+  "verdict": "NOT READY"
+ },
+ "vibe-test/k-feat-local-3-recurring-expenses_2026-10-21.md": {
+  "gaps": [],
+  "verdict": null
+ },
+ "vibe-test/r3-feat-local-4-csv-export_2026-10-21.md": {
+  "gaps": [],
+  "verdict": "READY"
+ }
+}

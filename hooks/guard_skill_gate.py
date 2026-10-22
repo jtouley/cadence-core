@@ -204,6 +204,17 @@ def activation_target(command: str, cwd: Path) -> Path:
     return _shell_path(workspace.group(1), here) or cwd
 
 
+def _plugin_join_hook() -> bool | None:
+    """The host set CLAUDE_PLUGIN_ROOT for this hook, so it loaded that plugin's hooks file: does the file
+    register the PostToolUse join hook? None when this hook does not run from a plugin."""
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if not root:
+        return None
+    from peer_attest import has_join_group
+
+    return has_join_group(Path(root) / "hooks" / "hooks.json")
+
+
 def note_activation_orchestrator(payload: dict[str, Any]) -> None:
     """Leave the activating agent's id for activation: the orchestrator's id.
 
@@ -226,18 +237,24 @@ def note_activation_orchestrator(payload: dict[str, Any]) -> None:
             return
         agent = payload.get("agent_id")
         session_store.write_pending_orchestrator(
-            agent if isinstance(agent, str) and agent else None, find_primary_checkout(target) / ".context"
+            agent if isinstance(agent, str) and agent else None, find_primary_checkout(target) / ".context",
+            join_hook=_plugin_join_hook(),
         )
     except Exception:  # noqa: BLE001
         return
 
 
+def _shell_command(payload: dict[str, Any]) -> str | None:
+    if not (payload.get("hook_event_name") == "beforeShellExecution" or extract_tool_name(payload) in SHELL_TOOLS):
+        return None
+    command = payload.get("command") or extract_tool_input(payload).get("command")
+    return command if isinstance(command, str) else None
+
+
 def pr_guard_denied(host: str, payload: dict[str, Any]) -> bool:
     """`gh pr create` / `gh pr ready` before planned_checks: they write no file."""
-    if not (payload.get("hook_event_name") == "beforeShellExecution" or extract_tool_name(payload) in SHELL_TOOLS):
-        return False
-    command = payload.get("command") or extract_tool_input(payload).get("command")
-    if not isinstance(command, str):
+    command = _shell_command(payload)
+    if command is None:
         return False
     from pr_guard import pr_guard_decision
 
@@ -246,6 +263,24 @@ def pr_guard_denied(host: str, payload: dict[str, Any]) -> bool:
         return False
     tool_deny(host, message)
     return True
+
+
+_SET_CHECK = re.compile(r"findings_io\.py\b[^;&|\n]*\bset-check\b")
+
+
+def set_check_denied(host: str, payload: dict[str, Any]) -> bool:
+    """A check is evidence: on Claude Code, where the hook knows who calls, the orchestrator sends the peer
+    whose row it is, and does not replace a check itself. On Cursor the set-check rules are the guard."""
+    command = _shell_command(payload)
+    if host != "claude" or command is None or not _SET_CHECK.search(command):
+        return False
+    for workspace in _session_workspaces(payload):
+        if orchestrator_scope.enforced(workspace) and orchestrator_scope.is_orchestrator(payload, workspace):
+            tool_deny(host, "BLOCKED: a finding's check is evidence, and the orchestrator does not write it.\n"
+                            "ACTION: send the peer whose row it is (R1 `/pr-review-update <PR>`, R2 `/test-benchmark <PR>`); "
+                            "it runs `findings_io.py set-check`")
+            return True
+    return False
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -268,7 +303,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     note_activation_owner(payload)
     note_activation_orchestrator(payload)
-    if pr_guard_denied(host, payload):
+    if pr_guard_denied(host, payload) or set_check_denied(host, payload):
         return 0
     checks, mention = planned_checks(payload)
     if not checks and not mention:

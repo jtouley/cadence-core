@@ -400,7 +400,7 @@ def protected_writer(target_file: Optional[str], workspace: Path) -> Optional[st
                 "scripts/subagent_provenance.py (begin on Pi and headless hosts, complete)")
     name = rel.rsplit("/", 1)[-1]
     if name.endswith(".jsonl") and (rel.startswith("findings/") or name.startswith("findings")):
-        return "scripts/findings_io.py (append, set-status) and scripts/ledger_verify.py"
+        return "scripts/findings_io.py (append, set-status, set-check) and scripts/ledger_verify.py"
     return None
 
 
@@ -697,7 +697,8 @@ def protected_shell_mention(command: str) -> Optional[str]:
 # The plan freeze after P9: the two places commands/plan-review.md resolves a plan. While the run's
 # P9 marker exists, a write there is denied: a plan change in execution is a new review cycle.
 PLAN_DIRS = (".cursor/plans", ".context/plans")
-PLAN_FROZEN_ACTION = "stop and tell the user what the plan must change; do not edit the plan"
+PLAN_FROZEN_ACTION = ("do not edit the plan. Return the defect in your artifact; the run goes on with the frozen plan "
+                      "and without a person (SKILL.md step 3)")
 
 
 def plan_document(target_file: Optional[str], workspace: Path) -> Optional[str]:

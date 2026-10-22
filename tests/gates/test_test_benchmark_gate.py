@@ -216,8 +216,11 @@ def test_code_mode_with_incomplete_entry_fails(tmp_path, capsys):
                  id="code_mode_follows_the_skill_contract_for_non_blocking_dimensions"),
     pytest.param("code", {"adversarial_inputs": [ENTRY],
                           "scores": {"coverage": 5, "assertions": 7, "dry": 7, "layer": 7, "failure_paths": 5,
-                                     "mutation": 5}}, 1,
-                 id="code_mode_fails_when_the_mean_is_below_seven"),
+                                     "mutation": 5}}, 0,
+                 id="code_mode_a_low_mean_alone_does_not_block"),
+    pytest.param("plan", {"scores": {"coverage": 5, "assertions": 7, "dry": 7, "layer": 7, "failure_paths": 5,
+                                     "mutation": 5}}, 0,
+                 id="plan_mode_a_low_mean_alone_does_not_block"),
     # A must-fix that lives only in the scorecard has no owner in the ledger.
     pytest.param("code", {"adversarial_inputs": [ENTRY], "scores": PASSING,
                           "findings": [{"id": "cd-1-F1", "must_fix": True}]}, 1,
@@ -231,7 +234,8 @@ def test_the_gate_judges_the_benchmark_deliverable(tmp_path, mode, extra, code):
 
 @pytest.mark.parametrize(("floor", "scores", "needle"), [
     pytest.param(6, {**PASSING, "dry": 6}, "must-fix dimensions below 7: {'dry': 6}", id="a-lower-floor-is-ignored"),
-    pytest.param(8, PASSING, "is below 8 (benchmark_score_floor)", id="a-higher-floor-applies"),
+    pytest.param(8, {**PASSING, "assertions": 7}, "must-fix dimensions below 8: {'assertions': 7}",
+                 id="a-higher-floor-applies"),
 ])
 def test_a_project_can_only_raise_the_score_floor(worktree, tmp_path, capsys, floor, scores, needle):
     project_config(worktree, {"benchmark_score_floor": floor})

@@ -364,10 +364,21 @@
       "description": "The most P6 adversarial review cycles."
     },
     "review_fix_rounds": {
-      "type": "integer",
+      "type": [
+        "integer",
+        "null"
+      ],
       "minimum": 1,
       "x-cadence-stricter": "lower",
-      "description": "The most R1 to R4 fix rounds (## Update sections of the PR review)."
+      "description": "The most R1 to R4 fix rounds, or null for no cap. The fix loop runs until the review closes; R4 holds it when a round changes nothing, or at this cap. A layer can set a cap or lower it."
+    },
+    "ci_commands": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The repository's own check commands that R5 runs at HEAD. Empty: R5 runs what the tree shows (make test, pytest, npm test, go test ./..., cargo test). A failing command becomes a must-fix row."
     },
     "benchmark_score_floor": {
       "type": "integer",

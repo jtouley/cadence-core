@@ -19,7 +19,9 @@ _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-from findings_io import HUMAN_FIELDS, check_problem, commit_on_branch, load_findings, rewrite_findings  # noqa: E402
+from findings_io import (  # noqa: E402
+    HUMAN_FIELDS, check_problem, commit_on_branch, ledger_lock, load_findings, missing_script, rewrite_findings,
+)
 
 
 def verify_finding(record: dict, *, dry_run: bool = False) -> dict:
@@ -93,14 +95,22 @@ def main(argv: list[str] | None = None) -> int:
             new_rows.append(verify_finding(row, dry_run=args.dry_run))
             selected += 1
         except (ValueError, RuntimeError) as exc:
-            errors.append(f"error: {row.get('id')}: {exc}")
+            missing = missing_script(row.get("check"), Path.cwd())
+            hint = (f" The check names {missing}, which is not a file. The {row.get('stage') or 'review'} peer that wrote "
+                    f"the row replaces it: findings_io.py set-check --id {row.get('id')} --check \"<a command that runs>\""
+                    if missing else "")
+            errors.append(f"error: {row.get('id')}: {exc}{hint}")
             new_rows.append(row)
     for line in errors:
         print(line, file=sys.stderr)
     if args.dry_run:
         print(json.dumps({"would_verify": selected, "verified": 0, "ledger": str(path)}))
     else:
-        rewrite_findings(path, new_rows)
+        # The checks run without the lock. Under it, only the rows that this run verified change.
+        done = {r["id"]: r for r in new_rows if r.get("status") == "verified"}
+        with ledger_lock(path):
+            rewrite_findings(path, [done.get(r["id"], r) if r.get("status") == "fixed" else r
+                                    for r in load_findings(path)])
         print(json.dumps({"verified": selected, "ledger": str(path), "errors": len(errors)}))
     return 1 if errors else 0
 

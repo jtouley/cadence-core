@@ -195,6 +195,10 @@ def play_implement(box: Sandbox) -> None:
     (tests / "test_core.py").write_text(
         "from toy_pkg.core import add, subtract\n\n\ndef test_add():\n    assert add(2, 3) == 5\n\n\n"
         "def test_subtract():\n    assert subtract(5, 3) == 2\n", encoding="utf-8")
+    # A check runs a test or a script, not inline `python3 -c` code.
+    (tests / "run_one.py").write_text(
+        '"""Run one test of test_core.py: python3 tests/run_one.py <name>."""\nimport sys\n\nimport test_core\n\n'
+        "getattr(test_core, sys.argv[1])()\n", encoding="utf-8")
     box.git("add", "-A")
     box.git("commit", "-qm", "feat: subtract()")
     say(box, "  committed: feat: subtract()")
@@ -285,7 +289,7 @@ def ledger(box: Sandbox) -> None:
                "pipeline_run_id": box.run_id, "rule_ref": "core:test-coverage", "class": "bug",
                "severity": "must-fix", "location": "tests/test_core.py",
                "evidence": "no test for a result below zero",
-               "check": 'PYTHONPATH=src python3 -c "from tests.test_core import test_subtract_below_zero as t; t()"',
+               "check": "PYTHONPATH=src python3 tests/run_one.py test_subtract_below_zero",
                "status": "open"}
     step(box, "A reviewer files a finding, check `true`", 1, "scripts/findings_io.py", "append", "--json",
          json.dumps({**finding, "check": "true"}))

@@ -22,7 +22,9 @@ Resolve `.cursor/plans/` then `.context/plans/`. Stop if missing.
 RUN_BY_COMMAND: plan-review
 ```
 
-Verdict: `READY TO EXECUTE` | `READY WITH CHANGES` | `NOT READY`.
+Verdict: `READY TO EXECUTE` | `READY WITH CHANGES` | `REQUEST CHANGES` | `NOT READY`. Each verdict
+except `READY TO EXECUTE` asks for a plan update. In each round, write this file again in place: do not
+write a second file.
 
 Write `Last reviewed plan sha256: <sha>` after the marker lines. `<sha>` is the sha256 of the plan on the `Input:` line of your packet.
 P9 compares this sha256 with the plan. When the plan changed after a `READY TO EXECUTE` review, P9 fails and the orchestrator runs `/plan-review` again.
@@ -36,6 +38,8 @@ The P9 gate reads the open ids from that section only. An id named in a status l
 On Claude Code, write this file with the Write or Edit tool, not a shell redirect. The hook attests a peer's tool write. A gate does not accept an unattested review.
 
 ## Delta review (cycle two and later)
+
+In a plan review round, record each finding and then `done`, as `references/plan-review-round.md` says (stage `plan-review`).
 
 From cycle two on, the orchestrator gives you the previous review as a second input. Read it before the plan.
 Start the review with a `## Status of earlier items` table, after the marker lines.
@@ -53,7 +57,8 @@ Write one row for each `MF-n` of the previous review:
 - `closed`: cite the Revision ledger row and the plan text that settles the item.
 - `open`: write what is still missing. Put the item under `## Must-fix items` too, with its earlier id.
 - Give a new item the next id after the highest id of the previous review.
-- A new must-fix item may cite only text that the newest update section added or changed.
+- A new must-fix item may cite only a section that the newest update changed: a section that a row of its
+  newest `## Revision ledger` names in its Where cell.
 - A sentence that was in the plan when the previous review passed it is not a new must-fix item. Write it as a note.
 
 ## Review for
@@ -65,7 +70,9 @@ Write one row for each `MF-n` of the previous review:
 - `core:dry-extension` (reuse, Rule of Three, R3 limit, extension point, cloned gates vs registry row)
 - The `## Reuse and extension` section of the plan
 - `core:standalone-package` (host path leaks)
-- TDD + commit checkpoints + real quality gates
+- TDD + commit checkpoints + real quality gates. Each phase has its own failing test and the code that
+  makes it pass. A phase of tests alone, or a phase whose test needs the code of a later phase, is a
+  must-fix item: E1 cannot commit it green
 - Weakened assertions or partial-success tests
 - Rollback / blast radius
 

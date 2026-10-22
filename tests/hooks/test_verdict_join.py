@@ -120,7 +120,8 @@ def test_the_stage_vocabulary_names_pr_review_update():
     assert prompt_shape.SLASH_TO_STAGE["/pr-review-update"] == "pr-review-update"
     assert "pr-review-update" in prompt_shape.LEAN_STAGES
     assert peer_models.SLUG_FOR_STAGE["pr-review-update"] is None
-    assert [r["command"] for r in prompt_shape.EXTRA_PEER_ROWS] == ["/pr-review-update", "/spec-driven --fix", "/session-summary"]
+    assert [r["command"] for r in prompt_shape.EXTRA_PEER_ROWS] == ["/pr-review-update", "/spec-driven --fix", "/session-summary",
+                                                                  "/deferral-review"]
 
 
 # --- verdict_join_rows: The PostToolUse Agent hook joins each orchestrator peer call to its subagent.

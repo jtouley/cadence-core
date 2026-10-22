@@ -19,7 +19,7 @@ PEERS = ROOT / "references" / "bundled-peers.json"
 PEER_CONTRACT = ROOT / "references" / "peer-contract.md"
 
 # A supporting command has no stages.json row. The block whose gate reads its artifact.
-SUPPORTING_BLOCKS = {"/pr-review-update": "R4", "/session-summary": "R7"}
+SUPPORTING_BLOCKS = {"/pr-review-update": "R4", "/session-summary": "R7", "/deferral-review": "P8"}
 
 # The required lines of each peer block, as literals. A str must appear in the bundled peer doc
 # and in the block's section of DOC. A pair is (literal in the peer doc, literal in DOC), for a
@@ -50,6 +50,8 @@ REQUIRED: dict[str, list[str | tuple[str, str]]] = {
     "R4": [("Append to", "appends to the R1 review"), ("PR_REVIEW_#{N}.md", "PR_REVIEW_#<n>.md"),
            "Last reviewed commit:", "### Must-fix items", "findings_io.py"],
     "R7": ["summaries/<task_id>.md", "RUN_BY_COMMAND: session-summary"],
+    "P8": ["RUN_BY_COMMAND: deferral-review", "Register sha256:", "Ruling", "Condition", "GREEN", "AMBER", "RED",
+           "_deferral-review.md"],
 }
 
 # Each bundled peer doc loads references/peer-contract.md, which states the shared rules.

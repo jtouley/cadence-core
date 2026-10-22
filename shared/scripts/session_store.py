@@ -120,19 +120,32 @@ PENDING_ORCHESTRATOR = "sessions/pending-orchestrator"
 PENDING_ORCHESTRATOR_SECONDS = 120
 
 
-def write_pending_orchestrator(agent_id: str | None, context: Path) -> Path:
-    """Note the agent that is about to run activation. One pool per canonical .context."""
+def write_pending_orchestrator(agent_id: str | None, context: Path, join_hook: bool | None = None) -> Path:
+    """Note the agent that is about to run activation. One pool per canonical .context.
+
+    `join_hook`: whether the hooks file that the host loaded for this very call registers the PostToolUse
+    join hook; None when the hook cannot tell (it does not run from a plugin)."""
     import time
 
     now = time.time()
     stamp = datetime.fromtimestamp(now, timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     path = Path(context) / PENDING_ORCHESTRATOR / f"{stamp}-{agent_id or 'toplevel'}.json"
-    _write_json(path, {"agent_id": agent_id, "at": now})
+    body: dict = {"agent_id": agent_id, "at": now}
+    if join_hook is not None:
+        body["join_hook"] = join_hook
+    _write_json(path, body)
     return path
 
 
 def take_pending_orchestrator(context: Path) -> tuple[bool, str | None]:
     """(found, agent_id) of the newest note of 120 s or less; that note and every stale one are deleted."""
+    note = take_pending_note(context)
+    agent = note.get("agent_id") if note is not None else None
+    return note is not None, agent if isinstance(agent, str) and agent else None
+
+
+def take_pending_note(context: Path) -> dict | None:
+    """The newest note of 120 s or less, else None; that note and every stale one are deleted."""
     import time
 
     now = time.time()
@@ -144,14 +157,14 @@ def take_pending_orchestrator(context: Path) -> tuple[bool, str | None]:
         except (TypeError, ValueError):
             at = 0.0
         if now - at <= PENDING_ORCHESTRATOR_SECONDS:
-            fresh.append((at, path.name, path, data.get("agent_id")))
+            fresh.append((at, path.name, path, data))
         else:
             path.unlink(missing_ok=True)
     if not fresh:
-        return False, None
-    _at, _name, path, agent = max(fresh, key=lambda note: (note[0], note[1]))
+        return None
+    _at, _name, path, data = max(fresh, key=lambda note: (note[0], note[1]))
     path.unlink(missing_ok=True)
-    return True, agent if isinstance(agent, str) and agent else None
+    return data
 
 
 def worktree_sessions(ctx: Path) -> list[tuple[Path, dict]]:

@@ -36,11 +36,17 @@ without them.
 Scorecard dimensions (1–10): coverage of behavior, assertion strength, DRY /
 no clone setups, layer correctness, failure paths, mutation resilience.
 
+`scores` holds these six numbers. Write `mean` and `verdict` at the top level. The gate computes the mean itself.
+
 The floor is `benchmark_score_floor` of the resolved config (default 7). A config
 layer can only raise it. A score below the floor on layer, DRY, or assertions is a
-must-fix finding. So is a mean score below the floor. Set `verdict` to `FAIL` in
-those cases, and to `PASS` otherwise. The R2 gate fails on any `verdict` other than `PASS`,
-and on a score below that floor.
+must-fix finding. Set `verdict` to `FAIL` in that case, and to `PASS` otherwise. The R2 gate
+fails on a `FAIL` verdict or on one of those three scores below the floor. The mean is not a
+finding: write it, but do not make a ledger row for it.
+
+A must-fix finding names its evidence: a surviving mutant (the file, the line
+and the test command that does not kill it), an input and its wrong output, or
+the test that is weak. A score alone is not a finding.
 
 ## DRY measurement
 
@@ -100,7 +106,11 @@ must-fix finding. In code mode, append a must-fix ledger row with the same `id` 
 `verified` or `deferred` still counts. The index reads the findings ledger.
 A finding that exists only in the scorecard JSON is not registered, and the
 R2 gate rejects it. Use severity `must-fix` and include `check`. The scorecard
-word `HIGH` is not a ledger severity.
+word `HIGH` is not a ledger severity. The `check` names a test or a script that is in
+the repository when R5 runs it. When R5 says that the check of one of your rows names a file
+that does not exist, replace it: `findings_io.py set-check --id <id> --check "<command>"`.
+
+In a plan review round, record each finding and then `done`, as `references/plan-review-round.md` says (stage `test-benchmark-plan`).
 
 In plan mode, write no ledger row. A ledger row closes with a fix commit, and the plan is not
 code. The P7 gate fails while the plan scorecard does not pass. The plan peer applies the
@@ -111,3 +121,14 @@ Run each mutant in a copy outside the worktree, made with `mktemp -d`, and delet
 run. Leave no file in the worktree: a mutant copy there fails R3 on duplication.
 
 Chat: C.O.R.E. with the scorecard path. When a Cadence run delegates this peer, replace the C.O.R.E. close with the one-line return in `peer-contract.md`.
+
+## A later card of the same PR
+
+In PR mode, write `"head": "<the HEAD sha you scored>"` on the card. After a fix round, the card of that
+PR is already there. Read its `head` and its findings first:
+
+- Score each must-fix of the earlier card again, with the same id. It is closed when its check passes and its
+  evidence no longer holds (the mutant dies, the input gives the right output). Else it stays open.
+- A new must-fix item cites a line that changed since the earlier `head` (`git diff <head>..HEAD`). A gap in
+  code or a test that the earlier card already scored is a note, not a must-fix. A fix loop ends only when
+  each round looks at its own change: a run found new mutants in old code in each of three rounds.

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""R4 final consolidate — Close pass then Delta pass (fix-loop budget: `review_fix_rounds`).
+"""R4 final consolidate — Close pass then Delta pass.
 
-A fix round is one `## Update` section of the PR review. At the budget, a loop that is still
-open holds with the loop rule: a MERGE-READY verdict with no open must-fix ends it.
+A fix round is one `## Update` section of the PR review. The loop goes on until the gate passes: a
+must-fix is fixed in the PR. It holds when a round changed nothing, and at the optional
+`review_fix_rounds` cap of the config.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -21,13 +23,14 @@ from findings_io import is_open_must_fix, ledger_scope, load_findings, scope_sum
 from labeled_lines import labeled_values  # noqa: E402
 
 _UPDATE = re.compile(r"^##[ \t]+Update\b", re.M)
-BUDGET_HOLD = (
-    "final-consolidate: the review fix loop is at its budget: {rounds} fix rounds (`## Update` sections) of "
-    "{budget} (review_fix_rounds). Do not start another fix round. a MERGE-READY verdict with no open "
-    "must-fix ends the loop, and a nit goes to the tracker, not into a fix commit. Defer each open must-fix: add its "
-    "row under `## Review deferrals` in .context/deferrals/<task>_deferral-register.md with the ticket, pass "
-    "deferral_adjudication_check.py, then findings_io.py set-status --id <id> --status deferred --ticket <n> "
-    '. Or stop and tell the user (activate_session.py --hard-stop retries --reason "...")'
+STALL_HOLD = (
+    "final-consolidate: fix round {rounds} changed nothing: HEAD and the open must-fix rows ({open}) are the same "
+    "as after round {before}. Do not send the same fix round again. Record the stop: "
+    'activate_session.py --hard-stop retries --reason "..."'
+)
+CAP_HOLD = (
+    "final-consolidate: the fix loop is at review_fix_rounds ({budget}) of the config and is still open. "
+    'Record the stop: activate_session.py --hard-stop retries --reason "..."'
 )
 
 
@@ -36,15 +39,68 @@ def fix_rounds(text: str) -> int:
     return len(_UPDATE.findall(text))
 
 
-def fix_round_budget(root: Path, workspace: Path | None = None) -> int:
-    """`review_fix_rounds` of the resolved config: a layer can only lower it. A bad value raises."""
+def fix_round_budget(root: Path, workspace: Path | None = None) -> int | None:
+    """`review_fix_rounds` of the resolved config: an optional cap on the fix rounds, else None (no cap).
+    A layer can set a cap or lower it. A bad value raises."""
     import cadence_config
 
     return cadence_config.load(root, workspace).get("review_fix_rounds")
 
 
+def stalled_since(context_dir: Path, rounds: int, head: str, open_ids: list[str]) -> int | None:
+    """Record HEAD and the open must-fix rows at the first gate run of fix round `rounds` of the cwd's run. The
+    round before it when it started from the same state, else None: a fix round that changed nothing ends the loop."""
+    from pipeline_run_binding import run_for
+
+    run_id = str((run_for(context_dir, cwd=Path.cwd()) or {}).get("pipeline_run_id") or "")
+    if not run_id or not head:
+        return None
+    path = Path(context_dir) / "gates" / f"final-consolidate-rounds-{run_id}.json"
+    readonly = os.environ.get("CADENCE_GATES_READONLY") == "1"  # the stop guard records nothing
+    try:
+        seen = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        seen = {}
+    seen = seen if isinstance(seen, dict) else {}
+    state = {"head": head, "open": sorted(open_ids)}
+    if not readonly and str(rounds) not in seen:
+        seen[str(rounds)] = state
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(seen, indent=2), encoding="utf-8")
+    return rounds - 1 if rounds >= 1 and seen.get(str(rounds - 1)) == state else None
+
+
+def fix_loop_moves(context_dir: Path, run_id: str, root: Path) -> str | None:
+    """Why a `retries` hard stop is early, else None: the PR fix loop of run `run_id` is still moving.
+
+    The loop has no retry count. R4 holds it when a round changed nothing or at review_fix_rounds.
+    Runs stopped themselves after three rounds that each changed HEAD and the open rows."""
+    path = Path(context_dir) / "gates" / f"final-consolidate-rounds-{run_id}.json"
+    try:
+        seen = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    rounds = sorted((int(k), v) for k, v in seen.items() if str(k).isdigit() and isinstance(v, dict)) \
+        if isinstance(seen, dict) else []
+    if not rounds:
+        return None
+    try:
+        budget = fix_round_budget(root)
+    except ValueError:
+        return None
+    last, state = rounds[-1]
+    if budget is not None and last >= budget:
+        return None
+    before = dict(rounds).get(last - 1)
+    if before is not None and before == state:
+        return None
+    return (f"the PR fix loop is still moving: round {last} is at HEAD {str(state.get('head'))[:12]} with open "
+            f"{', '.join(state.get('open') or []) or 'none'}, and no round changed nothing. The loop has no retry "
+            "count: send the next fix round. R4 (final_consolidate.py --check) says when it holds")
+
+
 def consolidate(ledger: Path, *, context_dir: Path | None = None, cwd: Path | None = None,
-                rounds: int = 0, budget: int = 2) -> dict:
+                rounds: int = 0, budget: int | None = None) -> dict:
     """Judge the rows of the run of ``cwd`` when ``context_dir`` is given; else every row."""
     rows = load_findings(ledger)
     scope = ledger_scope(rows, context_dir, cwd=cwd) if context_dir is not None else None
@@ -56,7 +112,7 @@ def consolidate(ledger: Path, *, context_dir: Path | None = None, cwd: Path | No
         },
         "delta_pass": {
             "note": "Re-scan for regressions after close-pass fixes" if ledger.is_file() else "no findings ledger",
-            "budget_remaining_hint": max(budget - rounds, 0),
+            "budget_remaining_hint": None if budget is None else max(budget - rounds, 0),
         },
         "fix_loop_budget": budget,
         "fix_rounds": rounds,
@@ -149,7 +205,7 @@ def run_pr_review(context_dir: Path, worktree: Path) -> Path | None:
         context_dir, run_for(context_dir, cwd=worktree), current_branch(worktree)
     )
     number = artifact_requirements.draft_pr_number(record) if record is not None else None
-    return None if number is None else context_dir / "prs" / "reviews" / f"PR_REVIEW_#{number}.md"
+    return None if number is None else artifact_requirements.pr_review_file(context_dir, number)
 
 
 def _own_review_problems(
@@ -210,10 +266,15 @@ def main() -> int:
     print(json.dumps(result, indent=2))
     if not args.check:
         return 0
-    problems = [f"final-consolidate: open must-fix {fid}" for fid in result["close_pass"]["open_must_fix"]]
+    open_ids = result["close_pass"]["open_must_fix"]
+    problems = [f"final-consolidate: open must-fix {fid}" for fid in open_ids]
     problems += head_review_problems(ctx(), run_worktree(ctx()))
-    if problems and rounds >= budget:
-        problems.append(BUDGET_HOLD.format(rounds=rounds, budget=budget))
+    head = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    before = stalled_since(ctx(), rounds, head, open_ids) if problems else None
+    if before is not None:
+        problems.append(STALL_HOLD.format(rounds=rounds, open=", ".join(open_ids) or "none", before=before))
+    elif problems and budget is not None and rounds >= budget:
+        problems.append(CAP_HOLD.format(budget=budget))
     for problem in problems:
         print(problem, file=sys.stderr)
     return 1 if problems else 0

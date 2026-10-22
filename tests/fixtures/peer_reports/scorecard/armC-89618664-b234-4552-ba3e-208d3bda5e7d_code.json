@@ -1,0 +1,71 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "89618664-b234-4552-ba3e-208d3bda5e7d",
+  "mode": "code (R2, PR 1, branch feat/LOCAL-4-csv-export, HEAD 66a653c)",
+  "verdict": "PASS",
+  "scores": {
+    "coverage_of_behavior": 9,
+    "assertion_strength": 8,
+    "dry_no_clone_setups": 7,
+    "layer_correctness": 8,
+    "failure_paths": 9,
+    "mutation_resilience": 8,
+    "mean": 8.17
+  },
+  "mutation_run": {
+    "method": "copies of src and tests in a mktemp -d directory outside the worktree, one mutant per copy, pytest run in each; copy deleted after the run",
+    "baseline": "39 passed",
+    "mutants": 15,
+    "killed": 14,
+    "survived": 1,
+    "kill_rate": "14 of 15",
+    "survivors": [
+      {
+        "id": "M5_no_isfinite",
+        "change": "remove the amount.is_finite() guard in ledger._money",
+        "why_survived": "Decimal NaN is still refused by the exact-at-two-decimals guard, and Infinity is refused by quantize (InvalidOperation, re-raised as ValueError). The outcome is the same ValueError. Only the message differs, and no test pins the message for Infinity."
+      }
+    ],
+    "killed_by_row": [
+      "M1 no sort: 5 failed",
+      "M2 no exact-at-two-decimals check: 1 failed",
+      "M3 LF line terminator: 15 failed",
+      "M4 QUOTE_ALL: 15 failed",
+      "M6 _is_ledger always False: 3 failed",
+      "M7 no hard-link check: 1 failed",
+      "M8 write in place, no temp file: 1 failed",
+      "M9 no chmod to umask mode: 1 failed",
+      "M10 no temp-file cleanup: 1 failed",
+      "M11 month filter ignores year: 1 failed",
+      "M12 wrong row count: 2 failed",
+      "M13 changed cannot-write text: 1 failed",
+      "M14 amount not formatted to two decimals: 11 failed",
+      "M15 stdout without CRLF bytes: 3 failed"
+    ]
+  },
+  "dry_measurement": {
+    "helpers_reimplemented": [],
+    "helpers_reused": [],
+    "thin_files": [],
+    "note": "helpers_reimplemented did not run: test_shape reports no conftest under the test directories (unmeasured, verdict warn). The empty list is not a pass. The DRY score covers the manual review only. thin_files: pass."
+  },
+  "adversarial_inputs": [
+    {"input": "missing: export --month 2026-10 with no ledger file", "expected": "header-only CSV on stdout, exit 0, no file created", "observed": "header-only CSV with CRLF on stdout, exit 0; ledger path not created"},
+    {"input": "missing: export --out pointing at the absent ledger path", "expected": "refused with an error line, exit 2, nothing written", "observed": "error: refusing to write over the ledger: <path>, exit 2; no file created"},
+    {"input": "corrupt: ledger file containing {\"not\": json", "expected": "error line, exit 2, no traceback, no output file", "observed": "error: Expecting value: line 1 column 9 (char 8), exit 2; no output file"},
+    {"input": "other ticket: leftovers of another ticket in the workspace", "expected": "n/a", "observed": "n/a: budgetcli has no ticket or tracker concept. The adapter is none."},
+    {"input": "resume: re-run of an interrupted export", "expected": "n/a", "observed": "n/a: export has no --resume flag and no resumable state. Each run rewrites the whole output."},
+    {"input": "adjacent id: month 2026-1 and 2026-1x against the 2026-10 request", "expected": "error line, exit 2, no month is matched by prefix", "observed": "error: not a month (YYYY-MM): '2026-1' and '2026-1x', exit 2"},
+    {"input": "offline: no network, no gh on the host", "expected": "n/a", "observed": "n/a: export reads the local JSON ledger only. No network or gh call exists in the change."}
+  ],
+  "findings": [
+    {"id": "cd-52-F01", "severity": "should-fix", "check": "mutation_resilience", "evidence": "Mutant M5 (remove the is_finite guard in ledger._money) survives. NaN and Infinity are still refused with ValueError. No test pins the Infinity message or checks which guard fired. Add an Infinity row to the parametrize table in tests/test_ledger.py (test_export_csv_refuses_an_amount_that_is_not_exact_at_two_decimals) and assert the message with match=\"not a finite amount\" for the NaN and Infinity rows."},
+    {"id": "cd-52-F02", "severity": "should-fix", "check": "dry_no_clone_setups", "evidence": "The CSV header is repeated as a literal in two files: HEADER in tests/test_ledger.py and HEADER_BYTES in tests/test_cli.py. OCTOBER_CSV in tests/test_cli.py also repeats the October rows that test_export_prints_the_month_as_crlf_csv_bytes builds inline. Keep one source of the header and the rows, or build the expected bytes from it. This is a manual finding. helpers_reimplemented did not measure it, because no conftest exists."},
+    {"id": "cd-52-F03", "severity": "nit", "check": "assertion_strength", "evidence": "test_export_without_a_month_prints_every_expense checks only the date column (row.split(',')[0]). Category, amount and note are not asserted for the all-months export. test_export_csv_refuses_an_amount_that_is_not_exact_at_two_decimals checks only the exception type, not the message."}
+  ],
+  "notes": [
+    "The PR body reports 26 tests and an older diff. HEAD collects 39 tests, and the change includes tests added by commits F05 to F09. This review scored HEAD.",
+    "No must-fix finding. No ledger row is needed, because findings_io registers must-fix rows only.",
+    "Unmeasured: helpers_reimplemented (no conftest under tests/). Not a pass."
+  ]
+}

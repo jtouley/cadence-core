@@ -12,6 +12,7 @@ Config: `orchestrator_scope.mode`, `enforce` (the default) or `off`.
 
 from __future__ import annotations
 
+import os
 import re
 from fnmatch import fnmatchcase
 from pathlib import Path
@@ -26,12 +27,13 @@ from skill_gate import (
     is_test_path,
     load_config,
     load_session,
+    skill_root,
     workspace_relative,
 )
 
 # Run artifacts, relative to .context: what the peers write and read. Session, gate and
 # ledger state is not here: the scripts that the orchestrator runs read it.
-RUN_ARTIFACTS = (*peer_attest.PEER_ARTIFACT_GLOBS, "plans/*", "proposals/*", "implementation/*")
+RUN_ARTIFACTS = (*peer_attest.PEER_ARTIFACT_GLOBS, "plans/*", "proposals/*", "implementation/*", "plan-findings/*")
 # The markdown of a run that a peer or a block's script writes: the orchestrator writes none.
 WRITTEN_FOR_IT = (*RUN_ARTIFACTS, "deferrals/*", "prs/comments/*", "summaries/*")
 WORKSPACE_PLANS = ".cursor/plans/"
@@ -63,9 +65,26 @@ def is_orchestrator(payload: dict[str, Any], workspace: Path) -> bool:
     return agent in peer_attest.orchestrator_ids(canonical_context_dir(workspace))
 
 
+# A command names the skill's own scripts through these variables: they are the gates, not the repo's code.
+SKILL_VARS = ("$CADENCE_HOME", "${CADENCE_HOME}", "$CLAUDE_PLUGIN_ROOT", "${CLAUDE_PLUGIN_ROOT}")
+
+
+def _skill_file(path: str, workspace: Path) -> bool:
+    """A path under the skill root, such as `$CADENCE_HOME/scripts/test_benchmark_gate.py`. When Cadence runs on
+    its own repository, the skill root is the workspace, and its files are the repo's code."""
+    if path.startswith(SKILL_VARS):
+        return True
+    try:
+        root = skill_root().resolve()
+        return (Path(path).is_absolute() and Path(path).resolve().is_relative_to(root)
+                and not workspace.resolve().is_relative_to(root))
+    except (OSError, ValueError):
+        return False
+
+
 def code_path(path: str, workspace: Path) -> str | None:
-    """The workspace path of a source or test file, else None."""
-    rel = workspace_relative(path, workspace)
+    """The workspace path of a source or test file, else None. A file of the skill is never the repo's code."""
+    rel = None if _skill_file(path, workspace) else workspace_relative(path, workspace)
     if not rel:
         return None
     # `src` names the directory of the prefix `src/`: a Grep or a reader of it reads the code.
@@ -87,13 +106,25 @@ def _denial(what: str) -> str:
     return f"BLOCKED: the orchestrator does not read or write {what}; a peer or a gate does.\n{ACTION}"
 
 
+_ASSIGN = re.compile(r"(?:^|[\s;&|(])([A-Za-z_]\w*)=(\"[^\"]*\"|'[^']*'|[^\s;&|]+)")
+_VAR = re.compile(r"\$(?:\{(\w+)\}|(\w+))")
+
+
+def expand(path: str, command: str, workspace: Path) -> str:
+    """`path` with the variables that the command assigns, the environment, and `$PWD` as the workspace. A gate
+    at `"$SKILL_ROOT/scripts/x.py"` then resolves under the skill root, and `"$PWD/src/x.py"` is still the code."""
+    names = {**os.environ, "PWD": str(workspace),
+             **{k: v.strip("\"'") for k, v in _ASSIGN.findall(command)}}
+    return _VAR.sub(lambda m: names.get(m.group(1) or m.group(2), m.group(0)), path)
+
+
 def read_denial(payload: dict[str, Any], workspace: Path, paths: list[str]) -> str | None:
     """The deny text for an orchestrator read of a run artifact, the code or the diff, else None."""
     tool_input = payload.get("tool_input") if isinstance(payload.get("tool_input"), dict) else {}
     command = tool_input.get("command") if isinstance(tool_input.get("command"), str) else ""
     grep = tool_input.get("path") if payload.get("tool_name") == "Grep" else None
     searched = [grep] if isinstance(grep, str) and grep.strip() else []
-    hits = [h for p in [*paths, *searched] if (h := out_of_scope(p, workspace))]
+    hits = [h for p in [*paths, *searched] if (h := out_of_scope(expand(p, command, workspace), workspace))]
     if not hits and not GIT_DIFF.search(command):
         return None
     if not is_orchestrator(payload, workspace) or not enforced(workspace):

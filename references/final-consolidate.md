@@ -2,22 +2,27 @@
 
 Two passes over the findings ledger:
 
-1. **Close pass** — action-resolve every open `must-fix` (fix → `fixed`, or
-   `deferred` / `spec_gap` with ticket).
+1. **Close pass** — action-resolve every open `must-fix`: fix it → `fixed`. Only a row that meets
+   `references/deferral-framework.md`, with a `/deferral-review` ruling, becomes `deferred` or `spec_gap`.
 2. **Delta pass** — re-scan for regressions introduced by close-pass fixes.
 
-## Fix-loop budget
+## The fix loop
 
-The config key `review_fix_rounds` sets the most fix rounds (default 2). A config
-layer can only lower the budget. The gate ignores a larger value, and a value that
-is not an integer of at least 1 fails the gate.
+A fix round is one `## Update` section of the PR review. The loop goes on until R4 and R5 pass:
+the code works, the repository's checks pass, and each must-fix is fixed in this PR. A
+must-fix is never deferred because the rounds ran out.
 
-A fix round is one `## Update` section of the PR review. The R4 gate counts the
-sections of the run's PR review. At the budget, while a must-fix is open or the
-review does not cite HEAD, the gate holds with the loop rule: a `MERGE-READY`
-verdict with no open must-fix ends the loop, and a nit goes to the tracker. Do
-not start another fix round. Record each open must-fix as `deferred` with a
-ticket or as `spec_gap`, or stop and tell the user.
+The R4 gate holds in two cases. Then record
+`activate_session.py --hard-stop retries --reason "..."`, and say why in the last message:
+
+- A fix round changed nothing: HEAD and the open must-fix rows are the same as at the start of the
+  round before it.
+- The optional config key `review_fix_rounds` caps the rounds, and the
+  loop is still open at the cap. With no key, there is no cap. A layer can set a cap or lower it. A value
+  that is not an integer of at least 1 fails the gate.
+
+A `MERGE-READY` verdict with no open must-fix ends the loop, and a nit goes to the tracker. A deferral in review meets `references/deferral-framework.md` and gets a
+`/deferral-review` ruling.
 
 Promotion to `verified` happens only via `ledger_verify.py` after the finding's
 `check` command passes.

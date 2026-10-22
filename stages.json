@@ -1,6 +1,13 @@
 {
   "version": 1,
   "description": "Registry SSOT for feature-pipeline stages across Alignment, Planning, Execution, and Review phases",
+  "review_rounds": {
+    "plan": {
+      "driver": "python3 scripts/plan_wave.py",
+      "cycle_limit": "plan_review_cycles",
+      "description": "The plan reviewers read one plan sha in parallel; one /plan-update answers all of them. Each reviewer reviews up to the cycle limit of its round, unless its row names another"
+    }
+  },
   "stages": [
     {
       "slug": "activate-session",
@@ -107,7 +114,12 @@
         "plan",
         "plan-review-previous",
         "vibetest"
-      ]
+      ],
+      "review_round": {
+        "round": "plan",
+        "cycle_limit": "plan_review_cycles",
+        "report_ids": true
+      }
     },
     {
       "slug": "plan-update",
@@ -123,7 +135,8 @@
         "plan",
         "plan-review",
         "vibetest",
-        "plan-benchmark"
+        "plan-benchmark",
+        "deferral-ruling"
       ]
     },
     {
@@ -135,7 +148,10 @@
       "manifest_type": "arch-review-plan",
       "trigger": "always",
       "pack": "architecture",
-      "description": "Core architecture review (dependency direction, boundaries, decision coverage)"
+      "description": "Core architecture review (dependency direction, boundaries, decision coverage)",
+      "review_round": {
+        "round": "plan"
+      }
     },
     {
       "slug": "adversarial-review",
@@ -155,7 +171,11 @@
       ],
       "inputs": [
         "plan"
-      ]
+      ],
+      "review_round": {
+        "round": "plan",
+        "cycle_limit": "adversarial_cycles"
+      }
     },
     {
       "slug": "test-benchmark-plan",
@@ -172,7 +192,10 @@
       ],
       "inputs": [
         "plan"
-      ]
+      ],
+      "review_round": {
+        "round": "plan"
+      }
     },
     {
       "slug": "deferral-register",

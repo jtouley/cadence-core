@@ -114,33 +114,53 @@ def score_floor() -> int:
 MUST_FIX_DIMENSIONS = ("layer", "dry", "assert")
 
 
-def _score_problems(path: Path) -> list[str]:
-    """R2 passes only on a passing scorecard: every dimension at or above `benchmark_score_floor`, no FAIL verdict.
+# Keys that a peer writes next to the dimensions in `scores`: the gate computes them itself (the corpus of real
+# scorecards in tests/fixtures/peer_reports puts `mean`, `floor` and `must_fix_dimensions` there).
+_NOT_DIMENSIONS = ("mean", "floor", "average", "total", "overall")
 
-    A low score is a must-fix: fix the tests, then score again.
-    """
+
+def dimension_scores(card: object) -> dict[str, float]:
+    """The numeric dimension scores of a scorecard; any other key of `scores` is ignored."""
+    scores = card.get("scores") if isinstance(card, dict) else None
+    return {k: v for k, v in (scores or {}).items() if isinstance(scores, dict)
+            and isinstance(v, (int, float)) and not isinstance(v, bool) and k.lower() not in _NOT_DIMENSIONS}
+
+
+def card_shape_problems(path: Path) -> list[str]:
+    """The gate can read the scorecard: it is JSON with at least one numeric dimension score."""
     try:
         card = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return ["unreadable scorecard"]
-    scores = card.get("scores") if isinstance(card, dict) else None
-    if not isinstance(scores, dict) or not scores:
-        return ["no scores (skills/test-benchmark/SKILL.md: dimensions 1-10)"]
+        return [f"{path.name} is not readable JSON"]
+    if not dimension_scores(card):
+        return [f"{path.name} has no dimension scores (skills/test-benchmark/SKILL.md: dimensions 1-10)"]
+    return []
+
+
+def _score_problems(path: Path) -> list[str]:
+    """R2 and P7 pass on a scorecard with no must-fix dimension below `benchmark_score_floor` and no FAIL verdict.
+
+    A low layer, DRY or assertion score is a must-fix: the gate measures DRY. The mean is not
+    a gate: a low mean names no defect, and runs sent fix rounds at a mean that did
+    not move. A defect is a finding with its evidence, and the ledger holds it.
+    """
+    shape = card_shape_problems(path)
+    if shape:
+        return shape
+    card = json.loads(path.read_text(encoding="utf-8"))
+    scores = dimension_scores(card)
     problems = []
-    bad = {k: v for k, v in scores.items() if not isinstance(v, (int, float))}
-    if bad:
-        return [f"scores must be numbers: {bad}"]
     # skills/test-benchmark/SKILL.md: below 7 is must-fix for layer, DRY and assertions.
     floor = score_floor()
     must = {k: v for k, v in scores.items() if any(w in k.lower() for w in MUST_FIX_DIMENSIONS) and v < floor}
     if must:
         problems.append(f"must-fix dimensions below {floor}: {must}. Fix the tests, then score again")
-    mean = sum(scores.values()) / len(scores)
-    if mean < floor:
-        problems.append(f"mean score {mean:.1f} is below {floor} (benchmark_score_floor)")
     verdict = card.get("verdict")
     if isinstance(verdict, str) and verdict.strip().upper() != "PASS":
-        problems.append(f"verdict is {verdict}")
+        from verdict_judge import judge
+
+        if (verdict.strip().upper() == "FAIL" or judge(verdict, "scorecard") != "PASS"):  # `PASSED` is a pass (Jev)
+            problems.append(f"verdict is {verdict}")
     return problems
 
 
@@ -186,12 +206,24 @@ def _must_fix_ledger_problems(path: Path) -> list[str]:
     ]
 
 
-def _plan_problems(path: Path) -> list[str]:
+def _plan_problems(path: Path, *, answered: bool = False) -> list[str]:
     """P7 passes only on a passing plan scorecard. A plan finding has no ledger row: a rescore of the
-    updated plan closes it, because the plan freezes at P9 and no commit can fix it after that."""
+    updated plan closes it, because the plan freezes at P9 and no commit can fix it after that. At its cycle
+    limit (``answered``: plan_wave.answered_at_limit) P7 reviews no more, and the update answered its rows."""
+    if card_shape_problems(path):  # the card, not the plan, is wrong: the P7 peer writes it again
+        return card_shape_problems(path) + ["send /test-benchmark plan <plan> again"]
+    if answered:
+        return []
     problems = _score_problems(path)
     return problems + [f"send /plan-update <plan>: the plan peer applies the must-fix findings of {path.name}. "
                        "Then send /test-benchmark plan <plan> again"] if problems else []
+
+
+def _plan_validator(context_dir: Path):
+    from plan_wave import answered_at_limit
+
+    answered = answered_at_limit(context_dir, None, "test-benchmark-plan")
+    return lambda path: _plan_problems(path, answered=answered)
 
 
 def _code_validator(shape: dict | str, notes: list[str]):
@@ -211,7 +243,7 @@ def run(context_dir: Path, *, mode: str = "plan", check: bool = False) -> int:
         relative_globs=spec["globs"],
         markers=_MARKERS,
         label=spec["label"],
-        validate=_code_validator(shape, notes) if shape is not None else _plan_problems,
+        validate=_code_validator(shape, notes) if shape is not None else _plan_validator(context_dir),
         accept=peer_written_filter(context_dir, slug=spec["stage_slug"]),
         rejections=lambda paths: stage_rejections(context_dir, paths, slug=spec["stage_slug"]),
     )

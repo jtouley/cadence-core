@@ -3,8 +3,9 @@
 
 Cadence: ticket regex from adapters/*.json; no hardcoded org prefixes.
 
-Car-apart default: ship in-PR unless ripeness documents a landing dependency.
-Exit 0 when ok; exit 1 with JSON issues on stdout when invoked as CLI.
+Car-apart default: ship in-PR. A row defers work only when it traces to no part of the request,
+names a ripeness with its evidence and a follow-up ticket, and the /deferral-review peer approved
+it. Exit 0 when ok; exit 1 with the issues.
 """
 from __future__ import annotations
 
@@ -48,18 +49,26 @@ INVALID_RIPENESS = frozenset(
     }
 )
 
-LEGITIMATE_RIPENESS = re.compile(
-    r"(?i)(blocked[- ]on|blocked[- ]by|different epic|different layer|"
-    r"prod[- ]mutation|--execute|fleet[- ]ops|operator must|parent product gap|"
-    r"engine redesign|explicitly out of scope|vibe-test|ripeness:\s*"
-    r"(blocked-by|prod-mutation|different-epic|different-layer|fleet-ops))"
-)
+# In review (R1 to R5) a must-fix is fixed in the PR. Only a blocker that no code change in it can
+# clear defers it.
+REVIEW_RIPENESS = frozenset({"blocked-by", "prod-mutation", "fleet-ops"})
+# The `Request trace` cell of a row that traces to no part of the request, the A5 report or the plan's goal.
+NO_TRACE = "none"
 
-WEAK_DEFERRAL = re.compile(
-    r"(?i)(\bnits?\b|PR-review|TB nits|YAGNI|out of AC|not needed to unblock|"
-    r"test hygiene|optional polish|residual PR-review|pre-rollout|"
-    r"extra parse/partition plumbing not needed)"
-)
+
+def traces_to_nothing(cell: str) -> bool:
+    """The cell says `none`, with prose after it or not: a plan peer wrote "none. The request names LOCAL-9
+    only to put the upload out of this change", and P8 refused it through three plan updates."""
+    first = re.split(r"[\s.,;:(—-]+", cell.strip().strip("`*_ "), maxsplit=1)[0]
+    return first.lower() == NO_TRACE
+# The RAG ruling of /deferral-review: GREEN defers, AMBER defers with a condition that this PR
+# builds, RED builds the item in this PR. A review row is GREEN or RED.
+RULINGS = ("GREEN", "AMBER", "RED")
+CONDITIONS_HEADER = "## Deferral conditions"
+# The documents that /deferral-review reads: the run before E1, and the review files after E4.
+MANIFEST_GLOBS = ("proposals/*.md", "vibetest/*.md", "reviews/plan_*.md", "adversarial/*.md",
+                  "benchmarks/*_plan.json", "deferrals/*_deferral-register.md", "issues/*.md",
+                  "prs/reviews/*.md", "findings.jsonl")
 
 ZERO_APPROVED = re.compile(
     r"(?i)(no approved deferrals|zero approved|approved deferrals:\s*0|"
@@ -75,6 +84,8 @@ class DeferralRow:
     ticket: str
     ripeness: str
     raw: str
+    trace: str = ""
+    evidence: str = ""
 
 
 @dataclass
@@ -146,20 +157,22 @@ def _row_to_deferral(header: list[str], cells: list[str]) -> DeferralRow | None:
     item_i = _col_index(header, "item") or 1
     reason_i = _col_index(header, "why not", "why deferred") or 2
     ticket_i = _col_index(header, "follow-up ticket", "follow-up") or 4
-    ripeness_i = _col_index(header, "ripeness")
     item = cells[item_i] if item_i < len(cells) else ""
     reason = cells[reason_i] if reason_i < len(cells) else ""
     ticket = cells[ticket_i] if ticket_i < len(cells) else ""
-    ripeness = (
-        cells[ripeness_i] if ripeness_i is not None and ripeness_i < len(cells) else ""
-    )
+    def cell(*names: str) -> str:
+        i = _col_index(header, *names)
+        return cells[i].strip() if i is not None and i < len(cells) else ""
+
     return DeferralRow(
         number=num.strip(),
         item=item,
         reason=reason,
         ticket=ticket,
-        ripeness=ripeness.strip().lower(),
+        ripeness=cell("ripeness").lower(),
         raw="|".join(cells),
+        trace=cell("request trace", "trace"),
+        evidence=cell("evidence"),
     )
 
 
@@ -219,46 +232,46 @@ def _validate_row(row: DeferralRow, *, review_phase: bool) -> list[AdjudicationI
             )
         )
 
-    if row.ripeness:
-        if row.ripeness in INVALID_RIPENESS:
-            issues.append(
-                AdjudicationIssue(
-                    "deferral-invalid-ripeness",
-                    f"{prefix}: Ripeness '{row.ripeness}' is not allowed — use blocked-by, "
-                    "prod-mutation, different-epic, different-layer, or fleet-ops",
-                    "Ship in-PR or document blocked-by with landing dependency ticket",
-                )
-            )
-        elif row.ripeness not in VALID_RIPENESS:
-            issues.append(
-                AdjudicationIssue(
-                    "deferral-unknown-ripeness",
-                    f"{prefix}: unknown Ripeness '{row.ripeness}'",
-                    f"Use one of: {', '.join(sorted(VALID_RIPENESS))}",
-                )
-            )
-        return issues
-
-    combined = f"{row.item} {row.reason}"
-    weak = bool(WEAK_DEFERRAL.search(combined))
-    legit = bool(LEGITIMATE_RIPENESS.search(combined))
-    if weak and not legit:
-        issues.append(
-            AdjudicationIssue(
-                "deferral-weak-ripeness",
-                f"{prefix}: convenience deferral ({row.item[:60]}...) — car-apart default is in-PR",
-                "Add Ripeness column (blocked-by + ticket) or move to Deferrals rejected",
-            )
-        )
-    elif not legit and re.search(r"(?i)out of (ac|scope)", combined):
-        issues.append(
-            AdjudicationIssue(
-                "deferral-out-of-ac-without-ripeness",
-                f"{prefix}: 'out of AC/scope' without ripeness — prove different epic/layer or blocked-by",
-                "Ship in-PR via /spec-driven or set Ripeness to different-epic/different-layer/blocked-by",
-            )
-        )
+    issues.extend(_ripeness_issues(row, prefix, review_phase=review_phase))
+    if not row.trace:
+        issues.append(AdjudicationIssue(
+            "deferral-missing-trace", f"{prefix}: no `Request trace` cell",
+            f"Write `{NO_TRACE}`, or the line of the request, the A5 report or the plan goal that the item serves"))
+    elif not traces_to_nothing(row.trace):
+        issues.append(AdjudicationIssue(
+            "deferral-core-of-request",
+            f"{prefix}: the item traces to the request ({row.trace[:80]}), so it is core and is not deferred",
+            "Move the row under `## Deferrals rejected` and build the item in this PR"))
+    if not row.evidence:
+        issues.append(AdjudicationIssue(
+            "deferral-missing-evidence", f"{prefix}: no `Evidence` cell for ripeness {row.ripeness or '?'}",
+            "Name what makes the ripeness true: the open blocker, the operator action, or the other epic or layer"))
+    elif row.ripeness == "blocked-by" and not (pat.search(row.evidence) or re.search(r"#\d+|https?://", row.evidence)):
+        issues.append(AdjudicationIssue(
+            "deferral-blocker-unnamed", f"{prefix}: blocked-by names no open ticket or PR in its evidence",
+            "Name the ticket or PR that blocks the item"))
     return issues
+
+
+def _ripeness_issues(row: DeferralRow, prefix: str, *, review_phase: bool) -> list[AdjudicationIssue]:
+    if not row.ripeness:
+        return [AdjudicationIssue("deferral-missing-ripeness", f"{prefix}: no `Ripeness` cell",
+                                  f"Use one of: {', '.join(sorted(VALID_RIPENESS))}, or build the item in this PR")]
+    if row.ripeness in INVALID_RIPENESS:
+        return [AdjudicationIssue(
+            "deferral-invalid-ripeness",
+            f"{prefix}: Ripeness '{row.ripeness}' is not allowed — use blocked-by, "
+            "prod-mutation, different-epic, different-layer, or fleet-ops",
+            "Ship in-PR or document blocked-by with landing dependency ticket")]
+    if row.ripeness not in VALID_RIPENESS:
+        return [AdjudicationIssue("deferral-unknown-ripeness", f"{prefix}: unknown Ripeness '{row.ripeness}'",
+                                  f"Use one of: {', '.join(sorted(VALID_RIPENESS))}")]
+    if review_phase and row.ripeness not in REVIEW_RIPENESS:
+        return [AdjudicationIssue(
+            "review-deferral-not-ripe",
+            f"{prefix}: a review finding with ripeness '{row.ripeness}' is fixed in this PR",
+            f"In review only {', '.join(sorted(REVIEW_RIPENESS))} defers a finding: send the fix round")]
+    return []
 
 
 def adjudicate_deferral_register(text: str) -> AdjudicationResult:
@@ -278,6 +291,104 @@ def adjudicate_deferral_register(text: str) -> AdjudicationResult:
     )
 
 
+def review_path(register: Path) -> Path:
+    """The /deferral-review ruling of a register: `<task>_deferral-review.md` beside it."""
+    return register.with_name(register.name.replace("_deferral-register.md", "_deferral-review.md"))
+
+
+def manifest_path(register: Path) -> Path:
+    """The one input of /deferral-review: `.context/manifests/<task>_deferrals.md`."""
+    return register.parent.parent / "manifests" / register.name.replace("_deferral-register.md", "_deferrals.md")
+
+
+def _rows(text: str) -> dict[str, DeferralRow]:
+    rows = {f"approved {r.number}": r for r in parse_approved_rows(text)}
+    return rows | {f"review {r.number}": r for r in parse_approved_rows(text, review_phase=True)}
+
+
+def write_review_manifest(register: Path, workspace: Path) -> Path:
+    """The documents of the run that the /deferral-review peer rules from, with their sha256."""
+    import hashlib
+
+    from activate_session import _shown, document_table
+    from pipeline_run_binding import current_session
+
+    context, data = register.parent.parent, register.read_bytes()
+    session = current_session(context)
+    task = str(session.get("task_id") or "")
+    lines = [f"# Deferral review manifest: {task}", "", f"Ticket: {task}",
+             f"Pipeline-Run: {session.get('pipeline_run_id') or ''}",
+             f"Register: {_shown(register, context, workspace)}",
+             f"Register sha256: {hashlib.sha256(data).hexdigest()}",
+             f"Rows: {', '.join(_rows(data.decode('utf-8', errors='replace')))}", "",
+             *document_table(context, workspace, session, MANIFEST_GLOBS), "",
+             f"Write the ruling to {_shown(review_path(register), context, workspace)}."]
+    path = manifest_path(register)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def _carried(context: Path, keys: list[str]) -> list[str]:
+    """The AMBER rows that the run's plan does not map under `## Deferral conditions`."""
+    from artifact_requirements import _run_plan, section
+    from pipeline_run_binding import current_session
+
+    plan = _run_plan(context, current_session(context))
+    body = section(plan.read_text(encoding="utf-8", errors="replace"), CONDITIONS_HEADER).lower() if plan else ""
+    return [k for k in keys if k not in body]
+
+
+def ruling_problems(register: Path) -> list[str]:
+    """Why the deferrals of ``register`` lack a GREEN or a carried AMBER of /deferral-review, else [].
+
+    The ruling covers the register as it is now and comes from a peer write on Claude Code."""
+    import hashlib
+
+    import peer_attest
+    from pipeline_run_binding import current_session
+
+    data = register.read_bytes()
+    rows = _rows(data.decode("utf-8", errors="replace"))
+    if not rows:
+        return []
+    review = review_path(register)
+    send = (f"run `deferral_adjudication_check.py` (it writes .context/manifests/{manifest_path(register).name}), "
+            f"then send the peer `/deferral-review .context/manifests/{manifest_path(register).name}`")
+    if not review.is_file():
+        return [f"deferral-review: no ruling of the {len(rows)} deferral rows of {register.name}: {send}"]
+    ruling = review.read_text(encoding="utf-8", errors="replace")
+    pinned = re.search(r"(?im)^\s*Register sha256:\s*([0-9a-f]{12,64})\s*$", ruling)
+    if "RUN_BY_COMMAND: deferral-review" not in ruling or not pinned \
+            or not hashlib.sha256(data).hexdigest().startswith(pinned.group(1).lower()):
+        return [f"deferral-review: {review.name} does not rule on {register.name} as it is now: {send}"]
+    context, session = register.parent.parent, current_session(register.parent.parent)
+    if session.get("host") == "claude" and not peer_attest.attested(
+            context, str(session.get("pipeline_run_id") or ""), review, peer_attest.orchestrator_ids(context)):
+        return [f"deferral-review: {review.name} is not the latest write of a peer: {send}"]
+    _, table = _parse_table(ruling)
+    given = {re.sub(r"\s*#\s*", " ", c[0]).strip().lower(): c + ["", ""] for c in table if c and len(c) >= 2}
+    problems, amber = [], []
+    for key, row in rows.items():
+        verdict, reason, condition = (given[key][1].strip().upper(), given[key][2], given[key][3].strip()) \
+            if key in given else ("", "", "")
+        if verdict not in RULINGS or (verdict == "AMBER" and key.startswith("review")):
+            problems.append(f"deferral-review: {review.name} has no RAG ruling for {key} "
+                            f"(GREEN, AMBER or RED; a review row is GREEN or RED): {send}")
+        elif verdict == "RED":
+            problems.append(f"deferral-red: {key} ({row.item[:60]}): {reason}. It is built in this PR: before E1 "
+                            "send /plan-update, which moves it under `## Deferrals rejected` and plans it; in review "
+                            "it stays a must-fix of the fix round")
+        elif verdict == "AMBER" and condition.lower() in ("", "none"):
+            problems.append(f"deferral-review: {key} is AMBER with no condition: {send}")
+        elif verdict == "AMBER":
+            amber.append(key)
+    problems += [f"deferral-amber: the plan does not carry the condition of {key} ({given[key][3].strip()[:80]}). "
+                 f"Send /plan-update: map {key} under `{CONDITIONS_HEADER}` to the phase that builds it"
+                 for key in _carried(context, amber)]
+    return problems
+
+
 def register_row_problem(context_dir: Path, session: dict | None, ticket: str) -> str | None:
     """Why ``ticket`` cannot defer a finding in review, else None. As P8 requires, the ticket matches the
     adapter pattern, and a deferral register of the run that passes adjudication has a row that names it."""
@@ -291,10 +402,22 @@ def register_row_problem(context_dir: Path, session: dict | None, ticket: str) -
         text = path.read_text(encoding="utf-8", errors="replace")
         rows = parse_approved_rows(text) + parse_approved_rows(text, review_phase=True)
         named = {m.group(0) for row in rows for m in pat.finditer(f"{row.ticket} {row.reason}")}
-        if (scope is None or _in_scope(path, scope)) and ticket.strip() in named and adjudicate_deferral_register(text).ok:
+        if ((scope is None or _in_scope(path, scope)) and ticket.strip() in named
+                and adjudicate_deferral_register(text).ok and not ruling_problems(path)):
             return None
-    return (f"no row of an adjudicated deferral register names {ticket.strip()}. Add the row under `## Review deferrals` "
-            "in .context/deferrals/<task>_deferral-register.md (references/deferral-framework.md)")
+    return (f"no row of an adjudicated deferral register names {ticket.strip()}, with a GREEN of /deferral-review. "
+            "Add the row under `## Review deferrals` in .context/deferrals/<task>_deferral-register.md, then send "
+            "/deferral-review (references/deferral-framework.md)")
+
+
+def _task_register(context_dir: Path) -> Path | None:
+    """The register of the run's ticket, when it exists."""
+    from pipeline_run_binding import current_session
+
+    task_id = str(current_session(context_dir).get("task_id") or "")
+    name = re.sub(r"[/\\]", "-", task_id)  # no backslash in an f-string expression before Python 3.12
+    path = context_dir / "deferrals" / f"{name}_deferral-register.md"
+    return path if task_id and path.is_file() else None
 
 
 def write_zero_register(context_dir: Path) -> Path | None:
@@ -309,7 +432,8 @@ def write_zero_register(context_dir: Path) -> Path | None:
     task_id = str(session.get("task_id") or "")
     if not task_id:
         return None
-    path = context_dir / "deferrals" / f"{re.sub(r'[/\\]', '-', task_id)}_deferral-register.md"
+    name = re.sub(r"[/\\]", "-", task_id)  # no backslash in an f-string expression before Python 3.12
+    path = context_dir / "deferrals" / f"{name}_deferral-register.md"
     if path.exists():
         return None
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -340,6 +464,10 @@ def main() -> int:
         errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
         if errors and not args.check and write_zero_register(context) is not None:
             errors = require_artifact(context, **DEFERRAL_REGISTER, scope=ticket_scope(context))
+        register = _task_register(context)
+        if not args.check and register is not None and any("deferral-review:" in e for e in errors):
+            print(f"NEXT: send the peer `/deferral-review .context/manifests/"
+                  f"{write_review_manifest(register, Path.cwd()).name}`")
         return fail("deferral-register", errors) if errors else ok("deferral-register")
     try:
         text = Path(args.path).read_text(encoding="utf-8")

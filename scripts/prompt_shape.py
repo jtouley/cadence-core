@@ -49,6 +49,7 @@ LEAN_STAGES = frozenset(
         "spec-driven",
         "commit-push-pr",
         "session-summary",
+        "deferral-review",
     }
 )
 
@@ -64,6 +65,7 @@ SLASH_TO_STAGE = {
     "/spec-driven": "spec-driven",
     "/commit-push-pr": "commit-push-pr",
     "/session-summary": "session-summary",
+    "/deferral-review": "deferral-review",
 }
 
 # Peer commands with no stages.json row. R4 runs /pr-review-update as a
@@ -73,12 +75,16 @@ SLASH_TO_STAGE = {
 # A review fix round runs /spec-driven --fix on the PR review between R1 and R4.
 # Its longer command wins over the E1 row, so the hook does not render it as E1.
 # At R7, /session-summary reads the run's manifest and writes the summary.
+# Before E1 and in review, /deferral-review rules GREEN, AMBER or RED on each deferral from the manifest
+# that P8 writes.
 EXTRA_PEER_ROWS = ({"slug": "pr-review-update", "block": "R4", "command": "/pr-review-update",
                     "inputs": ["pr-number"]},
                    {"slug": "review-fix", "block": "RF", "command": "/spec-driven --fix",
                     "inputs": ["pr-review"]},
                    {"slug": "session-summary", "block": "R7", "command": "/session-summary",
-                    "inputs": ["manifest"]})
+                    "inputs": ["manifest"]},
+                   {"slug": "deferral-review", "block": "DR", "command": "/deferral-review",
+                    "inputs": ["deferral-manifest"]})
 
 # A Claude Code plugin install lists the peers as /cadence:<name>. Only Cadence's
 # own prefix is stripped: /other:plan-review is not a Cadence peer call.
@@ -109,6 +115,7 @@ _PATTERNS: dict[str, re.Pattern[str]] = {
     "spec-driven": re.compile(r"^/spec-driven(\s+--fix)?(\s+\S+)?\s*$"),
     "commit-push-pr": re.compile(r"^/commit-push-pr(\s+--draft)?\s*$"),
     "session-summary": re.compile(r"^/session-summary\s+\S+\s*$"),
+    "deferral-review": re.compile(r"^/deferral-review\s+\S+\s*$"),
 }
 
 

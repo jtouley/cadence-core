@@ -1,0 +1,63 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "feat-local-4-csv-export",
+  "mode": "plan",
+  "Tracker": "none",
+  "Ticket": "TICKET_SKIPPED (none: no tracker declared)",
+  "plan_path": ".context/plans/feat-local-4-csv-export.plan.md",
+  "plan_sha256": "4da0a1d5c053dfe6a9bd415ddf83ad88f9175a6e97a83865347613aa90d85657",
+  "scope_measured": ["## Phases (test spec per phase)", "## Reuse and extension", "## Assumptions (settled-by tests)"],
+  "mutants_run": false,
+  "mutants_note": "Plan mode runs no scripts. No mutant was run. No kill rate is given.",
+  "verdict": "FAIL",
+  "scores": {
+    "coverage_of_behavior": 8,
+    "assertion_strength": 6,
+    "dry": 7,
+    "layer": 8,
+    "failure_paths": 7,
+    "mutation_resilience": 6,
+    "mean": 7.0
+  },
+  "fail_reasons": [
+    "assertion_strength 6 is below the floor of 7 (must-fix)."
+  ],
+  "findings": [
+    {
+      "id": "feat-local-4-csv-export-P7-F01",
+      "severity": "must-fix",
+      "check": "assertions",
+      "evidence": "Phase 3 (plan line 152) tests `export --out FILE` only by its stdout line `wrote 2 rows to FILE`. No test reads the file. A mutant that writes no bytes passes. Add a test that reads FILE and compares it with the header and the two rows in CRLF form."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F02",
+      "severity": "must-fix",
+      "check": "assertions",
+      "evidence": "Phase 3 (plan lines 149 and 150) names the stdout content in prose only: `prints the header and the October rows`. The spec does not name the exact expected text or line ends. Phase 4 (plan line 171) checks the smoke output `by eye`. Name the exact expected stdout for the October case and the all-rows case, and assert equality in the test."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F03",
+      "severity": "must-fix",
+      "check": "failure_paths",
+      "evidence": "Assumption G-8 (plan line 95) says argparse errors for unknown options keep argparse text, and says `Phase 3 tests` settle it. No Phase 3 test in plan lines 149 to 155 or 205 to 255 covers an unknown option. The logged assumption names a test that the spec does not define. Add one test for an unknown option, or change the settled-by column."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F04",
+      "severity": "note",
+      "check": "mutation_resilience",
+      "evidence": "Plan line 211 requires that a wrong month never reads the ledger. No test asserts this order. A mutant that reads the ledger first passes the spec. Add a case where the ledger file is malformed and the month is invalid, and expect the month error."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F05",
+      "severity": "note",
+      "check": "dry",
+      "evidence": "Plan lines 207, 251 and 252 define three tests with the same assertion shape: stderr `error: cannot read ledger`, no Traceback, return 2. Each differs only in the ledger content. Prefer one parametrize table of bad ledger contents, as the plan does for the exception classes."
+    },
+    {
+      "id": "feat-local-4-csv-export-P7-F06",
+      "severity": "note",
+      "check": "dry",
+      "evidence": "Plan line 80 adds `Ledger.expenses(month)` as a filter that parallels `total_by_category`. Both methods repeat a filter-and-sort structure. The Reuse section does not name a shared helper. This matches the review note core:dry-extension. It does not change the verdict."
+    }
+  ]
+}

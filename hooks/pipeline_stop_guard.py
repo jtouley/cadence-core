@@ -41,10 +41,10 @@ sys.path.insert(0, str(SKILL_ROOT / "shared" / "scripts"))
 
 try:
     from artifact_requirements import (
-        plan_review_cycle_limit,
         adversarial_route,
         check_plan_review_verdict,
         entry_invariant_matches,
+        plan_review_cycle_limit,
         plan_review_cycles,
         select_plan_review,
     )
@@ -715,6 +715,15 @@ def _plan_loop_limit(context_dir: Path, session: dict | None, open_block: dict |
             "detail": limit[0]}, None
 
 
+def _plan_round(context_dir: Path, session: dict, open_block: dict | None) -> dict | None:
+    """Before execution, the next step of an open plan review round (plan_wave.route), else None."""
+    if open_block is not None and open_block.get("phase") in EXECUTION_REVIEW_PHASES:
+        return None
+    from plan_wave import route
+
+    return route(context_dir, session)
+
+
 def _p6_route(context_dir: Path, session: dict, open_block: dict | None,
               plan_verdict: str | None) -> tuple[dict | None, str | None]:
     """Before execution, a blocking P6 verdict names the next step of the P6 loop."""
@@ -742,10 +751,15 @@ def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corr
         session = {**session, "stop_refusals": 0}
     # Every evidence read uses the judged run.
     plan_verdict = latest_plan_verdict(context_dir, session) if session and not corrupt else None
-    open_block, plan_verdict = _plan_loop_limit(context_dir, session, open_block, plan_verdict)
+    wave = _plan_round(context_dir, session, open_block) if live and not unknown else None
+    if wave is not None:  # an open plan review round names its next step
+        open_block, plan_verdict = wave, None
+    if wave is None:
+        open_block, plan_verdict = _plan_loop_limit(context_dir, session, open_block, plan_verdict)
     p3_holds = plan_verdict in BLOCKING_PLAN_VERDICTS or (open_block or {}).get("slug") == "plan-update"
     # With the spec-review pack off, a P6 report does not hold a stop.
-    if live and not unknown and not p3_holds and "adversarial-review" in stage_slugs(SKILL_ROOT, workspace):
+    p6_on = "adversarial-review" in stage_slugs(SKILL_ROOT, workspace)
+    if live and not unknown and not p3_holds and wave is None and p6_on:
         open_block, plan_verdict = _p6_route(context_dir, session, open_block, plan_verdict)
     decision, message = decide(
         session,
@@ -757,22 +771,49 @@ def _judge_one(session: dict | None, context_dir: Path, workspace: Path, *, corr
     return decision, message, here, session
 
 
+def round_stages(skill_root: Path, workspace: Path | None) -> dict[str, str]:
+    """{block: slug} of each peer of the plan review round, from stages.json."""
+    from load_stages import is_peer, round_members
+
+    return {row["block"]: row["slug"] for row in round_members("plan", skill_root, workspace) if is_peer(row)}
+
+
 def e1_peer_hold(payload: dict, agent: str, repeat: bool) -> str | None:
-    """The E1 peer's stop is held once while a plan phase has no commit."""
+    """A peer's stop is held once while its work is open: the E1 peer while a plan phase has no commit, a plan reviewer of an open round until it records `done`."""
     try:
         prompt = None if repeat else peer_return.first_prompt(payload.get("agent_transcript_path"))
-        if prompt is None or block_for_prompt(prompt, SKILL_ROOT) != "E1":
+        block = block_for_prompt(prompt, SKILL_ROOT) if prompt is not None else None
+        stages = round_stages(SKILL_ROOT, Path(payload.get("cwd") or _project_dir())) if block != "E1" else {}
+        if block != "E1" and block not in stages:
             return None
         started = {run_id for _ctx, run_id in _started_runs(payload, agent)}
         project = _project_dir()
         contexts = list(dict.fromkeys(canonical_context_dir(c) for c in (Path(payload.get("cwd") or project), project)))
         for session, ctx, ws, _path in _by_worktree_runs(contexts):
-            if str(session.get("pipeline_run_id") or "") in started:
-                row = with_next_phase({}, ctx, ws, session, worker=True)
-                return f"BLOCKED: {row['continue']}" if row.get("continue") else None
+            if str(session.get("pipeline_run_id") or "") not in started:
+                continue
+            if block in stages:
+                return _round_hold(ctx, session, stages[block])
+            row = with_next_phase({}, ctx, ws, session, worker=True)
+            return f"BLOCKED: {row['continue']}" if row.get("continue") else None
     except Exception:  # noqa: BLE001 - as for the lean return: a check that cannot run does not hold
         return None
     return None
+
+
+def _round_hold(context_dir: Path, session: dict, stage: str) -> str | None:
+    """The hold text while `stage` is due in the open round and has not recorded `done`, else None."""
+    from plan_wave import Round
+
+    rnd = Round(context_dir, session)
+    rounds = rnd.rounds()
+    current = rounds[-1] if rounds else None
+    if current is None or current["plan_sha256"] != rnd.sha or stage not in current["due"] or stage in current["done"]:
+        return None
+    script = SKILL_ROOT / "scripts" / "plan_wave.py"
+    return (f"BLOCKED: record each finding of your report with plan_wave.py add: `python3 \"{script}\" add "
+            f"--stage {stage} --json '{{...}}'`, then `python3 \"{script}\" done --stage {stage}` "
+            "(references/plan-review-round.md). Then return your one line.")
 
 
 def _peer_stop(host: str, payload: dict, agent: str | None, repeat: bool) -> tuple[bool, str | None]:

@@ -49,6 +49,60 @@ def parse_phases(plan_text: str) -> list[tuple[int, str]]:
     return sorted(seen.items())
 
 
+_GLOBAL = ("global", "all", "plan", "whole plan", "overall", "general")
+_PHASE_WORDS = re.compile(r"(?:phases?|p|and|to|through|[\s,&/+\-–—])*")
+
+
+def phase_keys(raw: str) -> list[str]:
+    """The sections that a finding names: `["global"]`, or each `Phase N`. A reviewer writes them in its own
+    words (as plans write them: `Phase 2`, `phase 2`, `P2`, `Phases 1 to 4`, `Phase 1 and Phase 3`); [] when the text
+    names no section, such as a location (`Assumptions row G-1`)."""
+    text = raw.strip().lower()
+    if text in _GLOBAL:
+        return ["global"]
+    if not re.search(r"\d", text) or not _PHASE_WORDS.fullmatch(re.sub(r"\d+", "", text)):
+        return []
+    numbers: set[int] = {int(n) for n in re.findall(r"\d+", text)}
+    for low, high in re.findall(r"(\d+)\s*(?:-|–|—|to|through)\s*(?:phase\s*|p)?(\d+)", text):
+        numbers |= set(range(int(low), int(high) + 1))
+    return [f"Phase {n}" for n in sorted(numbers) if n > 0]
+
+
+def phase_key(raw: str) -> str | None:
+    """The one section that ``raw`` names, else None."""
+    keys = phase_keys(raw)
+    return keys[0] if len(keys) == 1 else None
+
+
+# The sections that P4 writes for its answer, not for the build: P4 may always change them.
+RECORD_HEADER = re.compile(r"^#{2,3}\s+(?:Revision ledger|Carried |Deferral conditions|Plan update)", re.I)
+
+
+PROVENANCE = re.compile(r"^\s*[*_`]*RUN_BY_(?:COMMAND|SKILL|SCRIPT):")
+
+
+def phase_sections(plan_text: str) -> dict[str, str]:
+    """The plan by section: each `Phase N` from its header to the next heading of its level or higher,
+    `record` (the ledger and carried sections), and `global`, the rest. A plan finding names `global` or
+    `Phase N`, and P4 may change only the named ones and `record`. A provenance line (`RUN_BY_COMMAND:
+    plan-update`) is in no section: P4 writes its marker, and that is not a change of the plan."""
+    sections: dict[str, list[str]] = {"global": []}
+    key, level = "global", 0
+    for line in plan_text.splitlines(keepends=True):
+        if PROVENANCE.match(line):
+            continue
+        head = re.match(r"(#{1,6})\s", line)
+        phase = PHASE_HEADER.match(line.rstrip("\n"))
+        if phase:
+            key, level = f"Phase {int(phase.group(1))}", len(head.group(1)) if head else 3
+        elif head and RECORD_HEADER.match(line):
+            key, level = "record", len(head.group(1))
+        elif head and key != "global" and len(head.group(1)) <= level:
+            key = "global"
+        sections.setdefault(key, []).append(line)
+    return {k: "".join(v) for k, v in sections.items()}
+
+
 def resolve_base(worktree: Path, session: dict) -> str | None:
     """The session's base, else the first ref in BASE_CHAIN that resolves.
 

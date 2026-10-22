@@ -1,0 +1,53 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "feat-local-4-csv-export",
+  "mode": "plan",
+  "plan": ".context/plans/feat-local-4-csv-export.plan.md",
+  "plan_sha256": "6b1f3b800cb212ecfe74d298acb9ec27331630a5fdd324173817f1da007c4727",
+  "packet_sha256": "11afe638e4cd476a033829d557d38812fb93e0bc20d4f5a9093ec70dab775f1d",
+  "supersedes_scorecard_for_plan_sha": "aca709401d00287ab78f9546e6271348257cdc1fbfe2b3c5232484596f53c92b",
+  "scores": {
+    "coverage": 9,
+    "assertions": 8,
+    "dry": 8,
+    "layer": 8,
+    "failure_paths": 9,
+    "mutation_resilience": 8
+  },
+  "mean": 8.33,
+  "floor": 7,
+  "mutants": "not run. Plan mode runs no scripts. No kill rate is claimed. The mutation score is a reading of the spec.",
+  "dry_measurement": "not applicable in plan mode. No test code exists yet, so scripts/test_shape.py was not run.",
+  "coverage_map": {
+    "S1": "Phase 2, same-day and order tests",
+    "S2": "Phase 3, quoting table",
+    "S3": "Phase 2 and Phase 4, no-month export",
+    "S4": "Phase 4, --out row count",
+    "S5": "Phase 1, invalid-month table",
+    "S6": "Phase 5, missing ledger",
+    "S7": "Phase 4, missing directory",
+    "S8": "Phase 4, existing file replaced",
+    "S9": "Phase 3, amount table"
+  },
+  "prior_findings_closed": {
+    "TB-F07": "Phase 4 test_out_that_names_the_ledger_is_refused calls monkeypatch.chdir(tmp_path). Verified in the plan text.",
+    "TB-F08": "Phase 4 test_failed_replace_keeps_old_file uses monkeypatch.setattr on os.replace. Verified in the plan text."
+  },
+  "findings": [
+    {
+      "id": "TB-F09",
+      "severity": "nit",
+      "check": "assertions",
+      "phase": "Phase 1",
+      "evidence": "The invalid-month rows assert error: on stderr and exit 2. The spec does not name how the no-traceback rule is asserted. Name the check, for example that the word Traceback is absent from stderr. Carried from the prior scorecard. Not a must-fix."
+    },
+    {
+      "id": "TB-F10",
+      "severity": "nit",
+      "check": "layer",
+      "phase": "Phase 2",
+      "evidence": "Ledger.expenses is tested only through the CLI in tests/test_export.py. Name one direct test in tests/test_ledger.py, or state that the CLI tests cover the method on purpose. Carried from the prior scorecard. Not a must-fix."
+    }
+  ],
+  "verdict": "PASS"
+}

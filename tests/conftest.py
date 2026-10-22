@@ -12,6 +12,11 @@ from pathlib import Path
 
 import pytest
 
+# A plugin session writes CADENCE_HOME to the shell (hooks/session_start.py). Modules such as load_stages read
+# it at import, before any fixture runs, so the suite drops it here; a test that needs a root sets it.
+for _key in ("CADENCE_HOME", "CADENCE_SKILL_ROOT"):
+    os.environ.pop(_key, None)
+
 # The golden corpus holds sample repos with their own tests/ and conftest.py.
 # They are data for the measures, not tests of this repo.
 collect_ignore_glob = ["fixtures/golden/*"]
@@ -51,7 +56,8 @@ def _hermetic_git(monkeypatch):
     """
     for key, value in _GIT_ISOLATION.items():
         monkeypatch.setenv(key, value)
-    for key in ("CLAUDECODE", "CURSOR_PROJECT_DIR", "CLAUDE_PROJECT_DIR", "CADENCE_BASE_REF"):
+    for key in ("CLAUDECODE", "CURSOR_PROJECT_DIR", "CLAUDE_PROJECT_DIR", "CADENCE_BASE_REF", "TYPESAFE_API_KEY",
+                "TYPESAFE_API_URL"):  # Jev answers only in a test that sets them (test_verdict_judge.py)
         monkeypatch.delenv(key, raising=False)
     # The env layer of the config (scripts/cadence_config.py): no developer setting reaches a test.
     for key in [k for k in os.environ if k.startswith("CADENCE_") and k not in ("CADENCE_HOME", "CADENCE_SKILL_ROOT")]:
@@ -552,7 +558,8 @@ def peer_summary(workspace: Path) -> Path:
 
     session = session_store.load_worktree_session(workspace) or read_session(workspace)
     ctx = context_dir(workspace)
-    rel = f"summaries/{_re.sub(r'[\\/]', '-', str(session['task_id']))}.md"
+    name = _re.sub(r"[\\/]", "-", str(session["task_id"]))  # no backslash in an f-string expression before 3.12
+    rel = f"summaries/{name}.md"
     body = b"# Session summary\n\nRUN_BY_COMMAND: session-summary\n"
     (ctx / rel).parent.mkdir(parents=True, exist_ok=True)
     (ctx / rel).write_bytes(body)

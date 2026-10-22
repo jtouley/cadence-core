@@ -20,10 +20,12 @@ known task when the cwd has no run.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import re
 import subprocess
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable
@@ -48,6 +50,13 @@ _RUNNER = re.compile(
     r"(?:^|[\s/])(?:pytest|python[0-9.]*|make|tox|nox|npx|ruff|mypy|pyright|tsc|eslint|jest|vitest)(?:\s|$)"
     r"|\b(?:uv\s+run|(?:npm|pnpm|yarn|bun)\s+(?:test|run)|cargo\s+\w+|go\s+(?:test|vet))\b"
     r"|(?:^|\s)\./\S|(?:^|[\s/])scripts/\S")
+# inline interpreter code (`python3 -c pass`, `node -e 1`, `sh -c '...'`) is not a runner.
+# Per interpreter: the short flags that take inline code, the short flags that take a value, the short
+# flags that end the options (`python -m`), and the long flags of inline code.
+_INLINE_FLAGS = {"python": ("c", "WX", "m", ()), "node": ("ep", "r", "", ("--eval", "--print")),
+                 "perl": ("eE", "", "", ()), "ruby": ("e", "", "", ()), "sh": ("c", "", "", ()),
+                 "bash": ("c", "", "", ()), "zsh": ("c", "", "", ()), "npx": ("c", "p", "", ("--call",))}
+_WRAPPER = re.compile(r"^(?:uv run|npx|env|command|exec|time)(?:\s+-\S+)*\s+")
 _SHA = re.compile(r"^[0-9a-fA-F]{7,40}$")
 # Only `set-status --human --by <name>` writes these fields.
 HUMAN_FIELDS = ("human_confirmed", "confirmed_by", "confirmed_at")
@@ -66,16 +75,37 @@ def check_problem(check: object) -> str | None:
         return None
     if not text or text.split()[-1] == "--":
         return f"check {text!r} is empty: name the test or the script that proves the fix"
+    runs = False
     for segment in _SEGMENTS.split(text):
         words = [w for w in segment.split() if not _ASSIGNMENT.match(w)]
-        if words and words[0].rsplit("/", 1)[-1] in NO_OP_COMMANDS:
-            return f"check {text!r} is a shell no-op ({words[0]}): name the test or the script that proves the fix"
+        bare = _WRAPPER.sub("", " ".join(words)).split()  # `uv run true` is `true`
+        if bare and bare[0].rsplit("/", 1)[-1] in NO_OP_COMMANDS:
+            return f"check {text!r} is a shell no-op ({bare[0]}): name the test or the script that proves the fix"
         skill_path = next((w for w in words if _is_skill_script(w)), None)
         if skill_path:
             return f"check {text!r} names {skill_path}, a Cadence script not in this repository: write $CADENCE_HOME/{skill_path}"
-    if not _RUNNER.search(text):
-        return f"check {text!r} names no test runner or script path ({RUNNERS})"
+        runs = runs or bool(_RUNNER.search(segment) and not _inline(words))
+    if not runs:
+        return f"check {text!r} names no test runner or script path ({RUNNERS}; inline -c or -e code is not one)"
+    placeholder = next((w for w in text.split() if _PLACEHOLDER.search(w)), None)
+    if placeholder:
+        return (f"check {text!r} names a placeholder ({placeholder}): write the real path of the test or the script "
+                "(a run wrote SCRATCH/r2_f04_check.py)")
     return _shell_problem(text)
+
+
+# `<path>`, or a first path part in capitals such as `SCRATCH/x.py`: a name to fill in, never a real path.
+_PLACEHOLDER = re.compile(r"<[^<>\s]+>|^['\"]?[A-Z][A-Z_]{2,}/")
+_SCRIPT_WORD = re.compile(r"^[\w./-]+\.(?:py|sh)$")
+
+
+def missing_script(check: object, cwd: Path) -> str | None:
+    """The first script path of ``check`` that is not a file under ``cwd``, else None."""
+    for word in str(check or "").split():
+        word = word.strip("'\"")
+        if _SCRIPT_WORD.match(word) and not word.startswith("$") and not (Path(cwd) / word).is_file():
+            return word
+    return None
 
 
 def _shell_problem(text: str) -> str | None:
@@ -83,6 +113,31 @@ def _shell_problem(text: str) -> str | None:
     proc = subprocess.run(["sh", "-n", "-c", text], capture_output=True, text=True)
     return None if proc.returncode == 0 else (f"check {text!r} is not valid shell ({proc.stderr.strip() or 'sh -n'}): "
                                               "write only the command; put the reason in evidence")
+
+
+def _inline(words: list[str]) -> bool:
+    """A word of ``words`` runs an interpreter on inline code: `-c`, `-Ic`, `-cpass`, `-X dev -c`, `--eval`."""
+    for i, word in enumerate(words):
+        flags = _INLINE_FLAGS.get(re.sub(r"[0-9.]+$", "", word.rsplit("/", 1)[-1]))
+        if flags is None:
+            continue
+        code, valued, ends, long = flags
+        rest = iter(words[i + 1:])
+        for opt in rest:
+            if not opt.startswith("-") or opt == "-" or opt[1:2] in tuple(ends):
+                break
+            if opt.split("=", 1)[0] in long:
+                return True
+            if opt.startswith("--"):
+                continue
+            for n, char in enumerate(opt[1:], 1):
+                if char in code:
+                    return True
+                if char in valued:
+                    if n == len(opt) - 1:
+                        next(rest, None)  # the value is the next word
+                    break
+    return False
 
 
 def validate_write(record: dict[str, Any]) -> dict[str, Any]:
@@ -231,8 +286,7 @@ def append_finding(path: Path, record: dict[str, Any]) -> dict[str, Any]:
     validated = validate_write(validate_finding(record, allow_verified=False))
     if any(k in validated for k in HUMAN_FIELDS):
         raise FindingsValidationError(f"{validated['id']}: only set-status --human --by <name> writes {list(HUMAN_FIELDS)}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as fh:
+    with ledger_lock(path), path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(validated, ensure_ascii=False) + "\n")
     return validated
 
@@ -252,13 +306,23 @@ def load_findings(path: Path) -> list[dict[str, Any]]:
     return out
 
 
-def rewrite_findings(path: Path, records: Iterable[dict[str, Any]]) -> None:
+@contextmanager
+def ledger_lock(path: Path):
+    """One writer of a ledger at a time: peers of a review round run in parallel."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    with path.with_name(path.name + ".lock").open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        yield
+
+
+def rewrite_findings(path: Path, records: Iterable[dict[str, Any]]) -> None:
     lines = []
     for row in records:
         validated = validate_finding(row, allow_verified=True)
         lines.append(json.dumps(validated, ensure_ascii=False))
-    path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    tmp.replace(path)
 
 
 def ledger_must_fix_ids(context_dir: Path) -> set[str]:
@@ -284,27 +348,56 @@ def set_status(path: Path, finding_id: str, status: str, *, ticket: str | None =
             f"status {status!r} not settable here (allowed: {sorted(STATUSES_WRITABLE)}); "
             "verified comes only from ledger_verify.py"
         )
-    rows = load_findings(path)
-    hits = [r for r in rows if r["id"] == finding_id]
-    # Byte-identical duplicates are one finding appended twice; they change together.
-    if not hits or any(h != hits[0] for h in hits):
-        raise FindingsValidationError(f"{finding_id}: {len(hits)} matching findings in {path}")
-    row = hits[0]
-    if row["status"] == "verified":
-        raise FindingsValidationError(f"{finding_id} is verified; it cannot be reopened or changed here")
-    if status in ("deferred", "spec_gap") and not (ticket or row.get("ticket")):
-        raise FindingsValidationError(f"status={status} requires --ticket")
-    changes = {"status": status, **({"ticket": ticket} if ticket else {}), **({"note": note} if note else {})}
-    if fixed_in:
-        changes["fixed_in"] = commit_on_branch(fixed_in, cwd)
-    if confirmed_by is not None:
-        changes.update(_human_stamp(row, confirmed_by))
-    for hit in hits:
-        hit.update(changes)
-        validate_finding(hit, allow_verified=False)
-        if status == "fixed":
-            validate_write(hit)
-    rewrite_findings(path, rows)
+    with ledger_lock(path):
+        rows = load_findings(path)
+        hits = [r for r in rows if r["id"] == finding_id]
+        # Byte-identical duplicates are one finding appended twice; they change together.
+        if not hits or any(h != hits[0] for h in hits):
+            raise FindingsValidationError(f"{finding_id}: {len(hits)} matching findings in {path}")
+        row = hits[0]
+        if row["status"] == "verified":
+            raise FindingsValidationError(f"{finding_id} is verified; it cannot be reopened or changed here")
+        if status in ("deferred", "spec_gap") and not (ticket or row.get("ticket")):
+            raise FindingsValidationError(f"status={status} requires --ticket")
+        changes = {"status": status, **({"ticket": ticket} if ticket else {}), **({"note": note} if note else {})}
+        if fixed_in:
+            changes["fixed_in"] = commit_on_branch(fixed_in, cwd)
+        if confirmed_by is not None:
+            changes.update(_human_stamp(row, confirmed_by))
+        for hit in hits:
+            hit.update(changes)
+            validate_finding(hit, allow_verified=False)
+            if status == "fixed":
+                validate_write(hit)
+        rewrite_findings(path, rows)
+    return row
+
+
+def set_check(path: Path, finding_id: str, check: str, *, cwd: Path) -> dict[str, Any]:
+    """Replace the check of a row whose check cannot run: no check could verify the row, and only
+    `append` wrote checks. A check that runs is never replaced, so a fix round cannot weaken one. The old check
+    stays in `check_was` for the next review."""
+    problem = check_problem(check)
+    if problem:
+        raise FindingsValidationError(problem)
+    with ledger_lock(path):
+        rows = load_findings(path)
+        hits = [r for r in rows if r["id"] == finding_id]
+        if not hits or any(h != hits[0] for h in hits):
+            raise FindingsValidationError(f"{finding_id}: {len(hits)} matching findings in {path}")
+        row = hits[0]
+        if row["status"] == "verified":
+            raise FindingsValidationError(f"{finding_id} is verified; its check is not changed")
+        old = row.get("check")
+        broken = check_problem(old) or (f"it names {missing}, which is not a file" if (missing := missing_script(old, cwd))
+                                        else None)
+        if broken is None:
+            raise FindingsValidationError(f"{finding_id}: its check {old!r} can run, so it stays. set-check replaces only "
+                                          "a check that cannot run")
+        for hit in hits:
+            hit.update({"check": check.strip(), "check_was": old})
+            validate_finding(hit, allow_verified=False)
+        rewrite_findings(path, rows)
     return row
 
 
@@ -350,9 +443,10 @@ def _append_owner_problem(ledger: Path, record: Any) -> str | None:
 
 def _deferral_problem(ledger: Path, status: str, ticket: str | None) -> str | None:
     """In review (the cwd's run has a draft-PR record), a deferral on the canonical ledger meets P8.
-    Its ticket matches the adapter pattern, and an adjudicated deferral register has a row that names it."""
+    Its ticket matches the adapter pattern, and an adjudicated deferral register has a row that names it.
+    a `spec_gap` row is a deferral too, with the same row and the same ruling."""
     canonical = _default_ledger()
-    if status != "deferred" or ledger.resolve() != canonical.resolve():
+    if status not in ("deferred", "spec_gap") or ledger.resolve() != canonical.resolve():
         return None
     from artifact_requirements import draft_pr_record
     from deferral_adjudication_check import register_row_problem
@@ -404,12 +498,14 @@ def _append(ledger: Path, raw: str) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Append findings or change their status (never to verified)")
+    # no `--hum` for `--human`, so the shell hook matches the one spelling.
+    parser = argparse.ArgumentParser(description="Append findings or change their status (never to verified)",
+                                     allow_abbrev=False)
     parser.add_argument("--ledger", help="findings jsonl (default: findings.jsonl in the canonical .context)")
     sub = parser.add_subparsers(dest="command", required=True)
     add = sub.add_parser("append", help="append one finding record")
     add.add_argument("--json", required=True, help="the finding as a JSON object")
-    st = sub.add_parser("set-status", help="set a finding to open|fixed|deferred|spec_gap")
+    st = sub.add_parser("set-status", help="set a finding to open|fixed|deferred|spec_gap", allow_abbrev=False)
     st.add_argument("--id", required=True)
     st.add_argument("--status", required=True)
     st.add_argument("--ticket")
@@ -417,11 +513,17 @@ def main(argv: list[str] | None = None) -> int:
     st.add_argument("--fixed-in", help="sha of the commit that holds the fix (required for --status fixed)")
     st.add_argument("--human", action="store_true", help="a person confirms a manual check (with --by)")
     st.add_argument("--by", help="the name of the person who confirms (with --human)")
+    sc = sub.add_parser("set-check", help="replace a check that cannot run (a missing script, a placeholder)",
+                        allow_abbrev=False)
+    sc.add_argument("--id", required=True)
+    sc.add_argument("--check", required=True)
     args = parser.parse_args(argv)
     ledger = Path(args.ledger) if args.ledger else _default_ledger()
     try:
         if args.command == "append":
             row = _append(ledger, args.json)
+        elif args.command == "set-check":
+            row = set_check(ledger, args.id, args.check, cwd=Path.cwd())
         else:
             held = next((r.get("ticket") for r in load_findings(ledger) if r.get("id") == args.id), None)
             problem = _deferral_problem(ledger, args.status, args.ticket or held)

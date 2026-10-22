@@ -44,6 +44,11 @@ def run(context_dir: Path, *, check: bool = False) -> int:
     step = plan_review_step(context_dir)
     if step is not None and step[0] == "P4":
         return fail(SLUG, [step[1]])
+    from plan_wave import plan_update_problems
+
+    answered = plan_update_problems(context_dir)  # the update answers its plan review round
+    if answered:
+        return fail(SLUG, answered)
     if not _reviews_need_update(context_dir):
         if not check:
             write_gate_breadcrumb(

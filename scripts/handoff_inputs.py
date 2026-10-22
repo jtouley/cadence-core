@@ -23,10 +23,11 @@ from load_stages import load_registry
 from phase_ledger import select_plan
 
 KINDS = ("ticket", "plan", "plan-review", "plan-review-previous", "pr-number", "pr-review", "manifest",
-         "request", "vibetest", "plan-benchmark")
+         "request", "vibetest", "plan-benchmark", "deferral-manifest", "deferral-ruling")
 # The request and the vibe-test report are pinned when they exist; A5 is in a pack.
 # A plan scorecard is pinned while it fails, so that P4 applies its findings.
-OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest", "plan-benchmark"})
+# The deferral ruling is pinned when it exists, so that P4 applies its RED and AMBER rows.
+OPTIONAL = frozenset({"plan-review-previous", "request", "vibetest", "plan-benchmark", "deferral-ruling"})
 
 # What a missing kind is, and the stages.json slug of the block that writes it.
 _MISSING = {
@@ -36,6 +37,7 @@ _MISSING = {
     "pr-number": ("draft-PR record of the run with a PR URL in .context/prs/", "draft-pr"),
     "pr-review": ("PR review of the run's PR in .context/prs/reviews/PR_REVIEW_#<N>.md", "pr-review-local"),
     "manifest": ("session manifest in .context/manifests/<task_id>.md", "session-close"),
+    "deferral-manifest": ("deferral review manifest in .context/manifests/<task_id>_deferrals.md", "deferral-register"),
 }
 
 
@@ -75,7 +77,9 @@ def _newest_review(run: Run) -> Path | None:
 
 
 def _plan_review(run: Run) -> Found | None:
-    review = _newest_review(run)
+    from plan_wave import p4_input
+
+    review = p4_input(run.ctx, run.session) or _newest_review(run)  # a round file joins the reviews
     return (["--from-review", _shown(review, run)], review) if review is not None else None
 
 
@@ -94,7 +98,7 @@ def _pr_review(run: Run) -> Found | None:
     """The R1 review of the run's PR, as the fix round's one input."""
     record = artifact_requirements.draft_pr_record(run.ctx, run.session, current_branch(run.workspace))
     number = artifact_requirements.draft_pr_number(record) if record is not None else None
-    review = run.ctx / "prs" / "reviews" / f"PR_REVIEW_#{number}.md" if number is not None else None
+    review = artifact_requirements.pr_review_file(run.ctx, number) if number is not None else None
     return ([_shown(review, run)], review) if review is not None and review.is_file() else None
 
 
@@ -128,6 +132,17 @@ def _plan_benchmark(run: Run) -> Found | None:
     return ([], path) if str(verdict).strip().upper() != "PASS" else None
 
 
+def _deferral_ruling(run: Run) -> Found | None:
+    path = _task_file(run, "deferrals", "_deferral-review.md")
+    return ([], path) if path else None
+
+
+def _deferral_manifest(run: Run) -> Found | None:
+    """The documents that P8 lists for /deferral-review, its one input."""
+    path = _task_file(run, "manifests", "_deferrals.md")
+    return ([_shown(path, run)], path) if path else None
+
+
 def _manifest(run: Run) -> Found | None:
     """The run's session manifest, which `activate_session.py --deactivate` writes."""
     path = _task_file(run, "manifests", ".md")
@@ -138,6 +153,7 @@ _RESOLVERS: dict[str, Callable[[Run], Found | None]] = {
     "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "plan-review-previous": _previous_review,
     "pr-number": _pr_number, "pr-review": _pr_review, "manifest": _manifest,
     "request": _request, "vibetest": _vibetest, "plan-benchmark": _plan_benchmark,
+    "deferral-manifest": _deferral_manifest, "deferral-ruling": _deferral_ruling,
 }
 
 

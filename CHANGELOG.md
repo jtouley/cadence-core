@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- The plan review round. After P1, `plan_wave.py` sends P3, P6 and P7 in one message, runs P5 itself,
+  and joins their findings by plan section in `.context/plan-findings/round-<n>.md`. One `/plan-update`
+  answers every reviewer and edits the plan in place, in the sections that the round names. In a later
+  round only a reviewer that had a must-fix reviews again, and only the sections that the update changed.
+  `REQUEST CHANGES` is a P3 verdict. A reviewer's stop is held until it records `done`.
+- Deferrals are judged. A register row needs a `Request trace` of `none`, a ripeness with its evidence
+  and a follow-up ticket. Work that the request asks for is never deferred. P8 writes a manifest of the
+  run's documents and names the new `/deferral-review` peer, which rules `GREEN`, `AMBER` or `RED` on
+  each row. A `RED` row is built in this PR, and an `AMBER` condition is planned before P9.
+- The review fix loop runs until R4 and R5 pass. `review_fix_rounds` defaults to no cap, and R4 holds
+  only when a fix round changed nothing or at a cap that a layer sets. `--hard-stop retries` is refused
+  while the loop still moves.
+- R5 runs the repository's own checks: `ci_commands` of the resolved config, else `make test`, pytest,
+  `npm test`, `go test ./...` or `cargo test`. A failing check is a must-fix row for the fix round.
+- A verdict in the peer's own words. A gate reads each format that real peers wrote (the corpus in
+  `tests/fixtures/peer_reports`). When `TYPESAFE_API_KEY` is set, Jev judges a verdict that no strict
+  reader takes, and each answer that a run uses goes to `.context/verdict-judgments.jsonl`. Without the
+  key, an unreadable verdict fails closed, as before.
+- A run asks no person. A plan change after P9 is logged in `.context/issues/` and the run goes on
+  with the frozen plan. The last message of a run asks no question.
+- `findings_io.py set-check` replaces a check that cannot run, and keeps the old one in `check_was`.
+  On Claude Code only the peer whose row it is may run it. A check of inline `-c` code is refused.
+- R2 gates on must-fix dimensions and findings with evidence, not on the mean score.
+- The source line budget test is removed.
+
 - A plan finding closes in the plan. P7 fails while the plan scorecard does not pass, as
   R2 does, and names `/plan-update` and then `/test-benchmark plan`. The P4 packet pins the failing
   plan scorecard. The plan benchmark writes no findings ledger row, because the plan freezes at P9

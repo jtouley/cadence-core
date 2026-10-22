@@ -782,7 +782,16 @@ def test_measure_exclude_skips_a_corpus_of_planted_faults_and_names_them(change,
                          layer={"measure_exclude": ["tests/fixtures/golden/"]})
     assert code == 0 and crumb["files"] == 0
     assert crumb["excluded"] == ["tests/fixtures/golden/bad/a.py"]
-    assert "1 changed file(s) under measure_exclude not measured: tests/fixtures/golden/bad/a.py" in capsys.readouterr().out
+    assert "1 changed file(s) under measure_exclude or run state not measured: tests/fixtures/golden/bad/a.py" in capsys.readouterr().out
+
+
+def test_the_runs_own_state_is_not_measured_and_is_named(change, capsys):
+    """The repository did not ignore .context/, so R3 measured a reviewer's repro script there."""
+    code, crumb = change({}, {".context/prs/reviews/repro_MF.py": _branching(16) + COPY + RENAMED,
+                              ".cursor/plans/x.py": _branching(16), "src/a.py": "def f():\n    pass\n"})
+    assert code == 0 and crumb["files"] == 1
+    assert crumb["excluded"] == [".context/prs/reviews/repro_MF.py", ".cursor/plans/x.py"]
+    assert "or run state not measured" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(("arg", "key", "measure", "default"), [

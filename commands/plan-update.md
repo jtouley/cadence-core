@@ -22,10 +22,14 @@ An id in its `## Status of earlier items` table, or in a note, is not open.
 
 ## Rules
 
-- Append-only: keep the prior text. Add a dated update section that records what
-  changed and why. Start it with the heading `## Plan update <YYYY-MM-DD>`.
+- A plan review round file `.context/plan-findings/round-<n>.md` is a review that joins the must-fix
+  rows of each reviewer by section. Follow `references/plan-review-round.md`: change only the
+  sections that it names, and answer each of its ids in its ledger.
+- Keep the plan's header lines as they are: `RUN_BY_COMMAND: plan-create`, `Ticket:`, `Pipeline-Run:`.
+- Edit each section in place: the plan stays one specification, not a base and a list of changes.
+  Change only the sections that the review names. Record what changed and why in the ledger rows.
 - Apply the review's required changes. Do not silently drop a must-fix.
-- End the update section with a `## Revision ledger (review <sha>)` table. `<sha>` is the first 12 characters of the sha256 of the review file you answer. Your packet's `Input:` line for the review shows it. Without a packet, run `sha256sum <review>`. The gate reads the ledger that names the newest review, and no other.
+- Write a `## Revision ledger (review <sha>)` table after the phases. `<sha>` is the first 12 characters of the sha256 of the review file you answer. Your packet's `Input:` line for the review shows it. Without a packet, run `sha256sum <review>`. The gate reads the ledger that names the newest review, and no other.
   Write one row for each open `MF-n` of the review:
 
 ```markdown
@@ -62,16 +66,25 @@ Each cycle writes the review's required contracts into the plan.
 The loop has at most five review cycles (`plan_review_cycles`, default 5; a config layer can only lower it). After the fifth blocking review, this update is the last one.
 Add `## Carried review findings` and map each open `MF-n` to the phase whose test settles it. Do not request another review.
 At the limit, the gate reads `## Carried review findings`, not the ledger. Write the ledger of this update too.
+When the round file has adversarial rows, also add `## Carried adversarial findings (<report file> @ <first 12 characters
+of its sha256>)` and map each open `B-n` and `C-n` to its phase. `plan_wave.py` and P9 name the exact heading.
 `NOT READY` after the fifth review: the orchestrator runs `activate_session.py --hard-stop retries --reason "..."`.
 Do not ask the user to allow another cycle.
 
 ## Decisions and deferrals
 
 - When a review asks for a decision record, write it as step 5 of `commands/plan-create.md` says.
-- When a review proposes a deferral, take it only with a follow-up ticket and a ripeness
-  (`references/deferral-framework.md`). Add its row under `## Approved deferrals` in
-  `.context/deferrals/<task_id>_deferral-register.md`, and write the register with that heading
-  when it does not exist. Add a deferral that you reject under `## Deferrals rejected`.
+- When a review or the request proposes a deferral, take it only when it meets each criterion of
+  `references/deferral-framework.md`: the request does not ask for it (`Request trace` is `none`),
+  a code change in this PR cannot do it, and the ripeness has its evidence and a follow-up ticket.
+  Add its row under `## Approved deferrals` in `.context/deferrals/<task_id>_deferral-register.md`,
+  and write the register with that heading when it does not exist. Add a deferral that you reject
+  under `## Deferrals rejected`, and plan its work. The `/deferral-review` peer then rules on each row.
+- When the packet pins a `/deferral-review` ruling (`.context/deferrals/<task_id>_deferral-review.md`):
+  - `RED`: move the row under `## Deferrals rejected` in the register, and plan its work in a phase.
+  - `AMBER`: keep the row. Add a `## Deferral conditions` section to the plan, with one line for each
+    `AMBER` row: `- approved <#>: <the condition> (Phase N)`. Plan the condition in that phase.
+  - `GREEN`: change nothing.
 - P8 writes the register itself only when no deferral was proposed. The orchestrator writes none.
 - Keep the `## Assumptions` row of each `G-n` of the vibe-test report in the register. When a
   review disputes an assumption, change its row and the phase that settles it.

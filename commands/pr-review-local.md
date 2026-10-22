@@ -49,6 +49,13 @@ Use `findings_io.py`, as R2 does for its scorecard findings:
 python3 "$CADENCE_HOME/scripts/findings_io.py" append --json '{"id": "MF-1", "stage": "pr-review-local", "rule_ref": "core:x", "class": "bug", "severity": "must-fix", "location": "src/a.py:10", "evidence": "...", "check": "uv run pytest tests/test_a.py -q", "status": "open"}'
 ```
 
+The `check` of a row proves that the defect is gone, and passes for each way to remove it. Test the outcome
+that the finding asks for (the ledger file is the same after the command), not one design (the command exits 0).
+When R5 says that the check of one of your rows names a file that does not exist, replace it with
+`findings_io.py set-check --id <id> --check "<command>"`. It replaces only a check that cannot run.
+R5 runs each check at HEAD, and no fix round can change it: a run stopped at R5 on a check that wanted the
+command to pass, after a fix that refused the command with exit 2.
+
 `pr_review_local_gate.py` fails while an `MF-n` of the review has no ledger row. It also fails when the verdict is
 `NO MERGE` and the ledger has no `<task prefix>-<run>-MF-<n>` row of this run. R4 and R5 read only the ledger.
 

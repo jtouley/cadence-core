@@ -61,6 +61,16 @@ def draft_pr_record(context_dir: Path, session: dict | None, branch: str | None)
     return legacy if found and found.group(1) == branch else None
 
 
+def pr_review_file(context_dir: Path, number: int) -> Path:
+    """The R1 review of PR ``number``: `PR_REVIEW_#<n>.md`, or `PR_REVIEW_<n>.md` when only that one exists.
+
+    A live run's R1 peer wrote `PR_REVIEW_1.md` three times, and every reader looked only for the `#` name."""
+    reviews = Path(context_dir) / "prs" / "reviews"
+    named = reviews / f"PR_REVIEW_#{number}.md"
+    plain = reviews / f"PR_REVIEW_{number}.md"
+    return plain if plain.is_file() and not named.is_file() else named
+
+
 def draft_pr_number(record: Path) -> int | None:
     """The PR number of the first PR URL in a draft-PR record, else None."""
     try:
@@ -78,7 +88,9 @@ _VERDICT_RE = re.compile(
 _BARE_VERDICT_RE = re.compile(
     r"^\s*(READY TO EXECUTE|READY WITH CHANGES|NOT READY)\s*$", re.M
 )
-BLOCKING_PLAN_VERDICTS = frozenset({"READY WITH CHANGES", "NOT READY"})
+BLOCKING_PLAN_VERDICTS = frozenset({"READY WITH CHANGES", "NOT READY", "REQUEST CHANGES"})
+# The P3 verdicts that the skills offer. REQUEST CHANGES is a blocking verdict, as READY WITH CHANGES is.
+PLAN_VERDICTS = ("READY TO EXECUTE", *sorted(BLOCKING_PLAN_VERDICTS))
 # references/review-rigor.md: the `## <section>` headings every R1 review carries.
 REVIEW_RIGOR_SECTIONS = (
     "Reproductions",
@@ -360,12 +372,15 @@ def require_sections(sections: tuple[str, ...]) -> Callable[[Path], list[str]]:
 
 
 def verdict_in_text(text: str) -> str | None:
-    """Last labeled or bare verdict line. Bold and backticks are already stripped."""
-    text = normalize_text_markers(text)
-    found = [*_VERDICT_RE.finditer(text), *_BARE_VERDICT_RE.finditer(text)]
-    if not found:
-        return None
-    return max(found, key=lambda match: match.start()).group(1)
+    """The P3 verdict: the last `Verdict:` line or `## Verdict` section, else the last bare verdict line."""
+    from labeled_lines import verdict
+    from verdict_judge import judged_verdict
+
+    found = verdict(text, PLAN_VERDICTS)
+    if found:
+        return found
+    bare = list(_BARE_VERDICT_RE.finditer(normalize_text_markers(text)))
+    return bare[-1].group(1) if bare else judged_verdict(text, "plan-review", PLAN_VERDICTS)
 
 
 def _peer_attest():
@@ -592,6 +607,25 @@ def adversarial_cycle_limit() -> int:
     return config_limit("adversarial_cycles")
 
 
+def cycle_limit(spec: object, workspace: Path | None = None) -> int:
+    """The cycle limit that a `review_round.cycle_limit` of stages.json names: a config key, or a number.
+
+    A key reads the resolved config (scripts/cadence_config.py), with the project layers of `workspace`.
+    An unknown key, or a number below one, fails closed.
+    """
+    import cadence_config
+
+    if isinstance(spec, bool) or not isinstance(spec, (int, str)):
+        raise ValueError(f"cycle_limit {spec!r} is not a config key or a number")
+    if isinstance(spec, int):
+        if spec < 1:
+            raise ValueError(f"cycle_limit {spec} is below one")
+        return spec
+    if spec not in ("plan_review_cycles", "adversarial_cycles"):
+        raise ValueError(f"cycle_limit {spec!r} is not a known limit (adversarial_cycles, plan_review_cycles)")
+    return cadence_config.load(Path(__file__).resolve().parent.parent, workspace).get(spec)
+
+
 CARRIED_HEADER = "## Carried review findings"
 _MUST_FIX_ID = re.compile(r"\bMF-\d+\b")
 
@@ -816,11 +850,13 @@ _ADV_JSON = re.compile(r'"verdict"\s*:\s*"(APPROVE WITH CONDITIONS|REQUEST_CHANG
 
 
 def adversarial_verdict_in_text(text: str) -> str | None:
-    """The last strict P6 verdict in the text, or None (no readable verdict fails closed)."""
+    """The last strict P6 verdict in the text, else the peer's own words judged (verdict_judge), else None."""
+    from verdict_judge import judged_verdict
+
     text = normalize_text_markers(text)
     found = [*_ADV_LINE.finditer(text), *_ADV_JSON.finditer(text)]
-    if not found:
-        return None
+    if not found:  # the `## Verdict` form, a lower-case label, or the peer's own words
+        return judged_verdict(text, "adversarial-review")
     return max(found, key=lambda match: match.start()).group(1).replace("_", " ")
 
 
@@ -1217,12 +1253,14 @@ def review_must_fix_ids(text: str) -> set[str]:
 
 
 _LEDGER_HEADING = re.compile(r"^(#{2,3})\s+revision\s+ledger\s*\(\s*review\s+([0-9a-f]{12,64})\s*\)", re.I)
-_LEDGER_ROW = re.compile(r"^\s*\|\s*[*_`]*(MF-\d+)\b")
+# MF-n, and in a plan review round also B-n, C-n and scorecard ids such as F01.
+_LEDGER_ROW = re.compile(r"^\s*\|\s*[*_`]*([A-Za-z][\w-]*\d)\b")
+_BARE_LEDGER_HEADING = re.compile(r"^(#{2,3})\s+revision\s+ledger\s*$", re.I)
 
 
 def revision_ledger_ids(text: str, review_sha: str) -> set[str] | None:
-    """The MF-n row ids of the plan's `## Revision ledger (review <sha>)` table for the review whose sha256 is
-    `review_sha`. The heading holds the first 12 or more hex characters of that sha, which the peer
+    """The row ids (MF-n; in a round also B-n, C-n, F01) of the plan's `## Revision ledger (review <sha>)` table
+    for the review whose sha256 is `review_sha`. The heading holds the first 12 or more hex characters of that sha, which the peer
     reads from its packet's Input line. One source for both sides, no count.
 
     None when no ledger names that review: an older review's ledger does not answer a newer one, whatever
@@ -1230,10 +1268,17 @@ def revision_ledger_ids(text: str, review_sha: str) -> set[str] | None:
     count. With two ledgers for one review, the last one counts."""
     lines = _outside_fences(text.splitlines())
     found: tuple[int, int] | None = None
+    unnamed: tuple[int, int] | None = None
     for i, line in enumerate(lines):
         heading = _LEDGER_HEADING.match(line)
         if heading and review_sha.lower().startswith(heading.group(2).lower()):
             found = (i, len(heading.group(1)))
+        bare = _BARE_LEDGER_HEADING.match(line)
+        if bare:
+            unnamed = (i, len(bare.group(1)))
+    # P4 edits the plan in place and keeps one `## Revision ledger` with no sha. It answers the
+    # newest review: its rows must name each open MF-n of that review, so a stale ledger does not pass.
+    found = found or unnamed
     if found is None:
         return None
     ids: set[str] = set()
@@ -1248,21 +1293,27 @@ def revision_ledger_ids(text: str, review_sha: str) -> set[str] | None:
 
 
 def revision_ledger_problems(plan: Path, review: Path) -> list[str]:
-    """The plan's ledger for `review` (named by its sha256) has a row for each open MF-n of it."""
+    """The plan's ledger for `review` (a bare heading, or one that names its sha256) has a row for each open MF-n
+    of it."""
     try:
         review_bytes = review.read_bytes()
         sha = hashlib.sha256(review_bytes).hexdigest()
         open_ids = review_must_fix_ids(review_bytes.decode("utf-8", errors="replace"))
-        rows = revision_ledger_ids(plan.read_text(encoding="utf-8", errors="replace"), sha) if open_ids else set()
+        text = plan.read_text(encoding="utf-8", errors="replace")
+        rows = revision_ledger_ids(text, sha) if open_ids else set()
+        # P4 answers a plan review round, which joins the review's rows, in the round file's ledger.
+        for round_file in sorted((review.parent.parent / "plan-findings").glob("round-*.md")) if open_ids else ():
+            joined = revision_ledger_ids(text, hashlib.sha256(round_file.read_bytes()).hexdigest())
+            rows = (rows or set()) | joined if joined is not None else rows
     except OSError as exc:
         return [f"plan-update: cannot read {Path(exc.filename or plan).name}: {exc}"]
     missing = ", ".join(sorted(open_ids - (rows or set()), key=_id_key))
     if not missing:
         return []
-    head = f"## Revision ledger (review {sha[:12]})"
+    head = "## Revision ledger"  # no sha to type; the ledger answers the newest review
     where = (f"{plan.name} has no `{head}`" if rows is None else f"the `{head}` of {plan.name} has no row")
     return [f"plan-update: {where} for {missing} of {review.name}. Run /plan-update {plan.name} --from-review {review.name}. "
-            f"End the update with `{head}` and one row for each MF-n. A `not changed: <reason>` row counts"]
+            f"Keep one `{head}` at the end of the plan, with one row for each MF-n. A `not changed: <reason>` row counts"]
 
 
 def _outside_fences(lines: list[str]) -> list[str]:
@@ -1449,6 +1500,10 @@ def plan_changed_after_review(context_dir: Path, session: dict | None = None) ->
         return [f"plan-review: cannot read {Path(exc.filename or plan).name}: {exc}"]
     if not changed:
         return []
+    from plan_wave import carried
+
+    if carried(context_dir, session, "plan-review"):  # the round for this plan did not name P3
+        return []
     how = "its sha256 is not the one on the review's `Last reviewed plan sha256:` line" if pinned else "it is newer"
     return [f"plan-review: the plan changed after its review; run /plan-review again "
             f"({plan.name} changed after {review.name}: {how})"]
@@ -1473,13 +1528,14 @@ def check_plan_create_artifacts(
 
 def _deferral_register_problems(path: Path) -> list[str]:
     """P8 adjudication (references/deferral-framework.md) of one register file."""
-    from deferral_adjudication_check import adjudicate_deferral_register
+    from deferral_adjudication_check import adjudicate_deferral_register, ruling_problems
 
     try:
         result = adjudicate_deferral_register(path.read_text(encoding="utf-8"))
+        rulings = ruling_problems(path) if result.ok else []
     except OSError as e:
         return [f"unreadable: {e}"]
-    return [f"{i.code}: {i.message}" for i in result.issues]
+    return [f"{i.code}: {i.message}" for i in result.issues] + rulings
 
 
 # The register references/deferral-framework.md tells the agent to write; P8 and P9 share it.

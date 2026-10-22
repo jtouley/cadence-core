@@ -86,8 +86,18 @@ values). A resumed run keeps the config of its first activation.
 | `measure_exclude` | `[]` | Path prefixes that R2 and R3 do not measure |
 | `plan_review_cycles` | `5` | The most P3 review cycles |
 | `adversarial_cycles` | `3` | The most P6 review cycles |
-| `review_fix_rounds` | `2` | The most R1 to R4 fix rounds |
-| `benchmark_score_floor` | `7` | The lowest mean test-benchmark score that P7 and R2 pass |
+| `review_fix_rounds` | `null` | An optional cap on the R1 to R4 fix rounds. `null` is no cap: the loop goes on until R4 passes, and R4 holds when a round changed nothing |
+| `ci_commands` | `[]` | The repository's checks that R5 runs at HEAD. Empty: what the tree shows (`make test`, pytest, `npm test`, `go test ./...`, `cargo test`) |
+| `benchmark_score_floor` | `7` | The lowest layer, DRY and assertion score of a test-benchmark card that P7 and R2 pass |
+
+### Verdict judge
+
+A gate reads a verdict or a severity in each format that real peers write. When no strict reader takes
+the text, `scripts/verdict_judge.py` asks Jev (TypeSafe) for the meaning, if `TYPESAFE_API_KEY` is set in
+the environment. `TYPESAFE_API_URL` overrides the endpoint. An answer below the confidence bar is not
+taken, and the gate fails closed. Each answer that a run uses goes to `.context/verdict-judgments.jsonl`,
+with the model, the confidence and whether the gate took it. Without the key, nothing is sent, and an
+unreadable verdict fails closed. The key is not a config key: keep it out of every config file.
 
 ## Profiles
 

@@ -277,9 +277,23 @@ def record(ctx: Path, payload: dict[str, Any], call: dict[str, Any], decision: s
     })
 
 
-def lean_hint(row: dict[str, Any]) -> str:
-    return (f"Call the peer again with the lean slash command only: {row['command']} <arguments>. "
-            "If you only name the command in text, write it without the leading slash.")
+def lean_hint(row: dict[str, Any], rendered: str | None = None) -> str:
+    """The retry to send. With the packet's command, the exact prompt: a run guessed the arguments of
+    `/plan-create` after a bare `/plan-create` was denied."""
+    again = (f"Call the peer again with this prompt only: {rendered}." if rendered
+             else f"Call the peer again with the lean slash command only: {row['command']} <arguments>.")
+    return again + " If you only name the command in text, write it without the leading slash."
+
+
+def rendered_command(block: str, ctx: Path, session: dict[str, Any], workspace: Path | None = None) -> str | None:
+    """The command of the packet that the registry builds for ``block``, else None."""
+    try:
+        run = handoff_inputs.Run(root=Path(os.environ["CADENCE_HOME"]), ctx=ctx,
+                                 workspace=Path.cwd() if workspace is None else workspace, session=session)
+        packet, _missing = handoff_inputs.packet_for(block, run)
+    except Exception:  # noqa: BLE001 - a hint never changes the decision
+        return None
+    return str(packet["command"]) if packet and packet.get("command") else None
 
 
 def model_check(
@@ -319,7 +333,8 @@ def lean_scope(
     if session is None or not orchestrator_call(payload, ctx):
         return None
     return {"run_id": str(session["pipeline_run_id"]), "slug": row["slug"], "block": row["block"],
-            "record_stage": prompt_shape.delegation_stage_for_prompt(row["command"])}
+            "record_stage": prompt_shape.delegation_stage_for_prompt(row["command"]),
+            "session": session, "ctx": ctx, "workspace": workspace}
 
 
 def lean_check(
@@ -333,7 +348,8 @@ def lean_check(
                         "Call the Agent tool with a non-fork subagent_type and the lean slash command.")
         return "deny"
     if reason is not None:
-        tool_deny(host, f"BLOCKED: lean peer prompt rejected: {reason}. {lean_hint(row)}")
+        rendered = rendered_command(scope["block"], scope["ctx"], scope["session"], scope["workspace"])
+        tool_deny(host, f"BLOCKED: lean peer prompt rejected: {reason}. {lean_hint(row, rendered)}")
         return "deny"
     return "allow"
 

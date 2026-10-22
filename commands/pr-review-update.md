@@ -56,7 +56,10 @@ python3 "$CADENCE_HOME/scripts/final_consolidate.py" --check
 ```
 
 The gate fails while a must-fix is open, or while the review's last `Last reviewed commit:` line is not HEAD.
-Each `## Update` section is one fix round. At `review_fix_rounds` rounds (default 2), the gate also holds while the loop is open. Then do not ask for another fix commit. Defer each open must-fix with a ticket, or tell the user.
+Each `## Update` section is one fix round. The loop goes on until the gate passes: a must-fix is fixed in this PR.
+Defer a must-fix only when a code change in this PR cannot clear it: ripeness `blocked-by`, `prod-mutation` or `fleet-ops`, as `references/deferral-framework.md` says.
+Then add its row under `## Review deferrals` in `.context/deferrals/<task_id>_deferral-register.md`, with the finding id first in the Item cell.
+Do not set the finding to deferred. The orchestrator runs P8 and sends `/deferral-review <manifest>`. That peer rules on the row and sets a `GREEN` finding. A defect of the change is never deferred.
 If the check reports `no join row`, that is information only: the join row comes after you return. Do not change the review file for it.
 The ledger stays the SSOT for findings. Do not invent a second consolidate format.
 

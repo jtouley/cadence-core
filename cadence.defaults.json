@@ -66,6 +66,7 @@
   "measure_exclude": [],
   "plan_review_cycles": 5,
   "adversarial_cycles": 3,
-  "review_fix_rounds": 2,
+  "review_fix_rounds": null,
+  "ci_commands": [],
   "benchmark_score_floor": 7
 }

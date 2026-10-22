@@ -17,7 +17,7 @@ EXAMPLE_SHA = "5a76c1d2e3f4" + "0" * 52
 @pytest.mark.parametrize("command, phrase", [
     pytest.param("plan-update", "`--from-review <review-path>`", id="update-reads-the-named-review"),
     pytest.param("plan-update", "read the newest `.context/reviews/plan_<basename>.md`", id="update-falls-back-to-the-newest"),
-    pytest.param("plan-update", "End the update section with a `## Revision ledger (review <sha>)` table", id="update-ends-with-the-ledger"),
+    pytest.param("plan-update", "Write a `## Revision ledger (review <sha>)` table after the phases", id="update-ends-with-the-ledger"),
     pytest.param("plan-update", "| Id | Change | Where (phase or section) | Verification (the test or check that proves it) |",
                  id="update-names-the-ledger-columns"),
     pytest.param("plan-update", "Write `not changed: <reason>` in its Change cell", id="update-drops-nothing-in-silence"),
@@ -28,7 +28,7 @@ EXAMPLE_SHA = "5a76c1d2e3f4" + "0" * 52
     pytest.param("plan-review", "Start the review with a `## Status of earlier items` table", id="review-opens-with-the-status"),
     pytest.param("plan-review", "`closed`: cite the Revision ledger row and the plan text", id="review-closed-needs-evidence"),
     pytest.param("plan-review", "`open`: write what is still missing", id="review-open-names-the-gap"),
-    pytest.param("plan-review", "A new must-fix item may cite only text that the newest update section added or changed",
+    pytest.param("plan-review", "A new must-fix item may cite only a section that the newest update changed",
                  id="review-new-items-are-delta-only"),
     pytest.param("plan-review", "is not a new must-fix item", id="review-old-text-is-not-new"),
     pytest.param("plan-review", "Put every open must-fix item under one `## Must-fix items` heading", id="review-keeps-the-heading"),

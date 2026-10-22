@@ -1,0 +1,56 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "feat-local-4-csv-export",
+  "mode": "plan",
+  "plan": ".context/plans/feat-local-4-csv-export.plan.md",
+  "plan_sha256": "5092ce67a06060199302b8a9124353cc7bb7c5af6ad19158bd97441849948566",
+  "scores": {
+    "coverage": 8,
+    "assertions": 7,
+    "dry": 6,
+    "layer": 7,
+    "failure_paths": 7,
+    "mutation_resilience": 6
+  },
+  "mean": 6.83,
+  "verdict": "FAIL",
+  "mutants_run": false,
+  "mutants_note": "Plan mode. No mutants were run. The mutation score is a judgment on the spec only, not a kill rate.",
+  "findings": [
+    {
+      "id": "plan-P7-F01",
+      "severity": "must-fix",
+      "check": "dry",
+      "evidence": "Phase 2 and Phase 1 list separate test functions with one shape each: four quoting tests (test_note_with_comma_is_quoted, test_note_quote_is_doubled, test_note_with_newline_is_quoted, test_category_with_comma_is_quoted) that differ only in input and expected output, and a bad-month function (test_month_check_refuses_bad_months) that lists five bad values. The amount cases (1250, 1005, 500 cents) have no named test function of their own. Change the plan: one pytest.mark.parametrize table for the quoting cases, one for the bad-month cases, and one for the amount cases. A new row then adds a case without a new function."
+    },
+    {
+      "id": "plan-P7-F02",
+      "severity": "must-fix",
+      "check": "mutation",
+      "evidence": "The month regex in decision 2 is ^\\d{4}-(0[1-9]|1[0-2])$. The accept cases are 2026-10 and 2026-01. No accept case covers month 12. A mutant that narrows the alternation to 1[0-1] survives every listed test, and so does a mutant that drops the upper bound check. Add 2026-12 as an accept row and 2026-11 as an accept row to the parametrize table of F01. The 2026-00 and 2026-13 bad rows already exist, so the boundary on both sides is then covered."
+    },
+    {
+      "id": "plan-P7-F03",
+      "severity": "should-fix",
+      "check": "failure_paths",
+      "evidence": "Phase 3 says a bad month must never open or write a file, because the month is checked before any file is opened. No listed test asserts this. Add a test: export --month 2026-13 --out <path> exits 2, prints an error: line, and leaves no file at <path>. The plan names no test for this behavior, so a mutant that opens the file first survives."
+    },
+    {
+      "id": "plan-P7-F04",
+      "severity": "should-fix",
+      "check": "coverage",
+      "evidence": "The acceptance section lists S1 to S4 and S6 (N-8). S5 is not named and the plan does not say why it is skipped. Name S5 in the acceptance section, or write why it is out of scope. The constraint that totals behavior does not change (N-9) has no regression test. Phase 4 runs the full suite, but no named test pins totals output."
+    },
+    {
+      "id": "plan-P7-F05",
+      "severity": "should-fix",
+      "check": "layer",
+      "evidence": "parse_month is a CLI input check, but Phase 1 puts its test in tests/test_ledger.py next to the ledger tests. Phase 3 puts unit tests of to_csv (Phase 2) and CLI tests through main() in the same file, tests/test_export.py. Name the layer of each file in the plan: unit tests for to_csv and parse_month, and CLI tests for main(). Keep the two layers in separate files, or say why one file is right."
+    }
+  ],
+  "reuse_check": {
+    "reused": ["Ledger.load()", "Expense dataclass", "error: {exc} and exit 2 pattern", "stdlib csv module"],
+    "extension_point": "argparse sub.add_parser pattern in main()",
+    "assessment": "The Reuse section names real existing code paths and does not reimplement the quoter. No finding."
+  }
+}

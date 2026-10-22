@@ -86,6 +86,11 @@
       "slash": "/session-summary",
       "path": "commands/session-summary.md",
       "why": "R7 summary: a peer reads the run's manifest and its documents and writes .context/summaries/<task_id>.md; activate_session.py --deactivate closes the run only after that peer write."
+    },
+    {
+      "slash": "/deferral-review",
+      "path": "commands/deferral-review.md",
+      "why": "P8 and review deferrals: a peer rules GREEN, AMBER or RED on each row of the deferral register against the request and references/deferral-framework.md, from the manifest that P8 writes; P8 and P9 accept a deferral only with a ruling of the register as it is now."
     }
   ]
 }

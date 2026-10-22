@@ -32,6 +32,16 @@ missing, corrupt, another ticket's leftovers, `--resume`, an adjacent id
 (`cd-1` vs `cd-12`), an offline host without `gh`. For hooks and installers,
 also a workspace that never ran Cadence and a user symlink with the same name.
 
+For any change that reads or writes data, also try these inputs. The plan
+review does not find this class of defect. The PR round must find it.
+
+- an output path that is also an input, for example `--out` set to the file that the command reads
+- a closed output pipe, for example `| head -0`
+- a bad row in a stored file: a missing field, or a value of the wrong type
+- a trailing newline or a space in a parsed value
+- a very large number, NaN or a negative number
+- text that does not encode, for example a lone surrogate in a note
+
 ### `## Contracts`
 
 Check each finding against `SKILL.md`, `references/`, and the resolved config (`scripts/cadence_config.py resolve`).

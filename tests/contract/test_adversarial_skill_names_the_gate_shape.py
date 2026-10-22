@@ -46,7 +46,7 @@ def test_plan_update_names_the_p6_carry():
 
 def test_the_pipeline_section_names_the_p6_loop():
     for needle in ("**P6:**", "at most three cycles", "new Agent call for each P3 and P6 review round",
-                   "Do not run P3 and P6 on the same plan revision at the same time",
+                   "send these peers in one message, in parallel",
                    "When the gate output names a step, do that step before the `NEXT` command."):
         assert needle in PIPELINE, needle
     assert ar.adversarial_cycle_limit() == 3

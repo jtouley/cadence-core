@@ -30,17 +30,20 @@ from artifact_requirements import (adversarial_ids, adversarial_verdict_in_text 
     ('{"verdict": "REQUEST_CHANGES"}', "REQUEST CHANGES"),
     ("Verdict: APPROVE WITH CONDITIONS", "APPROVE WITH CONDITIONS"),
     ("Verdict: REQUEST_CHANGES", "REQUEST CHANGES"),
+    # Liberal on format, strict on meaning: one meaning each, so they are read (the corpus of real reports).
+    ("## Verdict\n\nAPPROVE", "APPROVE"),
+    ("verdict: APPROVE", "APPROVE"),
+    ("## Verdict\n\nREQUEST CHANGES. B-1 and B-2 block.", "REQUEST CHANGES"),
 ])
 def test_verdict_shapes(text, expected):
     assert read(text) == expected
 
 
 @pytest.mark.parametrize("text", [
-    "## Verdict\n\nAPPROVE",
     "Verdict: APPROVED",
     "Verdict: BLOCK",
     '{"Verdict": "APPROVE"}',
-    "verdict: APPROVE",
+    "- Round 1 verdict: APPROVE",
     "no verdict here",
 ])
 def test_unreadable_verdicts_are_none(text):
@@ -315,7 +318,7 @@ def test_a_round_two_report_that_reuses_an_id_needs_its_own_heading(lp):
 
 
 def test_no_readable_verdict_fails(lp):
-    report = lp.report(None, body="## Verdict\n\nAPPROVE")
+    report = lp.report(None, body="## Verdict\n\nAPPROVED, mostly")
     expected = [
         f"adversarial-review: {report.name} has no readable verdict. "
         'Write one line "Verdict: APPROVE | APPROVE WITH CONDITIONS | REQUEST CHANGES".'

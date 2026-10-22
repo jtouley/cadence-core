@@ -408,7 +408,9 @@ A, B = "a" * 64, "b" * 64  # the sha256 of review one and of review two
     pytest.param("## Plan update\n" + ledger({"MF-1": "a"}, A[:12]) + "\n## Plan update\n" + ledger({"MF-1": "b", "MF-4": "c"}, B[:12]), B,
                  {"MF-1", "MF-4"}, id="the-second-ledger-answers-the-second-review"),
     pytest.param("## Plan update\n" + ledger({"MF-1": "a"}, A), A, {"MF-1"}, id="the-full-sha-also-matches"),
-    pytest.param("## Plan update\n## Revision ledger\n\n| Id |\n|---|\n| MF-1 |\n", A, None, id="a-ledger-with-no-review-is-none"),
+    # A ledger with no sha answers the newest review.
+    pytest.param("## Plan update\n## Revision ledger\n\n| Id |\n|---|\n| MF-1 |\n", A, {"MF-1"},
+                 id="a-ledger-with-no-review-answers-the-newest"),
     pytest.param("## Plan update\n## Revision ledger (cycle 2)\n\n| Id |\n|---|\n| MF-1 |\n", A, None, id="a-cycle-number-is-not-a-review"),
 ])
 def test_revision_ledger_ids_reads_the_ledger_of_the_review_it_answers(text, sha, want):

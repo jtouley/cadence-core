@@ -193,10 +193,12 @@ def compute_resume_slug(*, fresh_run: bool, matching: dict[str, str], reopened: 
     if reopened:
         # Deactivation removed the P9 marker. P9 writes it again; the gates then walk to the first open block.
         return "entry-invariant", "Reopen: the run closed with a draft PR. Run P9, then the first open block"
+    # A guess from the artifacts: the run may be further on, as a resume "at E1" that was in the PR round.
+    walk = "The first open block may be later: `python3 \"$CADENCE_HOME/scripts/headless.py\" next` names it"
     if matching.get("review"):
-        return "implement", f"Resume: matching review for this ticket: {matching['review']}"
+        return "implement", f"Resume: matching review for this ticket: {matching['review']}. {walk}"
     if matching.get("plan"):
-        return "plan-review", f"Resume: matching plan for this ticket: {matching['plan']}"
+        return "plan-review", f"Resume: matching plan for this ticket: {matching['plan']}. {walk}"
     return first_slug(), "Resume requested but no ticket-scoped artifacts — start at A1"
 
 
@@ -227,22 +229,6 @@ JOIN_HOOK_WARNING = (
 )
 
 
-def _has_join_group(path: Path) -> bool:
-    """A PostToolUse group whose matcher names Agent and whose hook runs guard_subagent_handoff.py."""
-    try:
-        groups = json.loads(path.read_text(encoding="utf-8"))["hooks"]["PostToolUse"]
-    except (OSError, ValueError, KeyError, TypeError):
-        return False
-    if not isinstance(groups, list):
-        return False
-    return any(
-        isinstance(g, dict) and "Agent" in str(g.get("matcher") or "") and isinstance(g.get("hooks"), list)
-        and any(isinstance(h, dict) and "guard_subagent_handoff.py" in str(h.get("command") or "")
-                for h in g["hooks"])
-        for g in groups
-    )
-
-
 def claude_join_hook_registered(workspace: Path) -> bool:
     """The host loads the PostToolUse Agent join hook, so verdicts can be joined.
 
@@ -254,14 +240,19 @@ def claude_join_hook_registered(workspace: Path) -> bool:
     plugins = (Path.home() / ".claude" / "plugins").resolve()
     if SKILL_ROOT.resolve().is_relative_to(plugins):
         sources.append(SKILL_ROOT / "hooks" / "hooks.json")
-    return any(_has_join_group(path) for path in sources)
+    from peer_attest import has_join_group
+
+    return any(has_join_group(path) for path in sources)
 
 
-def apply_verdict_join(session: dict, *, host: str, resumed: dict | None, workspace: Path) -> None:
+def apply_verdict_join(session: dict, *, host: str, resumed: dict | None, workspace: Path,
+                       join_noted: bool | None = None) -> None:
     """Mark the run `verdict_join`, or warn on stderr.
 
     A fresh Claude Code run gets it only when the host loads the join hook. `--resume`
-    keeps it only when the resumed run has it.
+    keeps it only when the resumed run has it. `join_noted` is the proof of the PreToolUse hook that ran on
+    this activation call: a plugin's hooks file registers the join hook (a --plugin-dir session ran the join
+    hook, and the settings files did not show it).
     """
     if resumed is not None:
         if resumed.get("verdict_join") is True:
@@ -269,7 +260,7 @@ def apply_verdict_join(session: dict, *, host: str, resumed: dict | None, worksp
         return
     if host != "claude":
         return
-    if not claude_join_hook_registered(workspace):
+    if join_noted is not True and not claude_join_hook_registered(workspace):
         print(JOIN_HOOK_WARNING, file=sys.stderr)
         return
     session["verdict_join"] = True
@@ -315,6 +306,13 @@ def _hard_stop(args: argparse.Namespace, context_dir: Path, workspace: Path) -> 
     if not _is_active(session):
         print("FAIL  no active cadence session in this worktree", file=sys.stderr)
         return 1
+    if args.hard_stop == "retries":
+        from final_consolidate import fix_loop_moves
+
+        early = fix_loop_moves(context_dir, str(session.get("pipeline_run_id") or ""), SKILL_ROOT)
+        if early:
+            print(f"FAIL  --hard-stop retries: {early}", file=sys.stderr)
+            return 1
     session["hard_stop"] = {
         "class": args.hard_stop,
         "reason": args.reason.strip(),
@@ -329,6 +327,7 @@ def _status(args: argparse.Namespace, context_dir: Path, workspace: Path) -> int
     session = load_run_session(context_dir, workspace)
     if not args.check:
         print(json.dumps(session or {"active": False}, indent=2))
+        _join_report(context_dir, session)
         return 0
     if not _is_active(session):
         print("FAIL  no active cadence session", file=sys.stderr)
@@ -339,6 +338,17 @@ def _status(args: argparse.Namespace, context_dir: Path, workspace: Path) -> int
         return 1
     print("OK  active cadence session")
     return 0
+
+
+def _join_report(context_dir: Path, session: dict | None) -> None:
+    """R7: the join hook ran in a run whose verdict check was off, so activation missed the hook."""
+    import peer_attest
+
+    run = str((session or {}).get("pipeline_run_id") or "")
+    if session and session.get("host") == "claude" and session.get("verdict_join") is not True and run \
+            and peer_attest.join_rows(context_dir, run):
+        print(f"WARNING: the join hook wrote {len(peer_attest.join_rows(context_dir, run))} rows in this run, but "
+              "verdict_join is off: activation did not find the hook. Report it as a Cadence bug.", file=sys.stderr)
 
 
 def _file_name(task_id: str) -> str:
@@ -357,11 +367,22 @@ def write_request(context_dir: Path, task_id: str, text: str) -> Path:
 # The run's documents that the summary peer reads, as globs under .context.
 MANIFEST_GLOBS = ("proposals/*.md", "vibetest/*.md", "plans/*.md", "reviews/*.md", "adversarial/*.md",
                   "benchmarks/*.json", "deferrals/*.md", "implementation/*.md", "prs/*.md", "prs/reviews/*.md",
-                  "prs/comments/*.md", "issues/*.md", "findings.jsonl")
+                  "prs/comments/*.md", "issues/*.md", "findings.jsonl", "verdict-judgments.jsonl")
 
 
 def summary_path(context_dir: Path, task_id: str) -> Path:
     return context_dir / "summaries" / f"{_file_name(task_id)}.md"
+
+
+def document_table(context_dir: Path, workspace: Path, session: dict, globs: tuple[str, ...]) -> list[str]:
+    """`## Documents`: each run document under `globs` and each run plan, with its sha256."""
+    from artifact_requirements import run_scope_accept
+
+    accept = run_scope_accept(context_dir, session=session)
+    docs = sorted({p for g in globs for p in context_dir.glob(g) if p.is_file() and accept(p)})
+    docs += sorted(p for p in (workspace / ".cursor" / "plans").glob("*.plan.md") if accept(p))
+    return ["## Documents", "", "| Document | sha256 |", "|---|---|",
+            *[f"| {_shown(p, context_dir, workspace)} | {hashlib.sha256(p.read_bytes()).hexdigest()} |" for p in docs]]
 
 
 def write_manifest(context_dir: Path, workspace: Path, session: dict) -> Path:
@@ -369,15 +390,10 @@ def write_manifest(context_dir: Path, workspace: Path, session: dict) -> Path:
 
     The one input of the /session-summary peer. The script lists; the peer judges.
     """
-    from artifact_requirements import run_scope_accept
-
     task_id, run_id = str(session.get("task_id") or ""), str(session.get("pipeline_run_id") or "")
     base = str(session.get("base") or "")
     log = subprocess.run(["git", "log", "--oneline", f"{base}..HEAD"], cwd=workspace, capture_output=True,
                          text=True).stdout.splitlines() if base else []
-    accept = run_scope_accept(context_dir, session=session)
-    docs = sorted({p for g in MANIFEST_GLOBS for p in context_dir.glob(g) if p.is_file() and accept(p)})
-    docs += sorted(p for p in (workspace / ".cursor" / "plans").glob("*.plan.md") if accept(p))
     stop = session.get("hard_stop") or {}
     lines = [f"# Session manifest: {task_id}", "", f"Ticket: {task_id}", f"Pipeline-Run: {run_id}",
              f"Branch: {session.get('branch')}", f"Base: {base or 'none'}"]
@@ -385,8 +401,7 @@ def write_manifest(context_dir: Path, workspace: Path, session: dict) -> Path:
         lines.append(f"Hard stop: {stop.get('class')}: {stop.get('reason')}")
     if session.get("reopened_at"):
         lines.append(f"Reopened: {session['reopened_at']}")
-    lines += ["", "## Documents", "", "| Document | sha256 |", "|---|---|"]
-    lines += [f"| {_shown(p, context_dir, workspace)} | {hashlib.sha256(p.read_bytes()).hexdigest()} |" for p in docs]
+    lines += ["", *document_table(context_dir, workspace, session, MANIFEST_GLOBS)]
     lines += ["", "## Commits", "", *[f"- {line}" for line in log], "",
               f"Write the summary to {_shown(summary_path(context_dir, task_id), context_dir, workspace)}."]
     path = context_dir / "manifests" / f"{_file_name(task_id)}.md"
@@ -489,12 +504,16 @@ def _rejoin_active_run(existing: dict, noted: bool, orchestrator: str | None, co
 
 
 def _orchestrators(resumed: dict | None, noted: bool, orchestrator: str | None) -> tuple[list[str], str]:
-    """The run's orchestrator ids (kept on resume) and where the newest one came from."""
+    """The run's orchestrator ids (kept on resume) and where the newest one came from.
+
+    A resume with no note keeps the source of the run it resumes, as it keeps its ids: a second `--resume`
+    that reset `toplevel` to `missing` failed the validate gate."""
     ids = [a for a in (resumed or {}).get("orchestrator_agent_ids") or [] if isinstance(a, str)]
     if orchestrator and orchestrator not in ids:
         ids.append(orchestrator)
-    source = ("note" if orchestrator else "toplevel") if noted else "missing"
-    return ids, source
+    if noted:
+        return ids, "note" if orchestrator else "toplevel"
+    return ids, str((resumed or {}).get("orchestrator_source") or "missing")
 
 
 def _prepare_run(args: argparse.Namespace, context_dir: Path, fresh_run: bool, run_id: str, task_id: str,
@@ -602,7 +621,8 @@ def _start_run(args: argparse.Namespace, ctx: dict, resumed: dict | None, snapsh
     if reopened:
         session["reopened_at"] = datetime.now(timezone.utc).isoformat()
     _add_run_marks(session, args, resumed, snapshot, ctx.get("config"))
-    apply_verdict_join(session, host=session["host"], resumed=resumed, workspace=workspace)
+    apply_verdict_join(session, host=session["host"], resumed=resumed, workspace=workspace,
+                       join_noted=ctx.get("join_hook"))
     _report_activation(session, save_run_session(context_dir, workspace, session))
     if ctx.get("request") and (fresh_run or not (context_dir / "proposals" / f"{_file_name(task_id)}.md").is_file()):
         print(f"Request: {write_request(context_dir, task_id, ctx['request'])}", file=sys.stderr)
@@ -659,14 +679,14 @@ def _activate(args: argparse.Namespace, workspace: Path, primary: Path, context_
             return 2
 
     # Take the orchestrator note after the checks, so a failed activation keeps it for the next try.
-    noted, orchestrator = (
-        session_store.take_pending_orchestrator(context_dir) if session_store is not None else (False, None)
-    )
+    note = session_store.take_pending_note(context_dir) if session_store is not None else None
+    noted = note is not None
+    orchestrator = note.get("agent_id") if noted and isinstance(note.get("agent_id"), str) and note["agent_id"] else None
     if already_active:
         return _rejoin_active_run(existing, noted, orchestrator, context_dir, workspace)
     ctx = {"workspace": workspace, "primary": primary, "context_dir": context_dir, "branch": branch,
            "task_id": task_id, "task_source": task_source, "host": host, "config": config_record,
-           "request": request}
+           "request": request, "join_hook": note.get("join_hook") if noted else None}
     return _start_run(args, ctx, resumed, snapshot, noted, orchestrator)
 
 

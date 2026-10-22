@@ -19,7 +19,7 @@ from ledger_verify import main, supersede_finding, verify_finding  # noqa: E402
 
 ROW = {"id": "gh-1-F01", "stage": "pr-review-local", "rule_ref": "core:x", "class": "bug",
        "severity": "must-fix", "location": "src/a.py:1", "evidence": "off by one",
-       "status": "open", "check": "python3 -c pass"}
+       "status": "open", "check": "python3 check.py 0"}
 
 
 @pytest.fixture
@@ -34,6 +34,7 @@ def fix_repo(tmp_path, monkeypatch):
 
     path = git_repo(tmp_path / "repo")
     commit_file(path, "base")
+    (path / "check.py").write_text("import sys\nraise SystemExit(int(sys.argv[1]))\n", encoding="utf-8")
     monkeypatch.chdir(path)
     return path
 
@@ -223,7 +224,7 @@ def _fixed_row(path: Path, check: str) -> dict:
 def test_ledger_verify_promotes_fixed_to_verified(tmp_path, fix_repo):
     from conftest import head_sha
 
-    row = _fixed_row(tmp_path / "f.jsonl", "python3 -c pass")
+    row = _fixed_row(tmp_path / "f.jsonl", "python3 check.py 0")
     verified = verify_finding(row)
     assert verified["status"] == "verified"
     assert verified["verification_exit_code"] == 0
@@ -232,13 +233,13 @@ def test_ledger_verify_promotes_fixed_to_verified(tmp_path, fix_repo):
 
 
 def test_dry_run_returns_the_row_unverified(tmp_path, fix_repo):
-    row = _fixed_row(tmp_path / "f.jsonl", "python3 -c pass")
+    row = _fixed_row(tmp_path / "f.jsonl", "python3 check.py 0")
     assert verify_finding(row, dry_run=True)["status"] == "fixed"
 
 
 def test_dry_run_cli_leaves_the_ledger_bytes_unchanged(tmp_path, fix_repo, capsys):
     path = tmp_path / "f.jsonl"
-    _fixed_row(path, "python3 -c 'raise SystemExit(2)'")
+    _fixed_row(path, "python3 check.py 2")
     before = path.read_bytes()
     assert main(["--ledger", str(path), "--dry-run"]) == 0
     assert path.read_bytes() == before
@@ -273,13 +274,20 @@ def test_a_check_that_is_not_valid_shell_stays_fixed(tmp_path, fix_repo):
 
 # --- a finding closes only on a real check, a fix names its commit, and a person confirms the manual path.
 
-NO_OP_CHECKS = ["true", ":", "echo ok", "exit 0", "", "   ", "uv run --", "/bin/true", "FOO=1 true",
+NO_OP_CHECKS = ["true", ":", "echo ok", "exit 0", "", "   ", "uv run --", "/bin/true", "FOO=1 true", "uv run true", "npx -c true",
                 "pytest -q || true", "pytest -q; echo done"]
-NOT_A_RUNNER = ["ls -la", "bash -c ok", "cat README.md"]
+NOT_A_RUNNER = ["ls -la", "bash -c ok", "cat README.md",
+                # inline interpreter code is not a test
+                "python3 -c pass", "python -c 1", "uv run python -c pass", "PYTHONPATH=src python3 -u -c 'import a'",
+                "node -e 1", "perl -e 1", "ruby -e 1", "sh -c 'pytest -q'", "bash -c 'npm test'",
+                "python3 -cpass", "python3 -Ic pass", "python3 -X dev -c pass", "node --eval 1",
+                "/usr/bin/python3.12 -c pass"]
 REAL_CHECKS = ["pytest -q tests/test_a.py", "python3 -m pytest", "uv run pytest", "npm test", "cargo test",
                "go test ./...", "make test", "./run-tests.sh", "bash scripts/check.sh", "cd sub && pytest", "manual",
                "pnpm test", "yarn test -- a.spec.ts", "bun run check", "npx vitest run", "cargo clippy -- -D warnings",
-               "go vet ./...", "ruff check src", "mypy src", "tsc --noEmit", "tox -e py"]
+               "go vet ./...", "ruff check src", "mypy src", "tsc --noEmit", "tox -e py",
+               "python3 -m pytest -c pytest.ini tests", "python3 tests/check.py test_a", "python3 -c pass && pytest -q",
+               "python3 -W error -m pytest -q", "python3 -Wignore -m pytest", "npx -p vitest vitest run"]
 
 
 @pytest.mark.parametrize("check", NO_OP_CHECKS)
@@ -403,10 +411,25 @@ Zero approved deferrals.
 
 ## Review deferrals
 
-| # | Item | Why deferred | Ripeness | Follow-up ticket |
-|---|---|---|---|---|
-| 1 | Retry the upload | Needs the cache layer first | blocked-by | #42 |
+| # | Item | Why deferred | Request trace | Ripeness | Evidence | Follow-up ticket |
+|---|---|---|---|---|---|---|
+| 1 | cd-49-F1: Retry the upload | Needs the cache layer first | none | blocked-by | #41 adds the cache layer | #42 |
 """
+
+
+def _ruling(register: Path, verdict: str = "GREEN") -> None:
+    """The /deferral-review peer's ruling of the register as it is now, attested as the hook does."""
+    import hashlib
+
+    import peer_attest
+
+    sha = hashlib.sha256(register.read_bytes()).hexdigest()[:12]
+    body = (f"RUN_BY_COMMAND: deferral-review\nRegister sha256: {sha}\n\n| Row | Ruling | Reason | Condition |\n"
+            f"|---|---|---|---|\n| review 1 | {verdict} | #41 is open | none |\n").encode()
+    review = register.with_name("cd-49_deferral-review.md")
+    review.write_bytes(body)
+    peer_attest.record(register.parent.parent, "run-49", f"deferrals/{review.name}", "deferral-peer",
+                       peer_attest.sha256(body))
 
 
 def test_a_review_deferral_needs_the_adapter_pattern_and_a_register_row(scripts_path, tmp_path, monkeypatch, capsys):
@@ -426,9 +449,17 @@ def test_a_review_deferral_needs_the_adapter_pattern_and_a_register_row(scripts_
     assert _cli(*defer, "#42") == 1
     assert "no row of an adjudicated deferral register names #42" in capsys.readouterr().err
     (context / "deferrals").mkdir()
-    (context / "deferrals" / "cd-49_deferral-register.md").write_text(REGISTER, encoding="utf-8")
+    register = context / "deferrals" / "cd-49_deferral-register.md"
+    register.write_text(REGISTER, encoding="utf-8")
+    assert _cli(*defer, "#42") == 1  # no /deferral-review ruling yet
+    _ruling(register, "RED")
+    assert _cli(*defer, "#42") == 1
+    _ruling(register, "AMBER")  # a review row is GREEN or RED
+    assert _cli(*defer, "#42") == 1
+    _ruling(register)
     assert _cli(*defer, "#43") == 1
     assert _cli(*defer, "#42") == 0
+    assert _cli("set-status", "--id", "cd-49-F1", "--status", "spec_gap", "--ticket", "#43") == 1
     assert _canonical_rows(context) == ["cd-49-F1"]
     assert load_findings(context / "findings.jsonl")[0]["ticket"] == "#42"
     # With no --ticket, the check reads the ticket the row already holds
@@ -498,3 +529,50 @@ def test_ledger_verify_runs_a_check_under_cadence_home(tmp_path, fix_repo, monke
 def test_append_rejects_a_check_that_is_not_valid_shell(tmp_path, check):
     with pytest.raises(FindingsValidationError, match="not valid shell"):
         append_finding(tmp_path / "f.jsonl", {**ROW, "check": check})
+
+
+def test_set_status_takes_no_abbreviation_of_human(ledger, fix_repo, capsys):
+    """The shell hook matches `--human`, so argparse takes no `--hum` or `--hu`."""
+    from conftest import head_sha
+
+    assert _cli("--ledger", str(ledger), "append", "--json", json.dumps(MANUAL)) == 0
+    for flag in ("--hum", "--hu"):
+        with pytest.raises(SystemExit):
+            _cli("--ledger", str(ledger), "set-status", "--id", "gh-1-F01", "--status", "fixed",
+                 "--fixed-in", head_sha(fix_repo), flag, "--by", "Jo")
+    assert "human_confirmed" not in load_findings(ledger)[0]
+
+
+# --- a check that names a placeholder is refused, and a check that cannot run can be replaced.
+
+@pytest.mark.parametrize("check", ["python3 SCRATCH/r2_f04_check.py", "python3 -m pytest <test_file>",
+                                   "python3 TMP_DIR/check.py"])
+def test_append_rejects_a_check_that_names_a_placeholder(tmp_path, check):
+    with pytest.raises(FindingsValidationError, match="placeholder"):
+        append_finding(tmp_path / "f.jsonl", {**ROW, "check": check})
+
+
+def test_set_check_replaces_only_a_check_that_cannot_run(ledger, fix_repo):
+    """A run stopped at R5 on a row whose check named a script that was never written; append was the only writer
+    of a check. set-check replaces a check that cannot run, keeps the old one, and never touches one that runs."""
+    from findings_io import missing_script, set_check
+
+    append_finding(ledger, {**ROW, "check": "python3 checks/f04.py"})
+    assert missing_script("python3 checks/f04.py", fix_repo) == "checks/f04.py"
+    assert _cli("--ledger", str(ledger), "set-check", "--id", "gh-1-F01", "--check", "python3 check.py 0") == 0
+    [row] = load_findings(ledger)
+    assert (row["check"], row["check_was"]) == ("python3 check.py 0", "python3 checks/f04.py")
+    with pytest.raises(FindingsValidationError, match="can run, so it stays"):
+        set_check(ledger, "gh-1-F01", "python3 check.py 1", cwd=fix_repo)  # a weaker check never replaces one that runs
+    with pytest.raises(FindingsValidationError, match="no-op"):
+        set_check(ledger, "gh-1-F01", "true", cwd=fix_repo)
+
+
+def test_ledger_verify_names_set_check_for_a_check_whose_script_is_missing(ledger, fix_repo, capsys):
+    from conftest import head_sha
+
+    append_finding(ledger, {**ROW, "check": "python3 checks/f04.py"})
+    set_status(ledger, "gh-1-F01", "fixed", fixed_in=head_sha(fix_repo), cwd=fix_repo)
+    assert main(["--ledger", str(ledger)]) == 1
+    err = capsys.readouterr()
+    assert "findings_io.py set-check --id gh-1-F01" in err.out + err.err

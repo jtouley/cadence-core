@@ -419,9 +419,9 @@ def test_p8_ticket_pattern_accepts_local_id(tmp_path, monkeypatch):
 
 _REGISTER = """## Approved deferrals
 
-| # | Item | Why deferred | Ripeness | Follow-up ticket |
-|---|---|---|---|---|
-| 1 | Add retry | Needs the cache layer first | blocked-by | {ticket} |
+| # | Item | Why deferred | Request trace | Ripeness | Evidence | Follow-up ticket |
+|---|---|---|---|---|---|---|
+| 1 | Add retry | Needs the cache layer first | none | blocked-by | LOCAL-9 builds the cache layer | {ticket} |
 """
 
 
